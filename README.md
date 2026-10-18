@@ -1,4 +1,7 @@
-# Nexora 🛡️
+# Nexora
+
+> 🌐 **Live Production URL:** [https://nexora-chi-cyan.vercel.app](https://nexora-chi-cyan.vercel.app)
+ 🛡️
 
 **Global Corporate Tax Compliance, Document Intelligence & Financial Fraud Prevention Platform**  
 *Dibangun oleh **Team Nexora** untuk Google Cloud AI Builder Cup — Track 1: BFSI (Risiko Cerdas, Pencegahan Penipuan & Pengalaman Keuangan)*
