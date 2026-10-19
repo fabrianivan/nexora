@@ -1,5 +1,12 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+});
 
 export const metadata: Metadata = {
   title: 'Nexora — Global Corporate Tax Compliance, Document Intelligence & Fraud Prevention',
@@ -13,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
-      <body className="min-h-screen selection:bg-rose-600 selection:text-white">
+    <html lang="id" className={inter.variable}>
+      <body className="min-h-screen font-sans selection:bg-blue-600 selection:text-white antialiased">
         {children}
       </body>
     </html>

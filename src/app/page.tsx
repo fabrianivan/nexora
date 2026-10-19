@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Building2,
   Plus,
@@ -9,12 +9,8 @@ import {
   Upload,
   CheckCircle2,
   AlertTriangle,
-  FileText,
-  Network,
   Users,
   Calculator,
-  FileCheck2,
-  CreditCard,
   Calendar,
   BarChart3,
   BookOpen,
@@ -24,29 +20,18 @@ import {
   Bot,
   Send,
   RefreshCw,
-  ArrowLeft,
   ShieldCheck,
   Globe2,
-  Layers,
-  ArrowUpRight,
   SlidersHorizontal,
-  Edit3,
   Trash2,
-  MessageSquare,
   Minimize2,
   Maximize2,
   Check,
-  Briefcase,
-  MapPin,
-  Mail,
-  Phone,
   UserCheck,
   GitBranch,
   Lock,
-  Unlock,
   Crown,
   ShieldAlert,
-  Shield,
   ChevronDown,
 } from 'lucide-react';
 import {
@@ -54,6 +39,7 @@ import {
   CountryCode,
   formatCurrency,
 } from '@/data/multiCountryTaxData';
+import { parseBlockMarkdown, renderInlines } from '@/lib/chatMarkdown';
 
 type PrimaryNav = 'companies' | 'calculation' | 'tax_return' | 'payment';
 type SubNav = 'corporate' | 'individual' | 'studies' | 'calendar' | 'reports';
@@ -1196,99 +1182,95 @@ const INITIAL_COMPANIES: CorporateEntity[] = [
 ];
 
 
-// Full markdown renderer for chat bubbles (**bold**, *italic*, `code`, ### headers, bullets)
-function renderInlineMarkdown(text: string, isUserMessage = false): React.ReactNode[] {
-  const regex = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\n]+\*)/g;
-  const parts = text.split(regex);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
-      return (
-        <strong
-          key={i}
-          className={isUserMessage ? 'font-bold text-white' : 'font-extrabold text-slate-900'}
-        >
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
-      return (
-        <code
-          key={i}
-          className={`font-mono text-[11px] px-1.5 py-0.5 rounded font-semibold ${
-            isUserMessage
-              ? 'bg-blue-700/60 text-white'
-              : 'bg-slate-100 text-[#2563EB] border border-slate-200'
-          }`}
-        >
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-    if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
-      return (
-        <em key={i} className="italic">
-          {part.slice(1, -1)}
-        </em>
-      );
-    }
-    return part;
-  });
-}
-
+// Pure AST markdown renderer for chat bubbles (**bold**, *italic*, `code`, ### headers, bullets, formulas, NPWP badges)
 function renderChatMessage(text: string, isUserMessage = false): React.ReactNode {
-  const lines = text.split('\n');
+  const blocks = parseBlockMarkdown(text);
   return (
-    <div className="space-y-1.5 leading-relaxed">
-      {lines.map((line, idx) => {
-        const trimmed = line.trim();
-        if (!trimmed) {
-          return <div key={idx} className="h-1.5" />;
-        }
-        if (trimmed === '---') {
-          return <hr key={idx} className="my-2 border-slate-200" />;
-        }
-        if (trimmed.startsWith('#### ')) {
+    <div className="space-y-2 leading-relaxed">
+      {blocks.map((b, bIdx) => {
+        if (b.type === 'h2') {
           return (
-            <h5 key={idx} className="font-extrabold text-slate-900 text-xs mt-2 mb-0.5">
-              {renderInlineMarkdown(trimmed.slice(5), isUserMessage)}
-            </h5>
-          );
-        }
-        if (trimmed.startsWith('### ')) {
-          return (
-            <h4 key={idx} className="font-extrabold text-slate-900 text-xs sm:text-sm mt-2 mb-0.5">
-              {renderInlineMarkdown(trimmed.slice(4), isUserMessage)}
-            </h4>
-          );
-        }
-        if (trimmed.startsWith('## ')) {
-          return (
-            <h3 key={idx} className="font-extrabold text-slate-900 text-sm mt-2.5 mb-1">
-              {renderInlineMarkdown(trimmed.slice(3), isUserMessage)}
+            <h3
+              key={bIdx}
+              className={`font-extrabold text-sm mt-2 mb-1 ${
+                isUserMessage ? 'text-white' : 'text-slate-900'
+              }`}
+            >
+              {renderInlines(b.inlines, isUserMessage)}
             </h3>
           );
         }
-        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        if (b.type === 'h3' || b.type === 'h4') {
           return (
-            <div key={idx} className="flex items-start gap-1.5 ml-1">
-              <span className={isUserMessage ? 'text-white' : 'text-[#2563EB] font-bold mt-0.5'}>•</span>
-              <span className="flex-1">{renderInlineMarkdown(trimmed.slice(2), isUserMessage)}</span>
+            <h4
+              key={bIdx}
+              className={`font-bold text-xs mt-1.5 mb-0.5 ${
+                isUserMessage ? 'text-white' : 'text-slate-900'
+              }`}
+            >
+              {renderInlines(b.inlines, isUserMessage)}
+            </h4>
+          );
+        }
+        if (b.type === 'divider') {
+          return (
+            <hr
+              key={bIdx}
+              className={`my-2 ${
+                isUserMessage ? 'border-blue-400/40' : 'border-slate-200'
+              }`}
+            />
+          );
+        }
+        if (b.type === 'formula') {
+          return (
+            <div
+              key={bIdx}
+              className={`my-1.5 p-2.5 rounded-lg font-mono tabular-nums text-[11px] font-semibold border ${
+                isUserMessage
+                  ? 'bg-blue-800/80 border-blue-400/40 text-white'
+                  : 'bg-slate-100 border-slate-200/90 text-slate-900'
+              }`}
+            >
+              {renderInlines(b.inlines, isUserMessage)}
             </div>
           );
         }
-        const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
-        if (numMatch) {
+        if (b.type === 'bullet') {
           return (
-            <div key={idx} className="flex items-start gap-1.5 ml-1">
-              <span className={`font-bold text-[11px] ${isUserMessage ? 'text-white' : 'text-[#2563EB]'}`}>
-                {numMatch[1]}.
+            <div key={bIdx} className="flex items-start gap-1.5 ml-1">
+              <span
+                className={`font-bold ${
+                  isUserMessage ? 'text-white' : 'text-[#2563EB]'
+                }`}
+              >
+                •
               </span>
-              <span className="flex-1">{renderInlineMarkdown(numMatch[2], isUserMessage)}</span>
+              <div className="flex-1">{renderInlines(b.inlines, isUserMessage)}</div>
             </div>
           );
         }
-        return <p key={idx}>{renderInlineMarkdown(line, isUserMessage)}</p>;
+        if (b.type === 'ordered') {
+          return (
+            <div key={bIdx} className="flex items-start gap-1.5 ml-1 font-mono">
+              <span
+                className={`font-bold text-[11px] ${
+                  isUserMessage ? 'text-white' : 'text-[#2563EB]'
+                }`}
+              >
+                {b.order}.
+              </span>
+              <div className="flex-1 font-sans">
+                {renderInlines(b.inlines, isUserMessage)}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <p key={bIdx} className="leading-relaxed">
+            {renderInlines(b.inlines, isUserMessage)}
+          </p>
+        );
       })}
     </div>
   );
@@ -1314,7 +1296,6 @@ export default function NexoraApp() {
   const [structureModalTab, setStructureModalTab] = useState<'general' | 'tp_tax' | 'individual_ubo'>('tp_tax');
   const [showShareholderModal, setShowShareholderModal] = useState<boolean>(false);
   const [shareholderInputMode, setShareholderInputMode] = useState<'search_existing' | 'manual'>('manual');
-  const [shareholderModalTab, setShareholderModalTab] = useState<'profile' | 'beps'>('profile');
   const [showIndividualModal, setShowIndividualModal] = useState<boolean>(false);
   const [indInputMode, setIndInputMode] = useState<'search_existing' | 'manual'>('manual');
   const [isDocAiRunning, setIsDocAiRunning] = useState<boolean>(false);
@@ -1376,6 +1357,17 @@ export default function NexoraApp() {
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
   const [remediatedTrxIds, setRemediatedTrxIds] = useState<string[]>([]);
   const [simulatedRevenueMultiplier, setSimulatedRevenueMultiplier] = useState<number>(100);
+
+  // Close floating chatbot with Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && isChatOpen) {
+        setIsChatOpen(false);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isChatOpen]);
   const [chatHistory, setChatHistory] = useState<
     { role: 'user' | 'assistant'; text: string; citations?: string[]; entityLabel?: string }[]
   >([
@@ -1419,14 +1411,6 @@ export default function NexoraApp() {
   function triggerToast(msg: string) {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4500);
-  }
-
-  function handleSelectCompanyForManagement(comp: CorporateEntity, targetSection?: CorporateViewTab) {
-    setSelectedEntityId(comp.id);
-    setPrimaryNav('companies');
-    setSubNav('corporate');
-    if (targetSection) setCorpViewTab(targetSection);
-    triggerToast(`Membuka Manajemen Perusahaan: ${comp.flag} ${comp.legalName}`);
   }
 
   function handleSelectEntity(comp: CorporateEntity) {
@@ -2727,6 +2711,32 @@ export default function NexoraApp() {
                           </button>
                         </div>
 
+                        {/* Document AI Scanning Progress Bar */}
+                        {isDocAiRunning && (
+                          <div className="mb-4 p-3.5 rounded-xl bg-blue-50/60 border border-blue-200/80 space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-semibold text-blue-900 flex items-center gap-2">
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#2563EB]" />
+                                Memindai Dokumen Statutory dengan Google Cloud Document AI OCR...
+                              </span>
+                              <span className="font-mono tabular-nums text-blue-800 font-bold">99.2%</span>
+                            </div>
+                            <div
+                              role="progressbar"
+                              aria-valuenow={99}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              aria-label="Progress pemindaian Document AI"
+                              className="w-full h-2 bg-slate-100 rounded-full overflow-hidden"
+                            >
+                              <div
+                                className="h-full bg-[#2563EB] rounded-full transition-all duration-500 ease-out animate-pulse"
+                                style={{ width: '99.2%' }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         {/* Figma 201-8 Clean 2-Column Document Rows with Segmented `[ View | Upload ↑ ]` Bars */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                           {selectedEntity.documents.map((doc, index) => (
@@ -3827,13 +3837,15 @@ export default function NexoraApp() {
                           key={trx.id}
                           className={`p-4 rounded-xl border transition space-y-2 ${
                             isRemediated
-                              ? 'bg-emerald-50/40 border-emerald-300'
-                              : 'bg-white border-slate-200 hover:border-blue-300'
+                              ? 'border-l-4 border-l-emerald-500 bg-emerald-50/40 border-slate-200'
+                              : trx.riskLevel === 'CRITICAL'
+                              ? 'border-l-4 border-l-rose-500 bg-rose-50/30 border-slate-200 hover:border-slate-300'
+                              : 'border-l-4 border-l-amber-500 bg-amber-50/20 border-slate-200 hover:border-slate-300'
                           }`}
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs font-bold text-slate-500">
+                              <span className="font-mono tabular-nums text-xs font-bold text-slate-500">
                                 {trx.id}
                               </span>
                               <span className="text-sm font-bold text-slate-900">
@@ -3855,12 +3867,15 @@ export default function NexoraApp() {
                                   : `Risk ${trx.riskScore}/100 (${trx.riskLevel})`}
                               </span>
                             </div>
-                            <span className="font-mono text-sm font-extrabold text-slate-900">
+                            <span className="font-mono tabular-nums text-sm font-extrabold text-slate-900">
                               {formatCurrency(trx.amount, activeCountry)}
                             </span>
                           </div>
                           <p className="text-xs font-semibold text-rose-600">
-                            {trx.anomalyTag} • BigQuery Z-Score: {trx.bqZScore}σ
+                            {trx.anomalyTag} • BigQuery Z-Score:{' '}
+                            <span className="font-mono tabular-nums font-bold">
+                              {trx.bqZScore}σ
+                            </span>
                           </p>
                           <p className="text-xs text-slate-600 leading-relaxed">
                             {trx.aiExplanation}
@@ -3871,21 +3886,24 @@ export default function NexoraApp() {
                             </span>
                             <div className="flex items-center gap-2">
                               <button
-                                onClick={() =>
-                                  handleAskFloatingAi(
+                                type="button"
+                                onClick={() => {
+                                  setChatInput(
                                     `Jelaskan mitigasi hukum atas anomali transaksi ${trx.id} (${trx.vendor}) senilai ${formatCurrency(trx.amount, activeCountry)} pada ${selectedEntity.legalName}.`
-                                  )
-                                }
-                                className="px-2.5 py-1 rounded bg-blue-50 text-[#2563EB] font-bold text-[11px] cursor-pointer"
+                                  );
+                                  setIsChatOpen(true);
+                                }}
+                                className="px-2.5 py-1 rounded bg-blue-50 text-[#2563EB] border border-blue-200 font-bold text-[11px] cursor-pointer hover:bg-blue-100 transition"
                               >
-                                Tanya AI Chatbot
+                                Tanya AI Copilot
                               </button>
                               {!isRemediated && trx.riskLevel !== 'LOW' && (
                                 <button
+                                  type="button"
                                   onClick={() =>
                                     handleRemediateTransaction(trx.id, trx.vendor)
                                   }
-                                  className="px-3 py-1 rounded bg-[#2563EB] text-white font-bold text-[11px] cursor-pointer"
+                                  className="px-3 py-1 rounded bg-[#2563EB] text-white font-bold text-[11px] cursor-pointer hover:bg-blue-700 transition"
                                 >
                                   Auto-Remediate
                                 </button>
@@ -4113,8 +4131,9 @@ export default function NexoraApp() {
               </h1>
               <div className="overflow-x-auto rounded-xl border border-slate-200">
                 <table className="w-full text-left border-collapse text-xs">
+                  <caption className="sr-only">Kertas Kerja Rekonsiliasi Fiskal Multi-Negara</caption>
                   <thead>
-                    <tr className="bg-slate-100 border-b border-slate-200 text-slate-600 font-bold uppercase">
+                    <tr className="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                       <th className="py-3 px-4">Kode & Akun</th>
                       <th className="py-3 px-4 text-right">Komersial (Book)</th>
                       <th className="py-3 px-4 text-right">Koreksi Positif (+)</th>
@@ -4125,24 +4144,25 @@ export default function NexoraApp() {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {cfg.fiscalReconciliation.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50">
-                        <td className="py-3 px-4 font-semibold">
-                          [{item.accountCode}] {item.accountName}
+                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-4 font-semibold text-slate-800">
+                          <span className="font-mono tabular-nums text-slate-500 mr-1.5">[{item.accountCode}]</span>
+                          {item.accountName}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono">
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-700">
                           {formatCurrency(item.commercialAmount, activeCountry)}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono text-rose-600 font-bold">
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-emerald-600 font-bold">
                           {item.positiveCorrection > 0
                             ? formatCurrency(item.positiveCorrection, activeCountry)
                             : '-'}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono text-emerald-600 font-bold">
+                        <td className="py-3 px-4 text-right font-mono tabular-nums text-rose-600 font-bold">
                           {item.negativeCorrection > 0
-                            ? formatCurrency(item.negativeCorrection, activeCountry)
+                            ? `(${formatCurrency(item.negativeCorrection, activeCountry)})`
                             : '-'}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono font-extrabold">
+                        <td className="py-3 px-4 text-right font-mono tabular-nums font-extrabold text-slate-900">
                           {formatCurrency(item.fiscalAmount, activeCountry)}
                         </td>
                         <td className="py-3 px-4 text-slate-600">
@@ -4336,8 +4356,10 @@ export default function NexoraApp() {
 
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={() => setIsChatExpanded(!isChatExpanded)}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer"
+                aria-label={isChatExpanded ? 'Perkecil Panel' : 'Perbesar Panel'}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer transition"
                 title={isChatExpanded ? 'Perkecil Panel' : 'Perbesar Panel'}
               >
                 {isChatExpanded ? (
@@ -4347,10 +4369,15 @@ export default function NexoraApp() {
                 )}
               </button>
               <button
+                type="button"
                 onClick={() => setIsChatOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer"
-                title="Minimize ke Pinggir Kanan"
+                aria-label="Tutup Copilot (Esc)"
+                className="flex items-center gap-1 p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer transition"
+                title="Tutup Copilot (Esc)"
               >
+                <kbd className="hidden sm:inline-block text-[9px] px-1 py-0.5 rounded bg-white/15 text-slate-300 font-mono">
+                  Esc
+                </kbd>
                 <X className="w-4 h-4" />
               </button>
             </div>
