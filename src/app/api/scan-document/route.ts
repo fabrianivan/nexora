@@ -3,6 +3,15 @@ import { z } from 'zod';
 import { rateLimit } from '@/lib/server/rateLimit';
 
 const metadataSchema = z.object({ country: z.enum(['ID', 'SG', 'MY', 'US']), entityId: z.string().min(1), documentType: z.enum(['deed', 'shareholder', 'financial_statement', 'previous_tax_return', 'e_invoice']) });
+const extractionSchema = z.object({
+  number: z.string().nullable().optional(), date: z.string().nullable().optional(),
+  counterparty: z.string().nullable().optional(), counterpartyTaxId: z.string().nullable().optional(),
+  taxableBase: z.number().nullable().optional(), taxAmount: z.number().nullable().optional(),
+  totalAmount: z.number().nullable().optional(), ownershipPercentage: z.number().min(0).max(100).nullable().optional(),
+  invoiceUuid: z.string().nullable().optional(), taxIdValidated: z.boolean().optional(),
+  hasSupportingEvidence: z.boolean().optional(), deductible: z.boolean().optional(),
+  confidenceByField: z.record(z.string(), z.number().min(0).max(1)).optional(),
+});
 const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 
 export async function GET() { return Response.json({ live: Boolean(process.env.GEMINI_API_KEY), provider: process.env.GEMINI_API_KEY ? 'Gemini Vision' : null }); }
@@ -23,7 +32,11 @@ export async function POST(request: NextRequest) {
     if (!result.ok) return Response.json({ error: 'Ekstraksi AI gagal. Isi field secara manual.' }, { status: 502 });
     const json = await result.json(); const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (typeof text !== 'string') return Response.json({ error: 'AI tidak mengembalikan data terstruktur. Isi manual.' }, { status: 502 });
-    return Response.json({ data: JSON.parse(text), provider: 'Gemini Vision' });
+    let candidate: unknown;
+    try { candidate = JSON.parse(text); } catch { return Response.json({ error: 'Respons AI bukan JSON yang valid. Isi manual.' }, { status: 502 }); }
+    const extraction = extractionSchema.safeParse(candidate);
+    if (!extraction.success) return Response.json({ error: 'Struktur hasil AI tidak valid. Isi manual.' }, { status: 502 });
+    return Response.json({ data: extraction.data, provider: 'Gemini Vision' });
   } catch { return Response.json({ error: 'Ekstraksi timeout atau gagal. Isi field secara manual.' }, { status: 504 }); }
   finally { clearTimeout(timeout); }
 }

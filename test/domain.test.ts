@@ -37,6 +37,11 @@ describe('fraud rules and z-score', () => {
     const rules = detectFraud(docs).findings.map((finding)=>finding.rule);
     expect(rules).toContain('SPLIT_INVOICING'); expect(rules).toContain('Z_SCORE');
   });
+  it('limits invoice analytics to e-invoices within each entity', () => {
+    const docs = [0, 1, 2, 3].map((index) => document({ id: `company-a-${index}`, totalAmount: field(100 + index), type: 'e_invoice' as const }));
+    docs.push(document({ id: 'company-b-statement', entityId: 'entity-2', type: 'financial_statement', totalAmount: field(1_000_000) }));
+    expect(detectFraud(docs).zScoreReady).toBe(false);
+  });
 });
 
 describe('entity and ownership validation', () => {

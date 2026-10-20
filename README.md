@@ -127,6 +127,9 @@ Or deploy with `gcloud run deploy nexora --source . --region asia-southeast2 --a
 
 - Browser localStorage is single-device persistence and is not suitable for multi-user production use. Replace `WorkspaceRepository` with Firestore or another authenticated backend.
 - Gemini citations are displayed as official regulatory source links; no Vertex AI Search/RAG index is connected in this version.
+- Gemini's per-field confidence is model-reported and is not independently calibrated. Missing or invalid extraction output is sent to manual entry; no confidence score is fabricated.
+- Risk scores are a UI heuristic based on local findings, not a calibrated probability of fraud. TBTS tax comparisons use a configured standard-rate assumption and require verification against applicable exceptions.
+- Z-Score analysis uses e-invoices for each entity separately and requires at least five invoices for that entity.
 - The PDF output uses the browser print dialog, not an authority-issued filing form.
 - Payment channels are informational only. Nexora does not create billing codes, file returns, or move funds.
 - Tax rates are configurable assumptions and require professional review before real filing.
