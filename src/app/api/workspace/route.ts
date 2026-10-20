@@ -1,10 +1,12 @@
 import { NextRequest } from 'next/server';
 import { workspaceSchema } from '@/lib/domain';
 import { workspaceRepository } from '@/lib/mysql';
+import { isSessionValid } from '@/lib/server/session';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isSessionValid(request)) return Response.json({ error: 'Autentikasi diperlukan.' }, { status: 401 });
   if (!process.env.MYSQL_URL?.trim()) return Response.json({ error: 'Database belum dikonfigurasi. Tambahkan MYSQL_URL.' }, { status: 503 });
   try {
     const workspace = await workspaceRepository.load();
@@ -15,6 +17,7 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  if (!isSessionValid(request)) return Response.json({ error: 'Autentikasi diperlukan.' }, { status: 401 });
   if (!process.env.MYSQL_URL?.trim()) return Response.json({ error: 'Database belum dikonfigurasi. Tambahkan MYSQL_URL.' }, { status: 503 });
   const reader = request.body?.getReader();
   if (!reader) return Response.json({ error: 'Request body kosong.' }, { status: 400 });
