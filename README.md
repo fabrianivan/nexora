@@ -42,7 +42,7 @@ Production: <https://nexora-chi-cyan.vercel.app>
 - Local fraud rules for TBTS indicators, IRAS Missing Trader risk, missing MyInvois UUID, split invoicing, non-deductible costs, and Z-score anomalies.
 - Deterministic corporate tax, indirect tax, withholding/treaty, and BEPS Pillar Two simulator. Calculations never depend on an LLM.
 - Editable fiscal reconciliation and validated draft exports for SPT 1771, Form C-S/Form C, and Form 1120 in JSON/XML plus a printable PDF summary.
-- Local browser persistence behind a repository abstraction, with full workspace JSON import/export.
+- MySQL persistence through server-only API routes and a repository abstraction, with full workspace JSON import/export.
 
 Nexora starts with an empty workspace. It contains no demo companies, fake scans, seeded invoices, or fabricated AI responses.
 
@@ -59,8 +59,9 @@ The current implementation calls the Gemini API directly. `DOCUMENT_AI_PROCESSOR
 ```mermaid
 flowchart LR
   U[User] --> UI[Next.js 15 App Router]
-  UI --> R[WorkspaceRepository]
-  R --> LS[(Browser localStorage)]
+  UI --> API[Workspace API]
+  API --> R[MySQL repository]
+  R --> DB[(MySQL JSON workspace)]
   UI --> D[Deterministic domain engines]
   D --> O[Ownership validation]
   D --> F[Fraud and Z-score rules]
@@ -80,7 +81,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open <http://localhost:3000>. Leave `GEMINI_API_KEY` empty to verify the complete Manual Mode flow.
+Set `MYSQL_URL` in `.env.local` to a MySQL database the server can reach. The app creates the `nexora_workspaces` table on first use; the equivalent DDL is in `sql/schema.mysql.sql`. Open <http://localhost:3000>. Leave `GEMINI_API_KEY` empty to verify the complete Manual Mode flow.
 
 ```bash
 npm run lint
@@ -95,7 +96,8 @@ npm run test:e2e
 ```text
 src/app/                 UI and server route handlers
 src/lib/domain.ts        Zod schemas and domain types
-src/lib/repository.ts    Swappable workspace repository contract
+src/lib/mysql.ts         Server-only MySQL workspace repository
+src/app/api/workspace/   Validated workspace load/save API
 src/lib/ownership.ts     Graph validation
 src/lib/fraud.ts         Local fraud rules and Z-score
 src/lib/tax.ts           Deterministic tax simulator
@@ -109,8 +111,8 @@ e2e/                     Playwright smoke test
 
 - Input is validated by Zod; uploads accept only PDF/JPEG/PNG and are capped at 10 MB.
 - AI endpoints use an in-memory per-instance rate limit and request timeouts.
-- Uploaded bytes are sent to Gemini only after the user explicitly requests extraction. Attachments are not persisted; structured fields and attachment metadata are stored locally in the browser.
-- Do not enter production personal data into a shared demo deployment. There is no authentication or server database in this competition build.
+- Uploaded bytes are sent to Gemini only after the user explicitly requests extraction. Attachments are not persisted; structured fields and attachment metadata are stored in MySQL.
+- The current build uses one shared workspace and has no sign-in, tenant isolation, or row-level ownership. Add authentication and tenant scoping before exposing a configured instance publicly.
 
 ## Cloud Run
 
@@ -121,11 +123,11 @@ docker build -t nexora .
 docker run --rm -p 8080:8080 -e PORT=8080 nexora
 ```
 
-Or deploy with `gcloud run deploy nexora --source . --region asia-southeast2 --allow-unauthenticated` and provide `GEMINI_API_KEY` through Secret Manager/environment configuration for Live Mode.
+Or deploy with `gcloud run deploy nexora --source . --region asia-southeast2 --allow-unauthenticated` and provide `MYSQL_URL` and (optionally) `GEMINI_API_KEY` through Secret Manager/environment configuration. The MySQL instance must be reachable from Cloud Run.
 
 ## Known Limitations
 
-- Browser localStorage is single-device persistence and is not suitable for multi-user production use. Replace `WorkspaceRepository` with Firestore or another authenticated backend.
+- Workspace persistence requires `MYSQL_URL`; the workspace is stored as one JSON document in MySQL. The current build has no authentication or tenant isolation.
 - Gemini citations are displayed as official regulatory source links; no Vertex AI Search/RAG index is connected in this version.
 - Gemini's per-field confidence is model-reported and is not independently calibrated. Missing or invalid extraction output is sent to manual entry; no confidence score is fabricated.
 - Risk scores are a UI heuristic based on local findings, not a calibrated probability of fraud. TBTS tax comparisons use a configured standard-rate assumption and require verification against applicable exceptions.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { AlertTriangle, Building2, Download, GitBranch, Moon, Plus, ShieldAlert, Sparkles, Sun, Trash2, Upload } from 'lucide-react';
 import { documentSchema, emptyWorkspace, entitySchema, newId, workspaceSchema, type CountryCode, type CorporateEntity, type Workspace } from '@/lib/domain';
@@ -8,12 +8,10 @@ import { crossValidateDocuments } from '@/lib/crossValidation';
 import { detectFraud, type Severity } from '@/lib/fraud';
 import { validateOwnership } from '@/lib/ownership';
 import { calculateReconciliation } from '@/lib/reconciliation';
-import { LocalWorkspaceRepository } from '@/lib/repository';
 import { createReturnDraft, returnDraftToXml } from '@/lib/returns';
 import { simulateTax, TAX_CONFIG } from '@/lib/tax';
 
 type View = 'entities' | 'documents' | 'risk' | 'simulator' | 'returns';
-const repository = new LocalWorkspaceRepository();
 const countryNames: Record<CountryCode, string> = { ID: 'Indonesia', SG: 'Singapura', MY: 'Malaysia', US: 'Amerika Serikat' };
 const flags: Record<CountryCode, string> = { ID: 'ID', SG: 'SG', MY: 'MY', US: 'US' };
 const fieldClass = 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white';
@@ -31,10 +29,42 @@ export default function NexoraApp() {
   const [mode, setMode] = useState<'manual' | 'live'>('manual');
   const [dark, setDark] = useState(false);
   const [notice, setNotice] = useState('');
+  const [databaseStatus, setDatabaseStatus] = useState<'loading'|'ready'|'saving'|'error'>('loading');
+  const [databaseError, setDatabaseError] = useState('');
+  const lastSavedWorkspace = useRef('');
   const activeEntity = workspace.entities.find((entity) => entity.id === activeEntityId) ?? workspace.entities[0];
 
-  useEffect(() => { const loaded = repository.load(); setWorkspace(loaded); setActiveEntityId(loaded.entities[0]?.id ?? ''); setHydrated(true); fetch('/api/status').then((response) => response.json()).then((status: { mode: 'manual' | 'live' }) => setMode(status.mode)).catch(() => setMode('manual')); }, []);
-  useEffect(() => { if (hydrated) repository.save(workspace); }, [workspace, hydrated]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/workspace').then(async (response) => {
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? 'Gagal membaca MySQL.');
+      return workspaceSchema.parse(body.workspace);
+    }).then((loaded) => {
+      if (cancelled) return;
+      setWorkspace(loaded); setActiveEntityId(loaded.entities[0]?.id ?? '');
+      lastSavedWorkspace.current = JSON.stringify(loaded);
+      setDatabaseStatus('ready'); setDatabaseError(''); setHydrated(true);
+    }).catch((error: unknown) => {
+      if (cancelled) return;
+      setDatabaseStatus('error'); setDatabaseError(error instanceof Error ? error.message : 'Koneksi MySQL gagal.'); setHydrated(true);
+    });
+    fetch('/api/status').then((response) => response.json()).then((status: { mode: 'manual' | 'live' }) => setMode(status.mode)).catch(() => setMode('manual'));
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
+    if (!hydrated || databaseStatus !== 'ready') return;
+    const serialized = JSON.stringify(workspace);
+    if (serialized === lastSavedWorkspace.current) return;
+    const timer = window.setTimeout(() => {
+      setDatabaseStatus('saving');
+      fetch('/api/workspace', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: serialized })
+        .then(async (response) => { const body = await response.json(); if (!response.ok) throw new Error(body.error ?? 'Penyimpanan MySQL gagal.'); })
+        .then(() => { lastSavedWorkspace.current = serialized; setDatabaseStatus('ready'); setDatabaseError(''); })
+        .catch((error: unknown) => { setDatabaseStatus('error'); setDatabaseError(error instanceof Error ? error.message : 'Penyimpanan MySQL gagal.'); });
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [workspace, hydrated, databaseStatus]);
   useEffect(() => { document.documentElement.classList.toggle('dark', dark); }, [dark]);
   const update = (next: Workspace) => { setWorkspace(next); if (!activeEntityId && next.entities[0]) setActiveEntityId(next.entities[0].id); };
   const flash = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(''), 3500); };
@@ -43,7 +73,7 @@ export default function NexoraApp() {
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-[#0b1120]/90">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3"><div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-white"><Building2 size={18}/></div><div><h1 className="font-black tracking-tight">Nexora</h1><p className="text-[10px] text-slate-500">Corporate ownership & tax compliance</p></div></div>
-        <div className="flex items-center gap-2"><span className={`rounded-full px-3 py-1 text-xs font-bold ${mode === 'live' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{mode === 'live' ? 'Mode Live' : 'Mode Manual'}</span><button aria-label="Ubah tema" className="rounded-lg border border-slate-200 p-2 dark:border-slate-700" onClick={() => setDark(!dark)}>{dark ? <Sun size={16}/> : <Moon size={16}/>}</button></div>
+        <div className="flex items-center gap-2"><span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800 dark:bg-blue-950 dark:text-blue-200">{databaseStatus === 'loading' ? 'Memuat MySQL…' : databaseStatus === 'saving' ? 'Menyimpan MySQL…' : databaseStatus === 'error' ? 'MySQL terputus' : 'MySQL tersambung'}</span><span className={`rounded-full px-3 py-1 text-xs font-bold ${mode === 'live' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>{mode === 'live' ? 'Mode Live' : 'Mode Manual'}</span><button aria-label="Ubah tema" className="rounded-lg border border-slate-200 p-2 dark:border-slate-700" onClick={() => setDark(!dark)}>{dark ? <Sun size={16}/> : <Moon size={16}/>}</button></div>
       </div>
       <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 sm:px-6" aria-label="Navigasi utama">
         {([['entities','Entitas'],['documents','Dokumen'],['risk','Risiko'],['simulator','Simulator'],['returns','Rekonsiliasi & Return']] as [View,string][]).map(([id, label]) => <button key={id} onClick={() => setView(id)} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-xs font-bold ${view === id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'}`}>{label}</button>)}
@@ -51,6 +81,7 @@ export default function NexoraApp() {
     </header>
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
       {mode === 'manual' && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"><strong>Mode Manual.</strong> Layanan AI tidak dikonfigurasi. Nexora tidak akan membuat hasil ekstraksi atau jawaban palsu; isi data melalui form di bawah.</div>}
+      {databaseStatus === 'error' && <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200"><strong>Workspace belum tersimpan ke MySQL.</strong> {databaseError} Pastikan MYSQL_URL benar dan muat ulang aplikasi setelah database tersedia.</div>}
       {notice && <div role="status" className="fixed bottom-5 right-5 z-50 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-2xl">{notice}</div>}
       {view === 'entities' && <Entities workspace={workspace} activeId={activeEntity?.id ?? ''} setActive={setActiveEntityId} update={update} flash={flash}/>}
       {view === 'documents' && <Documents workspace={workspace} entity={activeEntity} mode={mode} update={update} flash={flash}/>}
@@ -65,7 +96,7 @@ function Entities({ workspace, activeId, setActive, update, flash }: { workspace
   const blank = { name: '', country: 'ID' as CountryCode, taxId: '', address: '', fiscalYearEnd: '12-31' };
   const [form, setForm] = useState(blank); const [error, setError] = useState('');
   const ownershipIssues = validateOwnership(workspace.entities, workspace.ownerships);
-  const submit = (event: React.FormEvent) => { event.preventDefault(); const parsed = entitySchema.safeParse({ ...form, id: newId('entity'), createdAt: new Date().toISOString() }); if (!parsed.success) return setError(parsed.error.issues[0].message); update({ ...workspace, entities: [...workspace.entities, parsed.data] }); setForm(blank); setError(''); flash('Entitas tersimpan di repository lokal.'); };
+  const submit = (event: React.FormEvent) => { event.preventDefault(); const parsed = entitySchema.safeParse({ ...form, id: newId('entity'), createdAt: new Date().toISOString() }); if (!parsed.success) return setError(parsed.error.issues[0].message); update({ ...workspace, entities: [...workspace.entities, parsed.data] }); setForm(blank); setError(''); flash('Entitas diperbarui; perubahan akan disimpan ke MySQL.'); };
   const importJson = async (file?: File) => { if (!file) return; try { const raw: unknown = JSON.parse(await file.text()); const parsed = workspaceSchema.safeParse(raw); if (!parsed.success) return flash('JSON tidak sesuai schema workspace Nexora.'); update(parsed.data); setActive(parsed.data.entities[0]?.id ?? ''); flash('Workspace berhasil diimpor.'); } catch { flash('File bukan JSON yang valid.'); } };
   return <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
     <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-black">Multi-Country Corporate Management</h2><p className="text-sm text-slate-500">Data awal kosong. Tambah manual atau impor JSON milik Anda.</p></div><div className="flex gap-2"><label className="cursor-pointer rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Import JSON<input className="hidden" type="file" accept="application/json" onChange={(event) => void importJson(event.target.files?.[0])}/></label><button onClick={() => download('nexora-workspace.json', JSON.stringify(workspace, null, 2), 'application/json')} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700"><Download className="mr-1 inline" size={14}/>Export</button></div></div>

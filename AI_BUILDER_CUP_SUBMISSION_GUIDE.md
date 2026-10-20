@@ -12,6 +12,7 @@ Nexora provides one privacy-conscious workspace where a user can enter or import
 |---|---|---|
 | Gemini 2.5 Flash API | Server-side explanation of deterministic results and multimodal extraction of explicitly uploaded PDF/JPG/PNG files | Copilot disabled; scanner switches to the same manual form |
 | Cloud Run | Container deployment using Next.js standalone output and `PORT` | Application can also run on Vercel/local Node |
+| MySQL | Server-side persistence for the shared workspace through validated `/api/workspace` endpoints | Set `MYSQL_URL`; the UI reports an explicit unavailable state when the database is not configured or reachable |
 | Document AI | Environment slots are documented for a future/custom processor adapter; not called by this repository | No Document AI claim is shown |
 | BigQuery | Optional future analytics sink; local rules and Z-score are authoritative in this build | All fraud checks continue locally |
 | Vertex AI Search | Not connected | Official source links are shown; no RAG claim |
@@ -47,6 +48,6 @@ Secrets are server-only. AI routes validate inputs, cap file size/type, apply re
 - [x] Vitest unit coverage and Playwright smoke test.
 - [x] Responsive UI, dark mode, labels, focus states, and empty/error/loading states.
 - [x] Vercel and Cloud Run deployment paths documented.
-- [ ] Replace browser repository with authenticated Firestore for a post-competition multi-user release.
+- [ ] Add authentication and tenant isolation before using the shared MySQL workspace for multiple organizations or production taxpayer data.
 - [ ] Add a real Document AI processor adapter only after processor credentials are provisioned.
 - [ ] Add authenticated audit logs and tenant isolation before handling production taxpayer data.
