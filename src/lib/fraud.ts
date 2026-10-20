@@ -15,17 +15,25 @@ export function zScores(values: number[], minimum = 5): number[] | null {
 
 export function detectFraud(documents: TaxDocument[]): { findings: Finding[]; zScoreReady: boolean } {
   const findings: Finding[] = [];
-  for (const doc of documents) {
+  const invoices = documents.filter((doc) => doc.type === 'e_invoice');
+  for (const doc of invoices) {
     const expectedTax = doc.taxableBase.value * TAX_CONFIG[doc.country].indirectRate;
-    if (doc.country === 'ID' && (!doc.taxIdValidated || Math.abs(doc.taxAmount.value - expectedTax) > 1)) findings.push(finding(doc, 'TBTS', 'critical', 'Identitas vendor atau perhitungan PPN tidak valid.', `${doc.number.value}: pajak ${doc.taxAmount.value}, ekspektasi ${expectedTax}`, 'Tahan pengkreditan dan minta NSFP serta bukti transaksi yang valid.'));
+    if (doc.country === 'ID' && (!doc.taxIdValidated || Math.abs(doc.taxAmount.value - expectedTax) > 1)) findings.push(finding(doc, 'TBTS', 'critical', 'Indikator risiko TBTS: identitas vendor belum tervalidasi atau nominal PPN berbeda dari asumsi tarif standar Nexora. Ini perlu verifikasi, bukan kesimpulan fraud.', `${doc.number.value}: pajak ${doc.taxAmount.value}, asumsi tarif standar ${expectedTax}`, 'Verifikasi NSFP, ketentuan tarif/pengecualian yang berlaku, vendor, dan bukti transaksi sebelum mengambil tindakan.'));
     if (doc.country === 'SG' && !doc.taxIdValidated) findings.push(finding(doc, 'MISSING_TRADER', 'critical', 'Registrasi pemasok tidak tervalidasi sehingga ada risiko Missing Trader Fraud.', doc.counterparty.value, 'Tahan klaim GST dan lakukan due diligence pemasok.'));
     if (doc.country === 'MY' && !doc.invoiceUuid.value.trim()) findings.push(finding(doc, 'MYINVOIS_UUID', 'high', 'Dokumen tidak memiliki UUID MyInvois.', doc.number.value, 'Minta e-Invoice tervalidasi LHDN sebelum mengklaim biaya.'));
     if (!doc.deductible || !doc.hasSupportingEvidence) findings.push(finding(doc, 'NON_DEDUCTIBLE', 'medium', 'Biaya ditandai non-deductible atau tidak memiliki bukti pendukung.', doc.attachmentName, 'Lengkapi bukti atau lakukan koreksi fiskal positif.'));
   }
   const groups = new Map<string, TaxDocument[]>();
-  documents.forEach((doc) => { const key = `${doc.entityId}|${doc.counterparty.value.toLowerCase()}|${doc.date.value}`; groups.set(key, [...(groups.get(key) ?? []), doc]); });
+  invoices.forEach((doc) => { const key = `${doc.entityId}|${doc.counterparty.value.toLowerCase()}|${doc.date.value}`; groups.set(key, [...(groups.get(key) ?? []), doc]); });
   groups.forEach((docs) => { if (docs.length >= 3) findings.push(finding(docs[0], 'SPLIT_INVOICING', 'high', `${docs.length} invoice vendor yang sama dibuat pada tanggal yang sama.`, docs.map((doc) => doc.number.value).join(', '), 'Gabungkan review invoice dan verifikasi kontrak/otorisasi transaksi.')); });
-  const scores = zScores(documents.map((doc) => doc.totalAmount.value));
-  scores?.forEach((score, index) => { if (Math.abs(score) >= 2) findings.push(finding(documents[index], 'Z_SCORE', 'high', `Nilai invoice menyimpang dengan Z-Score ${score.toFixed(2)}.`, documents[index].number.value, 'Bandingkan dengan kontrak, PO, dan histori vendor.')); });
-  return { findings, zScoreReady: scores !== null };
+  const byEntity = new Map<string, TaxDocument[]>();
+  invoices.forEach((doc) => byEntity.set(doc.entityId, [...(byEntity.get(doc.entityId) ?? []), doc]));
+  let zScoreReady = false;
+  byEntity.forEach((entityInvoices) => {
+    const scores = zScores(entityInvoices.map((doc) => doc.totalAmount.value));
+    if (!scores) return;
+    zScoreReady = true;
+    scores.forEach((score, index) => { if (Math.abs(score) >= 2) findings.push(finding(entityInvoices[index], 'Z_SCORE', 'high', `Nilai invoice menyimpang dengan Z-Score ${score.toFixed(2)}.`, entityInvoices[index].number.value, 'Bandingkan dengan kontrak, PO, dan histori vendor.')); });
+  });
+  return { findings, zScoreReady };
 }
