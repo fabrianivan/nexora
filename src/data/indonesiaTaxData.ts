@@ -14,7 +14,7 @@ export interface TaxDocumentSample {
   taxRate: string;
   taxAmount: number;
   totalAmount: number;
-  status: 'PATUH' | 'PERINGATAN' | 'RISIKO_FRAUD';
+  status: 'PATUH' | 'PERINGATAN' | 'RISIKO_FRAUD' | 'SIMULASI';
   confidenceScore: number;
   extractedFields: {
     label: string;
@@ -67,7 +67,7 @@ export interface IndustryBenchmark {
   industryIdealMin: number;
   industryIdealMax: number;
   unit: string;
-  status: 'SAFE' | 'WATCH' | 'SP2DK_RISK';
+  status: 'SAFE' | 'WATCH' | 'SP2DK_RISK' | 'SIMULASI';
   insight: string;
 }
 

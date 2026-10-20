@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MULTI_COUNTRY_DATA, CountryCode, formatCurrency } from '@/data/multiCountryTaxData';
+import { isSessionValid } from '@/lib/server/session';
+import { rateLimit } from '@/lib/server/rateLimit';
 
 export async function POST(req: NextRequest) {
+  if (!isSessionValid(req)) return NextResponse.json({ error: 'Autentikasi diperlukan.' }, { status: 401 });
+  if (!rateLimit('document-simulation:session', 10)) return NextResponse.json({ error: 'Batas pemindaian tercapai. Coba lagi sebentar.' }, { status: 429 });
   try {
     const body = await req.json();
     const {
@@ -17,6 +21,10 @@ export async function POST(req: NextRequest) {
       customTax?: number;
       country?: CountryCode;
     };
+
+    if (typeof fileName !== 'string' || fileName.trim().length === 0 || fileName.length > 200 || !['ID', 'SG', 'MY', 'US'].includes(country)) {
+      return NextResponse.json({ error: 'Metadata dokumen atau yurisdiksi tidak valid.' }, { status: 400 });
+    }
 
     const cfg = MULTI_COUNTRY_DATA[country] || MULTI_COUNTRY_DATA.ID;
     const dpp = Number(customDpp) || (country === 'ID' ? 28500000 : 25000);
@@ -39,25 +47,26 @@ export async function POST(req: NextRequest) {
       title: `Ekstraksi Document AI (${cfg.name}) — ${fileName}`,
       docType: 'e-Faktur PPN',
       fileName,
-      uploadDate: `Baru saja (${cfg.authorityShort} Live OCR)`,
+      uploadDate: `Simulasi (${cfg.authorityShort})`,
+      simulation: true,
       vendorName: vendor,
       npwp16: isSuspicious ? `INVALID-${country}-TAXID` : cfg.company.taxIdValue,
       nitku: isSuspicious ? 'UNVERIFIED-ENDPOINT' : cfg.company.subIdValue,
       docNumber: docNum,
-      docDate: '18 Oktober 2026',
+      docDate: 'Tanggal tidak diekstrak (simulasi)',
       dpp,
       taxType: `${cfg.indirectTaxName}`,
       taxRate: `${((reportedTax / dpp) * 100).toFixed(2)}%`,
       taxAmount: reportedTax,
       totalAmount: dpp + reportedTax,
-      status: isSuspicious ? 'RISIKO_FRAUD' : 'PATUH',
-      confidenceScore: 99.3,
+      status: isSuspicious ? 'SIMULASI_BUTUH_TINJAUAN' : 'SIMULASI_TANPA_VERIFIKASI',
+      confidenceScore: 0,
       extractedFields: [
         {
           label: `Sistem e-Invoice (${cfg.eInvoiceSystem})`,
           value: fileName,
           validation: 'valid',
-          note: `Dipindai menggunakan Google Cloud Document AI (${cfg.name} Processor)`,
+          note: `Simulasi ekstraksi untuk ${cfg.name}; file belum diunggah dan tidak ada registry yang diakses.`,
         },
         {
           label: `${cfg.company.taxIdLabel} Vendor`,
@@ -65,7 +74,7 @@ export async function POST(req: NextRequest) {
           validation: isSuspicious ? 'error' : 'valid',
           note: isSuspicious
             ? `PERINGATAN: Identitas pajak vendor gagal validasi di portal ${cfg.authorityShort}`
-            : `Aktif dan patuh di registri ${cfg.authorityShort}`,
+            : `Belum diverifikasi pada registri ${cfg.authorityShort}; nilai ini hanya data simulasi.`,
         },
         {
           label: 'Dasar Pengenaan Pajak (Taxable Base)',
@@ -83,7 +92,7 @@ export async function POST(req: NextRequest) {
                   expectedTax,
                   country
                 )} (Selisih ${formatCurrency(diff, country)})`
-              : `Akurat 100% sesuai tarif resmi ${cfg.indirectTaxName}`,
+              : `Perhitungan aritmetika simulasi; tarif dan perlakuan pajak perlu verifikasi ahli.`,
         },
       ],
       aiAuditSummary: isSuspicious
@@ -94,14 +103,14 @@ export async function POST(req: NextRequest) {
             expectedTax,
             country
           )}). Berisiko memicu ${cfg.riskNoticeName}.`
-        : `DOKUMEN VALID & PATUH (${cfg.authorityShort}): Seluruh atribut ${cfg.eInvoiceSystem} pada ${fileName} telah sesuai regulasi ${cfg.name}. Nilai pajak ${formatCurrency(
+        : `SIMULASI — bukan verifikasi kepatuhan (${cfg.authorityShort}): ${fileName} tidak diunggah atau diperiksa terhadap ${cfg.eInvoiceSystem}. Nilai contoh ${formatCurrency(
             reportedTax,
             country
           )} siap dimasukkan ke ${cfg.filingFormName}.`,
-      regulationRef: `${cfg.authorityFull} — Standar Validasi ${cfg.eInvoiceSystem}`,
+      regulationRef: 'Tidak ada sumber resmi yang diakses; hasil hanya simulasi.',
       recommendedAction: isSuspicious
-        ? `Tahan klaim pajak masukan dan minta revisi dokumen melalui ${cfg.eInvoiceSystem}.`
-        : `Setujui dan masukkan otomatis ke draf ${cfg.filingFormName}.`,
+        ? 'Tinjau dokumen dan lakukan validasi manual sebelum mengambil keputusan.'
+        : 'Jangan menyetujui dokumen dari hasil simulasi ini; lakukan validasi manual.',
     });
   } catch {
     return NextResponse.json(

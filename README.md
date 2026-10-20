@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Production Live](https://img.shields.io/badge/Production-Live%20Platform-2563EB?style=for-the-badge&logo=vercel&logoColor=white)](https://nexora-chi-cyan.vercel.app)
+[![Preview](https://img.shields.io/badge/Status-Demo%20Preview-F59E0B?style=for-the-badge&logo=vercel&logoColor=white)](https://nexora-chi-cyan.vercel.app)
 [![Google Cloud AI Builder Cup](https://img.shields.io/badge/Google%20Cloud-AI%20Builder%20Cup%202026-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)](https://cloud.google.com)
 [![Track 1: BFSI](https://img.shields.io/badge/Track%201-BFSI%20Smart%20Risk%20%26%20Fraud-059669?style=for-the-badge&logo=google&logoColor=white)](https://cloud.google.com)
 [![CI Build Status](https://img.shields.io/github/actions/workflow/status/fabrianivan/nexora/ci.yml?branch=main&label=Build%20%26%20CI&style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/fabrianivan/nexora/actions)
@@ -31,28 +31,28 @@
 
 ---
 
-Multi-country corporate ownership, document intelligence, fraud detection, and tax compliance workspace for Indonesia, Singapore, Malaysia, and the United States. Built for Google Cloud AI Builder Cup, Track 1: BFSI.
+Nexora is currently a demo interface for a multi-country corporate tax workspace. It is not a production tax, KYC, fraud, filing, or payments service.
 
 Production: <https://nexora-chi-cyan.vercel.app>
 
-## Capabilities
+## Current behavior
 
-- Corporate entity CRUD with country-specific Zod validation, ownership graph, 100% ownership checks, and circular ownership detection.
-- PDF/JPG/PNG attachment workflow up to 10 MB. Gemini Vision extraction is available only in Live Mode; Manual Mode uses the identical editable schema.
-- Local fraud rules for TBTS indicators, IRAS Missing Trader risk, missing MyInvois UUID, split invoicing, non-deductible costs, and Z-score anomalies.
-- Deterministic corporate tax, indirect tax, withholding/treaty, and BEPS Pillar Two simulator. Calculations never depend on an LLM.
-- Editable fiscal reconciliation and validated draft exports for SPT 1771, Form C-S/Form C, and Form 1120 in JSON/XML plus a printable PDF summary.
-- MySQL persistence through server-only API routes and a repository abstraction, with full workspace JSON import/export.
+- The current UI loads synthetic company examples and marks them as demo data. UBO identity fields are redacted.
+- Corporate workspace state can be saved to MySQL through the authenticated workspace API. Configure `MYSQL_URL` and the access/session secrets to enable it.
+- The document scanner is a simulation. It does not upload or inspect a file, check a government registry, or verify compliance.
+- Copilot output is unverified, has no retrieved citations, and must not be used as tax advice. Tax and legal claims: **PERLU VERIFIKASI AHLI PAJAK.**
+- The persona switcher changes the demo view only. It is not per-user or per-entity authorization.
+- Billing, tax submission, external registry lookups, and payments are not connected.
 
-Nexora starts with an empty workspace. It contains no demo companies, fake scans, seeded invoices, or fabricated AI responses.
+The application displays a persistent warning that demo scores and sample company data are not production verification.
 
 ## Operating Modes
 
-**Manual Mode** is the default when `GEMINI_API_KEY` is absent. Every primary workflow remains available through manual forms. Copilot is disabled with a clear message, and the scanner never invents extracted values.
+**Development preview** is available without auth configuration, but workspace persistence and AI endpoints remain unavailable. It uses synthetic data only.
 
-**Live Mode** is enabled when `GEMINI_API_KEY` is present on the server. Gemini Vision can extract a user-uploaded attachment and Gemini can explain deterministic simulator results. API errors fail closed and return the user to manual entry.
+In production, configure `NEXORA_ACCESS_TOKEN` and `NEXORA_SESSION_SECRET`. The browser exchanges the access token for an eight-hour, HttpOnly, SameSite session cookie. Workspace, scanner, and Copilot APIs reject requests without a valid session. The access token is shared; configure an identity provider and per-user/tenant authorization before multi-user production use.
 
-The current implementation calls the Gemini API directly. `DOCUMENT_AI_PROCESSOR_ID`, BigQuery, and Vertex AI settings are optional configuration points and are not claimed as active integrations unless a deployment adds the corresponding adapter.
+When `GEMINI_API_KEY` is configured, Copilot can call Gemini. Its response is still unverified and no search or citation retrieval is connected. Scanner output remains simulated.
 
 ## Architecture
 
@@ -81,7 +81,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Set `MYSQL_URL` in `.env.local` to a MySQL database the server can reach. The app creates the `nexora_workspaces` table on first use; the equivalent DDL is in `sql/schema.mysql.sql`. Open <http://localhost:3000>. Leave `GEMINI_API_KEY` empty to verify the complete Manual Mode flow.
+Set `MYSQL_URL`, `NEXORA_ACCESS_TOKEN`, and `NEXORA_SESSION_SECRET` in `.env.local` to enable authenticated persistence. The server creates the `nexora_workspaces` table on first use. In development without auth configuration, the app opens in demo preview and does not save changes. Open <http://localhost:3000>.
 
 ```bash
 npm run lint
@@ -109,10 +109,10 @@ e2e/                     Playwright smoke test
 
 ## Security and Data
 
-- Input is validated by Zod; uploads accept only PDF/JPEG/PNG and are capped at 10 MB.
-- AI endpoints use an in-memory per-instance rate limit and request timeouts.
-- Uploaded bytes are sent to Gemini only after the user explicitly requests extraction. Attachments are not persisted; structured fields and attachment metadata are stored in MySQL.
-- The current build uses one shared workspace and has no sign-in, tenant isolation, or row-level ownership. Add authentication and tenant scoping before exposing a configured instance publicly.
+- Workspace, scan simulation, and Copilot endpoints require a signed server session; the access token is shared by all operators.
+- Workspace payloads are schema-validated and capped at 5 MB. AI/simulation routes have a basic per-process rate limit.
+- The scanner does not accept or inspect file bytes. Do not enter real personal or tax data into the demo.
+- There is no user directory, per-user role assignment, tenant isolation, audit log, or row-level ownership. Do not expose real customer data until these controls are implemented.
 
 ## Cloud Run
 
@@ -123,15 +123,11 @@ docker build -t nexora .
 docker run --rm -p 8080:8080 -e PORT=8080 nexora
 ```
 
-Or deploy with `gcloud run deploy nexora --source . --region asia-southeast2 --allow-unauthenticated` and provide `MYSQL_URL` and (optionally) `GEMINI_API_KEY` through Secret Manager/environment configuration. The MySQL instance must be reachable from Cloud Run.
+Or deploy with `gcloud run deploy nexora --source . --region asia-southeast2 --allow-unauthenticated` and provide `MYSQL_URL`, `NEXORA_ACCESS_TOKEN`, and `NEXORA_SESSION_SECRET` through Secret Manager/environment configuration. The MySQL instance must be reachable from Cloud Run.
 
 ## Known Limitations
 
-- Workspace persistence requires `MYSQL_URL`; the workspace is stored as one JSON document in MySQL. The current build has no authentication or tenant isolation.
-- Gemini citations are displayed as official regulatory source links; no Vertex AI Search/RAG index is connected in this version.
-- Gemini's per-field confidence is model-reported and is not independently calibrated. Missing or invalid extraction output is sent to manual entry; no confidence score is fabricated.
-- Risk scores are a UI heuristic based on local findings, not a calibrated probability of fraud. TBTS tax comparisons use a configured standard-rate assumption and require verification against applicable exceptions.
-- Z-Score analysis uses e-invoices for each entity separately and requires at least five invoices for that entity.
-- The PDF output uses the browser print dialog, not an authority-issued filing form.
-- Payment channels are informational only. Nexora does not create billing codes, file returns, or move funds.
-- Tax rates are configurable assumptions and require professional review before real filing.
+- Workspace persistence requires MySQL and stores one shared JSON payload; multi-tenant storage is not implemented.
+- The demo contains tax rates, compliance scores, ownership, and transaction examples that have not been legally or operationally verified.
+- Copilot has no retrieval-backed citations. All tax and legal content: **PERLU VERIFIKASI AHLI PAJAK.**
+- No official billing, return submission, registry, KYC/PEP screening, or payment integration exists.
