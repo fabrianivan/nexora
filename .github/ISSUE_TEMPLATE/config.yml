@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Nexora Support & Discussions
+    url: https://github.com/fabrianivan/nexora/discussions
+    about: Ask questions or discuss new features.
