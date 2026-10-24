@@ -1,53 +1,52 @@
-# Nexora AI Builder Cup Submission Guide
+# Panduan Submisi Google Cloud AI Builder Cup — Track 1: Financial Services (BFSI)
 
-## Problem and Solution
+## 1. Ringkasan Eksekutif & Keselarasan Track 1 BFSI
 
-Multi-country groups manage ownership records, invoices, fraud checks, and tax reconciliations across disconnected authority systems. Missing identifiers, inconsistent shareholder percentages, invalid invoices, and manual book-to-tax adjustments create financial and audit risk.
+- **Nama Proyek:** Nexora v2.0 — Platform Kepatuhan Pajak Korporasi & Deteksi Risiko Fiskal Berbasis Bukti
+- **Track:** Track 1 — Financial Services (BFSI): *Intelligent Risk, Fraud Prevention, and Financial Experiences*
+- **Value Proposition Satu Kalimat:**
+  > *"Nexora membaca dokumen pajak & korporasi, menandai risiko fraud/kepatuhan lengkap dengan bukti, lalu menyiapkan draf rekonsiliasi fiskal yang siap direview manusia."*
 
-Nexora provides one privacy-conscious workspace where a user can enter or import real entity data, attach documents, run deterministic local fraud checks, simulate taxes, reconcile fiscal profit, and export a draft return. AI is an optional accelerator, never the source of fabricated business data or tax calculations.
+### Mengapa Masalah Ini Krusial di BFSI & Perpajakan Korporasi?
+Institusi keuangan, perusahaan pembiayaan, dan grup korporasi multi-entitas memproses ribuan dokumen transaksi dan perpajakan setiap bulan. Kegagalan mendeteksi satu Faktur Pajak Tidak Berdasarkan Transaksi Sebenarnya (TBTS), transaksi pihak berelasi tanpa dokumentasi *Transfer Pricing*, atau ketidakwajaran struktur kepemilikan (*Ultimate Beneficial Owner* / UBO) dapat memicu:
+- Koreksi fiskal positif dan sanksi bunga/denda administrasi perpajakan.
+- Risiko pencucian uang / *conduit company* di yurisdiksi berisiko tinggi.
+- Keterlambatan penutupan buku (*tax provisioning*) karena rekonsiliasi fiskal dilakukan manual di spreadsheet tanpa tautan ke bukti dokumen sumber.
 
-## Google Cloud Usage
+---
 
-| Service | Implemented use | Behavior without configuration |
-|---|---|---|
-| Gemini 2.5 Flash API | Server-side explanation of deterministic results and multimodal extraction of explicitly uploaded PDF/JPG/PNG files | Copilot disabled; scanner switches to the same manual form |
-| Cloud Run | Container deployment using Next.js standalone output and `PORT` | Application can also run on Vercel/local Node |
-| MySQL | Server-side persistence for the shared workspace through validated `/api/workspace` endpoints | Set `MYSQL_URL`; the UI reports an explicit unavailable state when the database is not configured or reachable |
-| Document AI | Environment slots are documented for a future/custom processor adapter; not called by this repository | No Document AI claim is shown |
-| BigQuery | Optional future analytics sink; local rules and Z-score are authoritative in this build | All fraud checks continue locally |
-| Vertex AI Search | Not connected | Official source links are shown; no RAG claim |
+## 2. Target Pengguna (Persona) & Jobs-to-be-Done
 
-Secrets are server-only. AI routes validate inputs, cap file size/type, apply request timeouts, and use simple rate limiting.
+| Persona | Tantangan Utama | Solusi di Nexora |
+| :--- | :--- | :--- |
+| **Head of Tax / Tax Manager** (Grup Usaha Multi-Entitas) | Harus menyusun kertas kerja rekonsiliasi fiskal dari puluhan dokumen yang tersebar dan memastikan tidak ada faktur TBTS yang dikreditkan. | Tampilan berdampingan (*side-by-side*) dokumen vs field ekstraksi, deteksi risiko otomatis, dan tabel Rekonsiliasi Fiskal yang langsung tertaut ke temuan risiko. |
+| **Tax Consultant / Reviewer** | Membutuhkan dasar hukum yang jelas (Pasal UU PPh/PPN, PMK, SE DJP, P3B) dan simulasi skenario (*What-If*) sebelum memberikan opini review. | Grounded RAG Copilot dengan sitasi wajib (menolak menjawab bila tidak cukup dasar) serta Simulator *What-If* & P3B/BEPS 2.0. |
+| **Internal Audit & Compliance Officer** | Membutuhkan transparansi mengapa suatu transaksi ditandai berisiko dan jejak perubahan (*audit trail*) siapa yang menyetujui atau menolak temuan. | Skor risiko *dual-layer* (Rule + Statistik Z-Score/IQR/Benford) beserta bukti spesifik dan halaman Audit Trail yang dapat diekspor ke CSV/PDF. |
 
-## Three-Minute Demo: Manual Mode
+---
 
-1. **0:00-0:30** Show the Manual Mode badge and empty workspace. Create one entity with its real-format NPWP/UEN/TIN/EIN.
-2. **0:30-1:00** Add a subsidiary and ownership relationship. Deliberately use 90% to show the total ownership warning, then correct it.
-3. **1:00-1:35** Open Documents, attach a small PDF/image, enter an e-Invoice manually, and leave a MyInvois UUID or validation flag missing to generate evidence-based findings.
-4. **1:35-2:00** Open Risk, explain the local rule finding, the remediation, the minimum-five-invoice Z-score state, and export CSV.
-5. **2:00-2:30** Enter tax simulator inputs, toggle treaty eligibility, and show CIT/indirect/WHT/Pillar Two calculations and disclaimer.
-6. **2:30-3:00** Add reconciliation lines and export JSON/XML plus the printable PDF summary. Emphasize that payment codes are informational only.
+## 3. Tabel Transparansi Layanan Google Cloud (`Live` vs `Simulasi` vs `Rencana`)
 
-## Three-Minute Demo: Live Mode
+Sesuai prinsip rekayasa yang jujur dan dapat diaudit, berikut adalah status aktual setiap komponen Google Cloud di dalam kode repositori Nexora:
 
-1. **0:00-0:30** Show Live Mode enabled by a server-side `GEMINI_API_KEY`; create/select an entity.
-2. **0:30-1:15** Upload a permitted attachment and select **Extract with Gemini Vision**. Edit the extracted fields and show AI source/confidence badges. If extraction fails, demonstrate the honest Manual Mode fallback.
-3. **1:15-1:50** Save the document and show local fraud findings. Explain that the LLM did not calculate the rule or risk score.
-4. **1:50-2:30** Run the deterministic tax simulator, then ask Copilot to explain those supplied numbers. Open an official regulation source chip.
-5. **2:30-3:00** Complete reconciliation and export the draft return.
+| Layanan Google Cloud | Status Implementasi | Lokasi di Kode | Penjelasan Teknis Jujur |
+| :--- | :---: | :--- | :--- |
+| **Google Gemini API (`gemini-2.5-flash`)** | **LIVE (dengan Fallback Deterministik)** | `src/lib/adapters/aiEngine.ts` (`LiveEngine` & `DemoEngine`), `src/app/api/copilot/route.ts`, `src/app/api/scan-document/route.ts` | Dipanggil langsung dari server route saat `GEMINI_API_KEY` dikonfigurasi, dilengkapi timeout 7 detik, retry dengan *exponential backoff*, sanitasi anti *prompt-injection*, dan fallback otomatis ke `DemoEngine` bila API key tidak disetel atau jaringan gagal. |
+| **Google Cloud Run** | **LIVE / SIAP DEPLOY** | `Dockerfile`, `next.config.mjs` (`output: 'standalone'`), `src/app/api/health/route.ts` | Konfigurasi container multi-stage `node:22-alpine` non-root di port `8080` lengkap dengan endpoint `/api/health` dan *structured JSON logging*. |
+| **BigQuery Statistical Fraud Analytics** | **SIMULASI LOKAL DI SERVER** | `src/lib/fraud.ts` (`computePopulationStats`, `zScores`, `evaluateBenfordFirstDigit`) | Perhitungan statistik populasi (Mean, StdDev, Median, Q1, Q3, IQR, Z-Score, dan deviasi digit pertama Hukum Benford) dihitung secara matematis di server Node.js dan diberi label eksplisit di UI: **`"Dihitung lokal (simulasi BigQuery)"`**. |
+| **Google Cloud Document AI** | **SIMULASI LOKAL / GEMINI-ASSISTED** | `src/lib/adapters/aiEngine.ts` (`extractDocument`) | Ekstraksi field dokumen, skor confidence per field, dan koordinat lokasi halaman disimulasikan secara deterministik di `DemoEngine` atau diekstrak melalui `LiveEngine` (Gemini). Belum memanggil endpoint `@google-cloud/documentai` secara langsung. |
+| **Vertex AI Search / Grounded RAG** | **KORPUS LOKAL TERKURASI + GEMINI** | `src/lib/rag.ts` (`REGULATORY_KNOWLEDGE_BASE`, `retrieveRegulatoryContext`) | Retrieval dilakukan terhadap basis pengetahuan regulasi pajak terkurasi di `src/lib/rag.ts` (UU PPN, UU PPh, UU KUP, PMK 66/2023, PMK 172/2023, P3B ID-SG, OECD Pillar Two). Jawaban dibatasi ketat hanya pada dokumen yang terambil (*strict grounding*). |
+| **Cloud SQL (MySQL)** | **OPSIONAL (Repository Pattern)** | `src/lib/mysql.ts` (`InMemoryWorkspaceRepository` & `MysqlWorkspaceRepository`) | Menggunakan pola *repository*. Jika `MYSQL_URL` disetel, data disimpan ke tabel MySQL `nexora_workspaces`. Jika tidak disetel (mode demo), otomatis menggunakan repositori in-memory. |
 
-## Submission Checklist
+---
 
-- [x] Four jurisdictions supported in schemas and deterministic rate configuration.
-- [x] Complete no-key Manual Mode flow.
-- [x] No Smart Demo Mode, seed data, fake parser, or AI fallback answer.
-- [x] Corporate CRUD, ownership validation, and repository abstraction.
-- [x] Secure file constraints and editable AI/manual document schema.
-- [x] Six local fraud/statistical rules with evidence and remediation.
-- [x] Tax simulator, reconciliation, and JSON/XML/PDF draft export.
-- [x] Vitest unit coverage and Playwright smoke test.
-- [x] Responsive UI, dark mode, labels, focus states, and empty/error/loading states.
-- [x] Vercel and Cloud Run deployment paths documented.
-- [ ] Add authentication and tenant isolation before using the shared MySQL workspace for multiple organizations or production taxpayer data.
-- [ ] Add a real Document AI processor adapter only after processor credentials are provisioned.
-- [ ] Add authenticated audit logs and tenant isolation before handling production taxpayer data.
+## 4. Keunggulan Utama untuk Penilaian Juri
+
+1. **Kedalaman Satu Alur Utama (End-to-End Hero Flow):**
+   Seluruh tahapan saling terhubung secara fungsional: mengedit field NPWP/DPP di *Document Intelligence* atau menandai *False Positive* di *Fraud Engine* secara instan memperbarui skor risiko, angka *Rekonsiliasi Fiskal*, dan mencatat baris baru di *Audit Log*.
+2. **Explainable Dual-Layer Fraud Engine:**
+   Tidak menggunakan "kotak hitam". Setiap temuan memisahkan kontribusi **(a) Skor Aturan Deterministik** dan **(b) Skor Statistik Populasi (Z-Score/Benford)** lengkap dengan nilai bukti, lokasi di dokumen, dan rekomendasi tindakan.
+3. **Grounded RAG Tanpa Halusinasi:**
+   Saat pengguna menanyakan topik di luar basis pengetahuan pajak (mis. prediksi harga saham), Copilot secara eksplisit menolak mengarang jawaban atau pasal.
+4. **Zero-Friction Demo Experience:**
+   Juri dapat mencoba seluruh alur dalam 1 klik melalui tombol **"Coba dengan data contoh (1-Klik)"** tanpa perlu login atau menyiapkan API key terlebih dahulu.

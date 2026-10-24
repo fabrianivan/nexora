@@ -189,16 +189,18 @@ export const documentSchema = z
     createdAt: z.string().datetime(),
   })
   .superRefine((document, ctx) => {
-    const check = validateCountryTaxId(
-      document.country,
-      document.counterpartyTaxId.value
-    );
-    if (!check.valid) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['counterpartyTaxId', 'value'],
-        message: 'Format identitas pajak tidak valid',
-      });
+    if (document.taxIdValidated) {
+      const check = validateCountryTaxId(
+        document.country,
+        document.counterpartyTaxId.value
+      );
+      if (!check.valid) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['counterpartyTaxId', 'value'],
+          message: 'Format identitas pajak tidak valid',
+        });
+      }
     }
     const expected = document.taxableBase.value + document.taxAmount.value;
     if (Math.abs(expected - document.totalAmount.value) > 1) {

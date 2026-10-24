@@ -1,133 +1,166 @@
-# Nexora 🛡️
+# Nexora v2.0 — Evidence-Based Corporate Tax Compliance & Fiscal Risk Intelligence
 
-<div align="center">
+> **Value Proposition:** *"Nexora membaca dokumen pajak & korporasi, menandai risiko fraud/kepatuhan lengkap dengan bukti, lalu menyiapkan draf rekonsiliasi fiskal yang siap direview manusia."*
 
-[![Preview](https://img.shields.io/badge/Status-Demo%20Preview-F59E0B?style=for-the-badge&logo=vercel&logoColor=white)](https://nexora-chi-cyan.vercel.app)
-[![Google Cloud AI Builder Cup](https://img.shields.io/badge/Google%20Cloud-AI%20Builder%20Cup%202026-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)](https://cloud.google.com)
-[![Track 1: BFSI](https://img.shields.io/badge/Track%201-BFSI%20Smart%20Risk%20%26%20Fraud-059669?style=for-the-badge&logo=google&logoColor=white)](https://cloud.google.com)
-[![CI Build Status](https://img.shields.io/github/actions/workflow/status/fabrianivan/nexora/ci.yml?branch=main&label=Build%20%26%20CI&style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/fabrianivan/nexora/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](./LICENSE)
-
-<br/>
-
-[![Next.js](https://img.shields.io/badge/Next.js-15.1_App_Router-black?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Gemini](https://img.shields.io/badge/Google_AI-Gemini_2.5_Flash-4285F4?style=flat-square&logo=googlegemini&logoColor=white)](https://ai.google.dev)
-[![Tests Passing](https://img.shields.io/badge/Vitest-Passing-success?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev)
-[![Code Style: ESLint](https://img.shields.io/badge/Code_Style-ESLint_9-4B32C3?style=flat-square&logo=eslint&logoColor=white)](https://eslint.org)
-
-<br/>
-
-[![Indonesia](https://img.shields.io/badge/%F0%9F%87%AE%F0%9F%87%A9_Indonesia-DJP_Coretax-E11D48?style=flat-square)](#)
-[![Singapore](https://img.shields.io/badge/%F0%9F%87%B8%F0%9F%87%AC_Singapore-IRAS_InvoiceNow-2563EB?style=flat-square)](#)
-[![Malaysia](https://img.shields.io/badge/%F0%9F%87%B2%F0%9F%87%BE_Malaysia-LHDN_MyInvois-D97706?style=flat-square)](#)
-[![United States](https://img.shields.io/badge/%F0%9F%87%BA%F0%9F%87%B8_United_States-IRS_MeF-059669?style=flat-square)](#)
-[![OECD Pillar Two](https://img.shields.io/badge/OECD-Pillar_Two_%26_BEPS-7C3AED?style=flat-square)](#)
-[![ISO 27001](https://img.shields.io/badge/ISO%2FIEC_27001-Access_Governance-0F172A?style=flat-square)](#)
-
-</div>
+Nexora adalah platform kepatuhan pajak korporasi dan deteksi risiko fiskal berbasis bukti (**Human-in-the-Loop**) yang dirancang untuk **Google Cloud AI Builder Cup — Track 1: Financial Services (BFSI)**.
 
 ---
 
-Nexora is currently a demo interface for a multi-country corporate tax workspace. It is not a production tax, KYC, fraud, filing, or payments service.
+## 1. Masalah & Solusi
 
-Production: <https://nexora-chi-cyan.vercel.app>
+### Masalah di Lapangan
+Grup usaha multi-entitas (holding dan anak perusahaan lintas yurisdiksi) menghadapi risiko koreksi pajak, sanksi administrasi, dan sengketa audit akibat:
+1. **Faktur Pajak Tidak Berdasarkan Transaksi Sebenarnya (TBTS)** atau lawan transaksi dengan NPWP/Tax ID tidak valid.
+2. **Ketidaksesuaian Lintas Dokumen** antara Akta Pendirian, Daftar Pemegang Saham (UBO), Laporan Keuangan Audited, dan SPT Tahunan periode sebelumnya.
+3. **Biaya Non-Deductible (Pasal 9 UU PPh)** seperti biaya jamuan tanpa daftar nominatif, natura melebihi batas, atau sanksi pajak yang lolos ke perhitungan laba fiskal.
+4. **Kertas Kerja Rekonsiliasi Fiskal Manual** yang terpisah dari bukti dokumen sumber dan tidak memiliki jejak audit (*audit trail*).
 
-## Current behavior
+### Solusi Nexora
+Nexora menyatukan ekstraksi dokumen berdampingan (*side-by-side*), validasi silang antar-dokumen, deteksi fraud/risiko *dual-layer* (aturan deterministik + statistik populasi Z-Score/IQR/Benford), kertas kerja rekonsiliasi fiskal interaktif (*What-If Mode*), hingga ekspor draf SPT dan Copilot pajak berbasis sitasi regulasi (*Grounded RAG*).
 
-- The current UI loads synthetic company examples and marks them as demo data. UBO identity fields are redacted.
-- Corporate workspace state can be saved to MySQL through the authenticated workspace API. Configure `MYSQL_URL` and the access/session secrets to enable it.
-- The document scanner is a simulation. It does not upload or inspect a file, check a government registry, or verify compliance.
-- Copilot output is unverified, has no retrieved citations, and must not be used as tax advice. Tax and legal claims: **PERLU VERIFIKASI AHLI PAJAK.**
-- The persona switcher changes the demo view only. It is not per-user or per-entity authorization.
-- Billing, tax submission, external registry lookups, and payments are not connected.
+---
 
-The application displays a persistent warning that demo scores and sample company data are not production verification.
-
-## Operating Modes
-
-**Development preview** is available without auth configuration, but workspace persistence and AI endpoints remain unavailable. It uses synthetic data only.
-
-In production, configure `NEXORA_ACCESS_TOKEN` and `NEXORA_SESSION_SECRET`. The browser exchanges the access token for an eight-hour, HttpOnly, SameSite session cookie. Workspace, scanner, and Copilot APIs reject requests without a valid session. The access token is shared; configure an identity provider and per-user/tenant authorization before multi-user production use.
-
-When `GEMINI_API_KEY` is configured, Copilot can call Gemini. Its response is still unverified and no search or citation retrieval is connected. Scanner output remains simulated.
-
-## Architecture
+## 2. Alur Utama (Hero Flow)
 
 ```mermaid
 flowchart LR
-  U[User] --> UI[Next.js 15 App Router]
-  UI --> API[Workspace API]
-  API --> R[MySQL repository]
-  R --> DB[(MySQL JSON workspace)]
-  UI --> D[Deterministic domain engines]
-  D --> O[Ownership validation]
-  D --> F[Fraud and Z-score rules]
-  D --> T[Tax and reconciliation]
-  D --> E[JSON XML PDF exports]
-  UI -->|Live only| API[Validated and rate-limited route handlers]
-  API --> G[Gemini API]
+    A["1. Onboarding / 1-Klik Data Contoh"] --> B["2. Struktur Kepemilikan & UBO"]
+    B --> C["3. Document Intelligence & Validasi Silang"]
+    C --> D["4. Explainable Fraud & Risk Engine"]
+    D --> E["5. Review Manusia & Rekonsiliasi Fiskal"]
+    E --> F["6. Ekspor Draf SPT (JSON/XML/PDF)"]
+    F --> G["7. Copilot RAG & Audit Trail"]
 ```
 
-Business logic lives under `src/lib` and does not rely on AI. API keys remain in server route handlers.
+### Prioritas Cakupan Yurisdiksi (`CountryAdapter`)
+- **Indonesia (`ID` — Cakupan Penuh / Full End-to-End):** Validasi NPWP 16 digit / NITKU, e-Faktur PPN, Bukti Potong Unifikasi, Akta & UBO, katalog aturan TBTS/NSFP/Pasal 9 UU PPh/PMK 66/2023/PMK 172/2023, Kertas Kerja Rekonsiliasi Fiskal SPT 1771, serta referensi kode billing (`KAP 411126-100`).
+- **Singapura (`SG`), Malaysia (`MY`), Amerika Serikat (`US` — Label `Preview`):** Adapter yurisdiksi modular untuk validasi format identitas pajak (`UEN`, `TIN LHDN`, `EIN IRS`), aturan risiko spesifik (`MISSING_TRADER`, `MYINVOIS_UUID`, `US_TIN_BACKUP_WHT`), serta template ringkasan Form C-S, Form C, dan Form 1120.
 
-## Run Locally
+---
 
-```bash
-npm ci
-cp .env.example .env.local
-npm run dev
-```
-
-Set `MYSQL_URL`, `NEXORA_ACCESS_TOKEN`, and `NEXORA_SESSION_SECRET` in `.env.local` to enable authenticated persistence. The server creates the `nexora_workspaces` table on first use. In development without auth configuration, the app opens in demo preview and does not save changes. Open <http://localhost:3000>.
-
-```bash
-npm run lint
-npm run test
-npm run build
-npx playwright install chromium
-npm run test:e2e
-```
-
-## Project Structure
+## 3. Arsitektur Berlapis
 
 ```text
-src/app/                 UI and server route handlers
-src/lib/domain.ts        Zod schemas and domain types
-src/lib/mysql.ts         Server-only MySQL workspace repository
-src/app/api/workspace/   Validated workspace load/save API
-src/lib/ownership.ts     Graph validation
-src/lib/fraud.ts         Local fraud rules and Z-score
-src/lib/tax.ts           Deterministic tax simulator
-src/lib/reconciliation.ts Fiscal calculations
-src/lib/returns.ts       Return schema and serializers
-test/                    Vitest unit tests
-e2e/                     Playwright smoke test
++-----------------------------------------------------------------------------------+
+| Lapisan UI (Next.js 15 App Router — Bilingual ID/EN, WCAG AA, Stepper Hero Flow)  |
+| - Dashboard & 1-Click Sample Loader    - Fraud & Risk Review (Rule + Statistik)   |
+| - Ownership Graph & UBO Detector       - Fiscal Reconciliation & What-If Mode     |
+| - Side-by-Side Document Intelligence   - Grounded RAG Copilot & Audit Trail       |
++-----------------------------------------+-----------------------------------------+
+                                          | HTTP JSON (Header x-nexora-demo / Session)
+                                          v
++-----------------------------------------------------------------------------------+
+| Lapisan API Routes (Server-Only, Validasi Input Zod, Per-IP Rate Limit, Logger)   |
+| - GET  /api/health        - GET/PUT /api/workspace     - POST /api/scan-document  |
+| - GET  /api/status        - GET/POST /api/session      - POST /api/copilot        |
++-----------------------------------------+-----------------------------------------+
+                                          |
+                                          v
++-----------------------------------------------------------------------------------+
+| Lapisan Domain & Service Engine (Pure TypeScript + Kontrak Skema Zod)             |
+| - ownership.ts (DFS Circular, Total != 100%, Unidentified UBO, High-Risk Conduit) |
+| - crossValidation.ts (Akta vs Daftar Pemegang Saham vs LK vs SPT Sebelumnya)      |
+| - fraud.ts (Dual-Layer: Rule Score + Statistik Populasi Z-Score / IQR / Benford)  |
+| - reconciliation.ts & returns.ts (Kertas Kerja Fiskal, What-If, XML/JSON/PDF)     |
+| - rag.ts (Basis Pengetahuan Regulasi Pajak Terkurasi + Anti Prompt-Injection)     |
++-----------------------------------------+-----------------------------------------+
+                                          |
+                                          v
++-----------------------------------------------------------------------------------+
+| Lapisan Adapter (Pluggable Interfaces)                                            |
+| 1. AIEngine         : DemoEngine (Deterministik Lokal) | LiveEngine (Gemini API)  |
+| 2. CountryAdapter   : IDAdapter (Full) | SGAdapter, MYAdapter, USAdapter (Preview)|
+| 3. WorkspaceRepo    : InMemoryWorkspaceRepository | MysqlWorkspaceRepository      |
++-----------------------------------------------------------------------------------+
 ```
 
-## Security and Data
+Dokumentasi arsitektur, produk, dan keputusan teknis selengkapnya tersedia di:
+- `docs/AUDIT.md` — Audit menyeluruh kondisi awal repositori
+- `docs/PRODUCT.md` — Problem statement, persona, JTBD, cakupan, dan non-goals
+- `docs/ARCHITECTURE.md` — Kontrak antarmuka, skema data Zod, dan desain adapter
+- `docs/DECISIONS.md` — Catatan keputusan arsitektur (ADR)
 
-- Workspace, scan simulation, and Copilot endpoints require a signed server session; the access token is shared by all operators.
-- Workspace payloads are schema-validated and capped at 5 MB. AI/simulation routes have a basic per-process rate limit.
-- The scanner does not accept or inspect file bytes. Do not enter real personal or tax data into the demo.
-- There is no user directory, per-user role assignment, tenant isolation, audit log, or row-level ownership. Do not expose real customer data until these controls are implemented.
+---
 
-## Cloud Run
+## 4. Variabel Lingkungan (`.env`)
 
-The standalone Docker image binds to `0.0.0.0` and reads `PORT` (default `8080`).
+Salin `.env.example` menjadi `.env.local` bila ingin mengaktifkan mode Live Gemini atau database MySQL. **Aplikasi dapat langsung dijalankan dalam Smart Demo Mode tanpa variabel lingkungan apa pun.**
 
+| Variabel | Wajib? | Deskripsi |
+| :--- | :---: | :--- |
+| `NEXORA_AI_MODE` | Opsional | `'demo'` (default deterministik) atau `'live'` (menggunakan Gemini 2.5 Flash bila `GEMINI_API_KEY` tersedia). |
+| `GEMINI_API_KEY` | Opsional | API Key Google Gemini (hanya diakses di server route, tidak pernah diekspos ke client bundle). |
+| `MYSQL_URL` | Opsional | Connection string MySQL/Cloud SQL. Jika kosong, otomatis menggunakan `InMemoryWorkspaceRepository`. |
+| `NEXORA_ACCESS_TOKEN` | Opsional | Token akses opsional untuk mengaktifkan gerbang login sesi HMAC. |
+| `NEXORA_SESSION_SECRET` | Opsional | Secret HMAC SHA-256 untuk penandatanganan cookie sesi. |
+| `GOOGLE_CLOUD_PROJECT` | Opsional | ID proyek Google Cloud untuk deployment Cloud Run. |
+
+---
+
+## 5. Cara Menjalankan Secara Lokal
+
+### Prasyarat
+- Node.js `>= 20.x`
+- npm `>= 10.x`
+
+### A. Menjalankan dalam Smart Demo Mode (Tanpa API Key / Tanpa Database)
 ```bash
-docker build -t nexora .
-docker run --rm -p 8080:8080 -e PORT=8080 nexora
+npm ci
+npm run dev
+```
+Buka `http://localhost:3000`, lalu klik tombol **"Coba dengan data contoh (1-Klik)"**.
+
+### B. Menjalankan dalam Live Gemini Mode
+```bash
+export GEMINI_API_KEY="AIzaSy..."
+export NEXORA_AI_MODE="live"
+npm run dev
+```
+Header aplikasi akan otomatis menampilkan badge **`LIVE GEMINI API — Grounded Mode`**. Jika terjadi timeout (>7 detik) atau gangguan jaringan, `LiveEngine` otomatis melakukan *fallback* ke `DemoEngine` tanpa memutus alur pengguna.
+
+### C. Menjalankan Pengujian & Pemeriksaan Kualitas
+```bash
+npm run lint          # ESLint strict check
+npx tsc --noEmit      # TypeScript strict typecheck
+npm test              # Unit & API integration tests (Vitest)
+npm run build         # Production standalone build
+npm run test:e2e      # Playwright E2E smoke test
 ```
 
-Or deploy with `gcloud run deploy nexora --source . --region asia-southeast2 --allow-unauthenticated` and provide `MYSQL_URL`, `NEXORA_ACCESS_TOKEN`, and `NEXORA_SESSION_SECRET` through Secret Manager/environment configuration. The MySQL instance must be reachable from Cloud Run.
+---
 
-## Known Limitations
+## 6. Deployment ke Google Cloud Run & Vercel
 
-- Workspace persistence requires MySQL and stores one shared JSON payload; multi-tenant storage is not implemented.
-- The demo contains tax rates, compliance scores, ownership, and transaction examples that have not been legally or operationally verified.
-- Copilot has no retrieval-backed citations. All tax and legal content: **PERLU VERIFIKASI AHLI PAJAK.**
-- No official billing, return submission, registry, KYC/PEP screening, or payment integration exists.
+### Deploy ke Google Cloud Run (Menggunakan `Dockerfile` Standalone)
+```bash
+gcloud run deploy nexora-tax-compliance \
+  --source . \
+  --region asia-southeast2 \
+  --platform managed \
+  --allow-unauthenticated \
+  --port 8080 \
+  --set-env-vars="NEXORA_AI_MODE=demo"
+```
+Verifikasi kesiapan container melalui endpoint health check:
+```bash
+curl https://<CLOUD_RUN_URL>/api/health
+```
+
+### Deploy ke Vercel
+Repositori ini terhubung langsung ke Vercel (`https://nexora-chi-cyan.vercel.app`). Setiap push ke branch utama akan membangun ulang bundle Next.js secara otomatis.
+
+---
+
+## 7. Batasan yang Diketahui & Kepatuhan (Non-Goals)
+
+1. **Bukan Nasihat Pajak Resmi:** Seluruh output Nexora adalah alat bantu analisis (*decision-support*) untuk direview oleh konsultan pajak/komite audit. Setiap tarif, pasal, dan posisi fiskal diberi penanda **"Perlu Verifikasi"**.
+2. **Tidak Melakukan Pengiriman Resmi (No Official e-Filing):** Ekspor JSON/XML/PDF diberi watermark wajib `"DRAF - BUKAN UNTUK DISAMPAIKAN KE OTORITAS"` dan menggunakan skema kerja internal Nexora.
+3. **Transparansi Layanan Cloud:** Analitik statistik (Z-Score, IQR, Hukum Benford) dan ekstraksi dokumen pada mode demo dihitung secara lokal di server Node.js dan diberi label jujur **`"Dihitung lokal (simulasi BigQuery)"`**.
+
+---
+
+## 8. Roadmap Pengembangan
+
+1. **Integrasi Konektor Live Document AI:** Menghubungkan `LiveEngine.extractDocument` ke processor OCR khusus Faktur Pajak & Bukti Potong DJP Coretax.
+2. **Sinkronisasi BigQuery & Cloud SQL:** Memindahkan penyimpanan sesi dari `InMemoryWorkspaceRepository` ke Cloud SQL/Firestore terkelola dan mengeksekusi kuartil populasi vendor langsung di BigQuery.
+3. **Ekspansi Adapter SG, MY, US ke Status `Full`:** Melengkapi skema validasi XML Peppol InvoiceNow (IRAS) dan MyInvois (LHDN) terhadap spesifikasi publik resmi.
