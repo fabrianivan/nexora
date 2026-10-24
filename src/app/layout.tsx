@@ -1,10 +1,17 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
 
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-sans',
+});
+
 export const metadata: Metadata = {
-  title: 'Nexora v2.0 — Platform Kepatuhan Pajak Korporasi & Deteksi Risiko Fiskal Berbasis Bukti',
+  title: 'Nexora — Global Corporate Tax Compliance, Document Intelligence & Fraud Prevention',
   description:
-    'Nexora membaca dokumen pajak & korporasi, menandai risiko fraud/kepatuhan lengkap dengan bukti, lalu menyiapkan draf rekonsiliasi fiskal yang siap direview manusia (Google Cloud AI Builder Cup — Track 1 BFSI).',
+    'Solusi berbasis Google Cloud Vertex AI, Document AI, dan BigQuery untuk Otomatisasi Kepatuhan Pajak Multi-Negara, Deteksi Faktur Fiktif, dan Pencegahan Risiko Keuangan oleh Team Nexora (Track 1: BFSI - AI Builder Cup).',
 };
 
 export default function RootLayout({
@@ -13,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
-      <body className="min-h-screen font-sans selection:bg-indigo-600 selection:text-white antialiased">
+    <html lang="id" className={inter.variable}>
+      <body className="min-h-screen font-sans selection:bg-blue-600 selection:text-white antialiased">
         {children}
       </body>
     </html>

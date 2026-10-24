@@ -1,139 +1,121 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { MULTI_COUNTRY_DATA, formatCurrency } from '@/data/multiCountryTaxData';
-import { countrySchema, documentTypeSchema } from '@/lib/domain';
-import { getAIEngine } from '@/lib/adapters/aiEngine';
-import { isRequestAuthorized } from '@/lib/server/session';
-import { rateLimitByIp } from '@/lib/server/rateLimit';
-import { logServerEvent } from '@/lib/server/logger';
-
-const scanDocumentBodySchema = z.object({
-  entityId: z.string().trim().min(1).default('ENT-ID-001'),
-  fileName: z.string().trim().min(1).max(240),
-  fileSize: z.number().int().positive().max(10 * 1024 * 1024).default(245_000),
-  mimeType: z
-    .enum(['application/pdf', 'image/png', 'image/jpeg'])
-    .default('application/pdf'),
-  documentType: documentTypeSchema.default('e_invoice'),
-  customVendor: z.string().trim().max(160).optional(),
-  customDpp: z.number().nonnegative().max(1_000_000_000_000).optional(),
-  customTax: z.number().nonnegative().max(1_000_000_000_000).optional(),
-  country: countrySchema.default('ID'),
-});
+import { MULTI_COUNTRY_DATA, CountryCode, formatCurrency } from '@/data/multiCountryTaxData';
+import { isSessionValid } from '@/lib/server/session';
+import { rateLimit } from '@/lib/server/rateLimit';
 
 export async function POST(req: NextRequest) {
-  const startedAt = Date.now();
-  if (!isRequestAuthorized(req)) {
-    return NextResponse.json({ error: 'Autentikasi diperlukan.' }, { status: 401 });
-  }
-  if (!rateLimitByIp(req, 'document-simulation', 20, 60_000)) {
-    return NextResponse.json(
-      { error: 'Batas pemindaian tercapai. Coba lagi sebentar.' },
-      { status: 429 },
-    );
-  }
-
+  if (!isSessionValid(req)) return NextResponse.json({ error: 'Autentikasi diperlukan.' }, { status: 401 });
+  if (!rateLimit('document-simulation:session', 10)) return NextResponse.json({ error: 'Batas pemindaian tercapai. Coba lagi sebentar.' }, { status: 429 });
   try {
-    const rawBody: unknown = await req.json();
-    const parsed = scanDocumentBodySchema.safeParse(rawBody);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Metadata dokumen, tipe file, ukuran (maks 10MB), atau yurisdiksi tidak valid.' },
-        { status: 400 },
-      );
-    }
-
+    const body = await req.json();
     const {
-      entityId,
       fileName,
-      fileSize,
-      mimeType,
-      documentType,
       customVendor,
       customDpp,
       customTax,
-      country,
-    } = parsed.data;
+      country = 'ID',
+    } = body as {
+      fileName: string;
+      customVendor?: string;
+      customDpp?: number;
+      customTax?: number;
+      country?: CountryCode;
+    };
 
-    const aiEngine = getAIEngine();
-    const extraction = await aiEngine.extractDocument({
-      entityId,
-      fileName,
-      fileSize,
-      mimeType,
-      country,
-      documentType,
-      customVendor,
-      customDpp,
-      customTaxAmount: customTax,
-    });
+    if (typeof fileName !== 'string' || fileName.trim().length === 0 || fileName.length > 200 || !['ID', 'SG', 'MY', 'US'].includes(country)) {
+      return NextResponse.json({ error: 'Metadata dokumen atau yurisdiksi tidak valid.' }, { status: 400 });
+    }
 
     const cfg = MULTI_COUNTRY_DATA[country] || MULTI_COUNTRY_DATA.ID;
-    const dpp = extraction.taxableBase;
-    const reportedTax = extraction.taxAmount;
-    const confidencePct = Math.round(extraction.overallConfidence * 100);
-    const hasLowConfidenceField = extraction.fields.some((f) => f.confidence < 0.85);
+    const dpp = Number(customDpp) || (country === 'ID' ? 28500000 : 25000);
+    const expectedTax = Math.round(dpp * cfg.indirectTaxRate);
+    const reportedTax =
+      customTax !== undefined && customTax !== null ? Number(customTax) : expectedTax;
+    const diff = Math.abs(reportedTax - expectedTax);
+    const tolerance = country === 'ID' ? 1000 : 5;
     const isSuspicious =
-      !extraction.taxIdValidated || hasLowConfidenceField || confidencePct < 85;
+      fileName.toLowerCase().includes('fiktif') ||
+      fileName.toLowerCase().includes('fraud') ||
+      fileName.toLowerCase().includes('tbts') ||
+      diff > tolerance;
 
-    logServerEvent('info', 'scan_document_completed', {
-      route: '/api/scan-document',
-      engine: extraction.engineMode,
-      country,
-      durationMs: Date.now() - startedAt,
-      status: 200,
-    });
+    const vendor = customVendor?.trim() || 'Global Tech Partner Entity';
+    const docNum = `${country}-INV-2026-${Math.floor(10000 + Math.random() * 89999)}`;
 
     return NextResponse.json({
-      id: extraction.documentId,
-      title: `Ekstraksi ${extraction.providerLabel} (${cfg.name}) — ${fileName}`,
-      docType: documentType,
+      id: `${country}-UPL-${Date.now().toString().slice(-4)}`,
+      title: `Ekstraksi Document AI (${cfg.name}) — ${fileName}`,
+      docType: 'e-Faktur PPN',
       fileName,
-      uploadDate: new Date().toISOString().slice(0, 10),
-      simulation: extraction.engineMode === 'demo',
-      engineMode: extraction.engineMode,
-      engineLabel: extraction.providerLabel,
-      fallbackUsed: extraction.fallbackUsed,
-      vendorName: extraction.counterparty,
-      npwp16: extraction.counterpartyTaxId,
-      nitku: `${extraction.counterpartyTaxId}000000`,
-      docNumber: extraction.number,
-      docDate: extraction.date,
+      uploadDate: `Simulasi (${cfg.authorityShort})`,
+      simulation: true,
+      vendorName: vendor,
+      npwp16: isSuspicious ? `INVALID-${country}-TAXID` : cfg.company.taxIdValue,
+      nitku: isSuspicious ? 'UNVERIFIED-ENDPOINT' : cfg.company.subIdValue,
+      docNumber: docNum,
+      docDate: 'Tanggal tidak diekstrak (simulasi)',
       dpp,
-      taxType: cfg.indirectTaxName,
-      taxRate: dpp > 0 ? `${((reportedTax / dpp) * 100).toFixed(2)}%` : '0.00%',
+      taxType: `${cfg.indirectTaxName}`,
+      taxRate: `${((reportedTax / dpp) * 100).toFixed(2)}%`,
       taxAmount: reportedTax,
-      totalAmount: extraction.totalAmount,
-      taxIdValidated: extraction.taxIdValidated,
-      deductible: extraction.deductible,
-      hasSupportingEvidence: extraction.hasSupportingEvidence,
-      status: isSuspicious ? 'PERLU_VERIFIKASI_MANUSIA' : 'TEREKSTRAKSI_TERSTRUKTUR',
-      confidenceScore: confidencePct,
-      structuredFields: extraction.fields,
-      extractedFields: extraction.fields.map((field) => ({
-        key: field.key,
-        label: field.label,
-        value: field.value,
-        confidence: Math.round(field.confidence * 100),
-        location: field.location,
-        validation: field.validationStatus,
-        note:
-          field.validationNote ||
-          `Confidence ${Math.round(field.confidence * 100)}% · Lokasi: ${field.location}`,
-      })),
-      aiAuditSummary: extraction.summary,
-      regulationRef:
-        country === 'ID'
-          ? 'UU PPN Pasal 13 ayat (5) & ayat (9) / PER-03/PJ/2022 (perlu verifikasi)'
-          : `Aturan e-Invoice ${cfg.authorityShort} (perlu verifikasi)`,
+      totalAmount: dpp + reportedTax,
+      status: isSuspicious ? 'SIMULASI_BUTUH_TINJAUAN' : 'SIMULASI_TANPA_VERIFIKASI',
+      confidenceScore: 0,
+      extractedFields: [
+        {
+          label: `Sistem e-Invoice (${cfg.eInvoiceSystem})`,
+          value: fileName,
+          validation: 'valid',
+          note: `Simulasi ekstraksi untuk ${cfg.name}; file belum diunggah dan tidak ada registry yang diakses.`,
+        },
+        {
+          label: `${cfg.company.taxIdLabel} Vendor`,
+          value: `${vendor} (${isSuspicious ? 'TIDAK TERDAFTAR' : 'TERVALIDASI'})`,
+          validation: isSuspicious ? 'error' : 'valid',
+          note: isSuspicious
+            ? `PERINGATAN: Identitas pajak vendor gagal validasi di portal ${cfg.authorityShort}`
+            : `Belum diverifikasi pada registri ${cfg.authorityShort}; nilai ini hanya data simulasi.`,
+        },
+        {
+          label: 'Dasar Pengenaan Pajak (Taxable Base)',
+          value: formatCurrency(dpp, country),
+          validation: 'valid',
+          note: 'Diekstrak otomatis dari subtotal dokumen',
+        },
+        {
+          label: `Validasi Tarif ${cfg.indirectTaxName}`,
+          value: formatCurrency(reportedTax, country),
+          validation: diff > tolerance ? 'error' : 'valid',
+          note:
+            diff > tolerance
+              ? `ANOMALI TARIF: Seharusnya ${(cfg.indirectTaxRate * 100).toFixed(2)}% adalah ${formatCurrency(
+                  expectedTax,
+                  country
+                )} (Selisih ${formatCurrency(diff, country)})`
+              : `Perhitungan aritmetika simulasi; tarif dan perlakuan pajak perlu verifikasi ahli.`,
+        },
+      ],
+      aiAuditSummary: isSuspicious
+        ? `PERINGATAN AUDIT AI (${cfg.authorityShort}): Dokumen ${fileName} memiliki selisih perhitungan pajak sebesar ${formatCurrency(
+            diff,
+            country
+          )} dari tarif resmi ${cfg.indirectTaxName} (${formatCurrency(
+            expectedTax,
+            country
+          )}). Berisiko memicu ${cfg.riskNoticeName}.`
+        : `SIMULASI — bukan verifikasi kepatuhan (${cfg.authorityShort}): ${fileName} tidak diunggah atau diperiksa terhadap ${cfg.eInvoiceSystem}. Nilai contoh ${formatCurrency(
+            reportedTax,
+            country
+          )} siap dimasukkan ke ${cfg.filingFormName}.`,
+      regulationRef: 'Tidak ada sumber resmi yang diakses; hasil hanya simulasi.',
       recommendedAction: isSuspicious
-        ? `Periksa field dengan confidence < 85% (${formatCurrency(reportedTax, country)}) dan lakukan konfirmasi manual sebelum masuk rekonsiliasi fiskal.`
-        : 'Field terekstrak siap divalidasi silang terhadap Akta, Laporan Keuangan, dan SPT sebelumnya.',
+        ? 'Tinjau dokumen dan lakukan validasi manual sebelum mengambil keputusan.'
+        : 'Jangan menyetujui dokumen dari hasil simulasi ini; lakukan validasi manual.',
     });
   } catch {
     return NextResponse.json(
       { error: 'Gagal memindai dokumen pajak multi-negara' },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
