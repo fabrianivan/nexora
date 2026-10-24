@@ -33,6 +33,7 @@ import {
   Crown,
   ShieldAlert,
   ChevronDown,
+  ArrowLeft,
 } from 'lucide-react';
 import {
   MULTI_COUNTRY_DATA,
@@ -2467,20 +2468,20 @@ export default function NexoraApp() {
                               }
                               className="absolute right-1.5 top-1.5 bottom-1.5 px-4 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center"
                             >
-                              Cari
+                              Search
                             </button>
                           </div>
                         </div>
 
-                        {/* Quick Jump to Ownership Tree */}
+                        {/* Back to Company Directory */}
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => setCorpViewTab('subsidiaries_tree')}
-                            className="px-3.5 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#2563EB] border border-blue-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                            onClick={() => setCorpViewTab('directory')}
+                            className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
                           >
-                            <GitBranch className="w-3.5 h-3.5" />
-                            <span>Open Company Structure</span>
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                            <span>← Back to Directory</span>
                           </button>
                         </div>
                       </div>
@@ -2815,8 +2816,10 @@ export default function NexoraApp() {
                         SECTION 3: COMPANY STRUCTURE — INTERACTIVE SHAREHOLDER & COMPANY OWNERSHIP TREE
                         (VISUAL ORG-CHART TREE + FIGMA 201-8 INDENTED HIERARCHY TREE)
                        ======================================================= */}
-                    {corpViewTab === 'subsidiaries_tree' && (
-                      <div className="space-y-5">
+                    {(corpViewTab === 'all_in_one' ||
+                      corpViewTab === 'subsidiaries_tree' ||
+                      corpViewTab === 'corporate_form') && (
+                      <div className="space-y-5 pt-6 border-t border-slate-200">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <div className="flex items-center gap-2">
@@ -3325,19 +3328,20 @@ export default function NexoraApp() {
                           </div>
 
                           {/* Exact Figma 201-8 Bottom-Left Button inside Company Structure Box (Red Arrow to Screen 3 Modal) */}
-                          <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
+                          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200">
                             <button
                               type="button"
                               onClick={() => {
                                 setStructureModalTab('tp_tax');
                                 setShowStructureModal(true);
                               }}
-                              className="px-4 py-2 rounded-lg bg-white hover:bg-blue-50 text-[#2563EB] border border-blue-300 text-xs font-bold shadow-2xs transition cursor-pointer"
+                              className="px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition cursor-pointer flex items-center gap-2"
                             >
-                              + View Full Ownership & Tax Structure
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>+ Add Node / Company</span>
                             </button>
                             <span className="text-[11px] text-slate-500">
-                              Click any node to see its ownership path & tax treaty rate
+                              Click any node to see its ownership path &amp; tax treaty rate
                             </span>
                           </div>
                         </div>
