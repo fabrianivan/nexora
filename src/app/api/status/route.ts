@@ -1,3 +1,19 @@
+import { NextResponse } from 'next/server';
+import { getAIEngine } from '@/lib/adapters/aiEngine';
+import { isMysqlConfigured } from '@/lib/mysql';
+
 export async function GET() {
-  return Response.json({ mode: process.env.GEMINI_API_KEY?.trim() ? 'ai-unverified' : 'simulation', gemini: Boolean(process.env.GEMINI_API_KEY?.trim()), documentAi: false, documentScanner: 'simulation-only', bigQuery: Boolean(process.env.BIGQUERY_DATASET), mysqlConfigured: Boolean(process.env.MYSQL_URL?.trim()) });
+  const aiEngine = getAIEngine();
+  return NextResponse.json({
+    mode: aiEngine.mode === 'live' ? 'live-gemini' : 'demo-simulation',
+    engineMode: aiEngine.mode,
+    engineLabel: aiEngine.providerLabel,
+    gemini: aiEngine.mode === 'live',
+    documentAi: false,
+    documentScanner: aiEngine.mode === 'live' ? 'gemini-assisted-extraction' : 'simulation-only',
+    bigQuery: false,
+    bigQueryAnalyticsLabel: 'Dihitung lokal (simulasi BigQuery)',
+    mysqlConfigured: isMysqlConfigured(),
+    storageBackend: isMysqlConfigured() ? 'mysql' : 'in-memory',
+  });
 }
