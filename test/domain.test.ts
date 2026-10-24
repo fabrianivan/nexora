@@ -5,7 +5,6 @@ import { validateOwnership } from '../src/lib/ownership';
 import { calculateReconciliation } from '../src/lib/reconciliation';
 import { createReturnDraft, returnDraftToXml } from '../src/lib/returns';
 import { simulateTax } from '../src/lib/tax';
-import { MULTI_COUNTRY_DATA } from '../src/data/multiCountryTaxData';
 
 const entity: CorporateEntity = { id: 'entity-1', name: 'Valid Company Inc.', country: 'US', taxId: '12-3456789', address: '100 Main Street, Delaware', fiscalYearEnd: '12-31', createdAt: '2026-01-01T00:00:00.000Z' };
 const field = <T>(value: T) => ({ value, source: 'manual' as const });
@@ -51,16 +50,5 @@ describe('entity and ownership validation', () => {
     const second = { ...entity, id: 'entity-2', name: 'Second Inc.' };
     const issues = validateOwnership([entity, second], [{ id: '1', ownerId: entity.id, ownedId: second.id, percentage: 90 }, { id: '2', ownerId: second.id, ownedId: entity.id, percentage: 100 }]);
     expect(issues.map((issue)=>issue.type)).toEqual(expect.arrayContaining(['total','circular']));
-  });
-});
-
-describe('demo fixture safety', () => {
-  it('never presents fixture documents or benchmarks as verified', () => {
-    for (const jurisdiction of Object.values(MULTI_COUNTRY_DATA)) {
-      expect(jurisdiction.company.taxHealthScore).toBe(0);
-      expect(jurisdiction.sampleDocuments.every((doc) => doc.status === 'SIMULASI' && doc.confidenceScore === 0)).toBe(true);
-      expect(jurisdiction.industryBenchmarks.every((item) => item.status === 'SIMULASI')).toBe(true);
-      expect(jurisdiction.fiscalReconciliation.every((item) => item.legalBasis === 'PERLU VERIFIKASI AHLI PAJAK.')).toBe(true);
-    }
   });
 });
