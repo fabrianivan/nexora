@@ -1314,6 +1314,7 @@ export default function NexoraApp() {
   const [newSubVolume, setNewSubVolume] = useState<string>('S$ 150,000 / tahun');
 
   // Add Intermediate Shareholder Form fields (Frame 4 & Frame 5 of Figma 1)
+  const [editingShId, setEditingShId] = useState<string | null>(null);
   const [newShName, setNewShName] = useState<string>('Global Horizon Holdings Pte. Ltd.');
   const [newShRegNo, setNewShRegNo] = useState<string>('ACRA-202499182K');
   const [newShJurisdiction, setNewShJurisdiction] = useState<string>('🇸🇬 Singapore');
@@ -1542,8 +1543,65 @@ export default function NexoraApp() {
     );
   }
 
+  function handleOpenAddShareholder() {
+    setEditingShId(null);
+    setNewShName('');
+    setNewShRegNo('');
+    setNewShJurisdiction('🇸🇬 Singapore');
+    setNewShTaxId('');
+    setNewShPercent('15');
+    setNewShAddress('');
+    setNewShEmail('');
+    setShowShareholderModal(true);
+  }
+
+  function handleOpenEditShareholder(sh: IntermediateShareholder) {
+    setEditingShId(sh.id);
+    setNewShName(sh.name);
+    setNewShRegNo(sh.registrationNo);
+    setNewShJurisdiction(sh.jurisdiction);
+    setNewShTaxId(sh.taxId);
+    setNewShPercent(String(sh.sharePercent));
+    setNewShAddress(sh.address);
+    setNewShEmail(sh.contactEmail);
+    setShowShareholderModal(true);
+  }
+
   function handleAddShareholder(e: React.FormEvent) {
     e.preventDefault();
+    if (editingShId) {
+      setCompanies((prev) =>
+        prev.map((c) =>
+          c.id === selectedEntity.id
+            ? {
+                ...c,
+                intermediateShareholders: c.intermediateShareholders.map((s) =>
+                  s.id === editingShId
+                    ? {
+                        ...s,
+                        name: newShName,
+                        registrationNo: newShRegNo,
+                        jurisdiction: newShJurisdiction,
+                        taxId: newShTaxId,
+                        sharePercent: Number(newShPercent) || s.sharePercent,
+                        votingRightPercent: Number(newShPercent) || s.votingRightPercent,
+                        address: newShAddress,
+                        contactEmail: newShEmail,
+                      }
+                    : s
+                ),
+              }
+            : c
+        )
+      );
+      setShowShareholderModal(false);
+      triggerToast(
+        `Intermediate Shareholder "${newShName}" (${editingShId}) berhasil diperbarui!`
+      );
+      setEditingShId(null);
+      return;
+    }
+
     const nextNum = selectedEntity.intermediateShareholders.length + 1;
     const newSh: IntermediateShareholder = {
       id: `INT-0000${nextNum}`,
@@ -3365,11 +3423,11 @@ export default function NexoraApp() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => setShowShareholderModal(true)}
+                            onClick={handleOpenAddShareholder}
                             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 text-xs font-bold transition cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            <span>Add Intermediate Shareholder</span>
+                            <span>+ Add Intermediate Shareholder</span>
                           </button>
                         </div>
 
@@ -3433,7 +3491,7 @@ export default function NexoraApp() {
                                         <button
                                           type="button"
                                           onClick={() =>
-                                            setShowShareholderModal(true)
+                                            handleOpenEditShareholder(sh)
                                           }
                                           className="text-[#2563EB] hover:underline cursor-pointer"
                                         >
@@ -3442,7 +3500,7 @@ export default function NexoraApp() {
                                         <button
                                           type="button"
                                           onClick={() =>
-                                            setShowShareholderModal(true)
+                                            handleOpenEditShareholder(sh)
                                           }
                                           className="text-[#2563EB] hover:underline cursor-pointer"
                                         >
@@ -4942,10 +5000,10 @@ export default function NexoraApp() {
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <span className="text-[11px] font-bold uppercase text-[#2563EB]">
-                  ADD INTERMEDIATE SHAREHOLDER (CORPORATE)
+                  {editingShId ? 'EDIT INTERMEDIATE SHAREHOLDER' : 'ADD INTERMEDIATE SHAREHOLDER'} (CORPORATE)
                 </span>
                 <h3 className="text-base font-extrabold text-slate-900">
-                  Add / Edit Intermediate Shareholder — {selectedEntity.legalName}
+                  {editingShId ? 'Edit Intermediate Shareholder' : 'Add Intermediate Shareholder'} — {selectedEntity.legalName}
                 </h3>
               </div>
               <button
@@ -5103,7 +5161,7 @@ export default function NexoraApp() {
                   type="submit"
                   className="px-5 py-2 rounded-lg bg-[#2563EB] text-white font-bold cursor-pointer"
                 >
-                  Save Intermediate Shareholder
+                  {editingShId ? 'Update Intermediate Shareholder' : 'Save Intermediate Shareholder'}
                 </button>
               </div>
             </form>
