@@ -80,15 +80,38 @@ export const reconciliationLineSchema = z.object({
 });
 export type ReconciliationLine = z.infer<typeof reconciliationLineSchema>;
 
+const corporateCompanySnapshotSchema = z.object({
+  id: z.string().min(1).max(100),
+  legalName: z.string().min(1).max(200),
+  tradeName: z.string().max(200),
+  parentCompanyId: z.string().nullable(),
+  parentCompanyName: z.string().max(200),
+  ownershipByParent: z.number().min(0).max(100),
+  registrationNumber: z.string().max(200),
+  taxId: z.string().max(100),
+  countryCode: z.enum(countryCodes),
+  entityType: z.enum(['Parent Holding Company', 'Subsidiary (Anak Perusahaan)', 'Regional Hub Subsidiary', 'Foreign Operating Subsidiary']),
+  jurisdictionName: z.string().max(100),
+  status: z.enum(['ACTIVE', 'PENDING']),
+  aiComplianceScore: z.number().min(0).max(100),
+  documents: z.array(z.record(z.string(), z.unknown())).max(200),
+  structureNodes: z.array(z.record(z.string(), z.unknown())).max(500),
+  intermediateShareholders: z.array(z.record(z.string(), z.unknown())).max(500),
+  individualShareholders: z.array(z.record(z.string(), z.unknown())).max(500),
+}).passthrough();
+
 export const workspaceSchema = z.object({
   version: z.literal(1),
   entities: z.array(entitySchema),
   ownerships: z.array(ownershipSchema),
   documents: z.array(documentSchema),
   reconciliation: z.array(reconciliationLineSchema),
+  // The current legacy corporate UI has a richer nested model. Keep it in a
+  // separate, size-limited field until that UI is migrated to the normalized model.
+  corporateCompanies: z.array(corporateCompanySnapshotSchema).max(100).optional(),
 });
 export type Workspace = z.infer<typeof workspaceSchema>;
-export const emptyWorkspace: Workspace = { version: 1, entities: [], ownerships: [], documents: [], reconciliation: [] };
+export const emptyWorkspace: Workspace = { version: 1, entities: [], ownerships: [], documents: [], reconciliation: [], corporateCompanies: [] };
 
 export function newId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID()}`;
