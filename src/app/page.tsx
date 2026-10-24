@@ -1734,9 +1734,9 @@ export default function NexoraApp() {
             onClick={() => {
               setPrimaryNav('companies');
               setSubNav('corporate');
-              setCorpViewTab('all_in_one');
+              setCorpViewTab('directory');
             }}
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-3 cursor-pointer group shrink-0"
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-[#2563EB] to-blue-500 flex items-center justify-center text-white font-black text-base shadow-md shadow-blue-500/20 group-hover:shadow-lg group-hover:scale-105 transition-all duration-200">
               NX
@@ -1847,11 +1847,17 @@ export default function NexoraApp() {
               })}
             </div>
 
-            <div className="hidden md:flex items-center gap-2 text-[11px] text-slate-300 bg-slate-800/60 px-3 py-1 rounded-full border border-slate-700/60">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>
-                Active Entity: <strong>{selectedEntity.flag} {selectedEntity.legalName}</strong> ({selectedEntity.entityType})
+            <div className="hidden md:flex items-center gap-3">
+              <span className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700/60 text-[10px] font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Google Cloud Document AI + BigQuery Connected
               </span>
+              <div className="flex items-center gap-2 text-[11px] text-slate-300 bg-slate-800/60 px-3 py-1 rounded-full border border-slate-700/60">
+                <span className="w-2 h-2 rounded-full bg-blue-400" />
+                <span>
+                  Active Entity: <strong>{selectedEntity.flag} {selectedEntity.legalName}</strong> ({selectedEntity.entityType})
+                </span>
+              </div>
             </div>
           </div>
         </div>
