@@ -64,6 +64,8 @@ interface UserPersona {
   title: string;
   entityRole: 'PARENT' | 'SUBSIDIARY';
   organization: string;
+  email: string;
+  jurisdiction: string;
   avatarInitials: string;
   avatarBg: string;
   badge: string;
@@ -71,6 +73,7 @@ interface UserPersona {
   accessibleEntityIds: string[];
   governanceLevel: string;
   description: string;
+  complianceStatus: string;
 }
 
 const USER_PERSONAS: UserPersona[] = [
@@ -80,6 +83,8 @@ const USER_PERSONAS: UserPersona[] = [
     title: 'Group Chief Executive Officer (CEO)',
     entityRole: 'PARENT',
     organization: 'PT Nusantara Kreasi Digital Tbk (Induk Grup)',
+    email: 'aditya.pratama@nusantara-holding.com',
+    jurisdiction: '🇮🇩 Indonesia (Ultimate Parent Entity - UPE)',
     avatarInitials: 'AP',
     avatarBg: 'bg-emerald-600',
     badge: '👑 Group CEO (Induk)',
@@ -87,6 +92,7 @@ const USER_PERSONAS: UserPersona[] = [
     accessibleEntityIds: ['ENT-ID-001', 'ENT-SG-002', 'ENT-MY-003', 'ENT-US-004'],
     governanceLevel: 'Level 5 (Unrestricted Multinational Holding Scope)',
     description: 'CEO Perusahaan Induk — Memiliki hak akses universal (Global Scope) sesuai standar enterprise internasional untuk mengaudit, mengonsolidasi, dan melihat seluruh data Induk & 3 Anak Usaha (ID, SG, MY, US).',
+    complianceStatus: 'ISO 27001 Annex A.9 Compliant • OECD Action 13 UPE Master Authority',
   },
   {
     id: 'cfo_parent',
@@ -94,6 +100,8 @@ const USER_PERSONAS: UserPersona[] = [
     title: 'Group Chief Financial Officer (CFO)',
     entityRole: 'PARENT',
     organization: 'PT Nusantara Kreasi Digital Tbk (Induk Grup)',
+    email: 'sri.mulyani@nusantara-holding.com',
+    jurisdiction: '🇮🇩 Indonesia (Ultimate Parent Entity - UPE)',
     avatarInitials: 'SM',
     avatarBg: 'bg-blue-600',
     badge: '💼 Group CFO (Induk)',
@@ -101,6 +109,7 @@ const USER_PERSONAS: UserPersona[] = [
     accessibleEntityIds: ['ENT-ID-001', 'ENT-SG-002', 'ENT-MY-003', 'ENT-US-004'],
     governanceLevel: 'Level 5 (Group Fiscal & BEPS Consolidation)',
     description: 'CFO Perusahaan Induk — Setara dengan CEO dalam pengawasan keuangan fiskal konsolidasi, transfer pricing lintas negara, dan kepatuhan audit grup.',
+    complianceStatus: 'OECD Action 13 CbCR Lead • ISO 27001 Financial Auditor',
   },
   {
     id: 'md_sg',
@@ -108,6 +117,8 @@ const USER_PERSONAS: UserPersona[] = [
     title: 'Managing Director — Singapore Subsidiary',
     entityRole: 'SUBSIDIARY',
     organization: 'Nusantara FinTech Pte. Ltd. (Singapura)',
+    email: 'marcus.tan@nusantara-sg.com',
+    jurisdiction: '🇸🇬 Singapura (Constituent Entity)',
     avatarInitials: 'MT',
     avatarBg: 'bg-purple-600',
     badge: '🇸🇬 Director SG (Anak Usaha)',
@@ -115,6 +126,7 @@ const USER_PERSONAS: UserPersona[] = [
     accessibleEntityIds: ['ENT-SG-002'],
     governanceLevel: 'Level 2 (Single Entity — Singapore IRAS Only)',
     description: 'Karyawan Anak Usaha Singapura — Hanya memiliki hak akses internal Nusantara FinTech Pte. Ltd. Entitas lain dikunci sesuai segregasi tugas ISO 27001.',
+    complianceStatus: 'ISO 27001 Segregated Scope • Singapore IRAS Constituent',
   },
   {
     id: 'dir_my',
@@ -122,13 +134,16 @@ const USER_PERSONAS: UserPersona[] = [
     title: 'Country Director — Malaysia Subsidiary',
     entityRole: 'SUBSIDIARY',
     organization: 'Nusantara Digital Solutions Sdn. Bhd. (Malaysia)',
+    email: 'ahmad.razak@nusantara-my.com',
+    jurisdiction: '🇲🇾 Malaysia (Constituent Entity)',
     avatarInitials: 'AR',
     avatarBg: 'bg-amber-600',
     badge: '🇲🇾 Director MY (Anak Usaha)',
     canViewAll: false,
     accessibleEntityIds: ['ENT-MY-003'],
     governanceLevel: 'Level 2 (Single Entity — Malaysia LHDN Only)',
-    description: 'Karyawan Anak Usaha Malaysia — Akses dibatasi pada entitas lokal Malaysia.',
+    description: 'Karyawan Anak Usaha Malaysia — Akses dibatasi pada entitas lokal Malaysia. Data grup dan entitas lain terkunci sesuai protokol segregasi ISO 27001.',
+    complianceStatus: 'ISO 27001 Segregated Scope • Malaysia LHDN Constituent',
   },
   {
     id: 'ctrl_us',
@@ -136,13 +151,16 @@ const USER_PERSONAS: UserPersona[] = [
     title: 'VP Finance & Controller — US Subsidiary',
     entityRole: 'SUBSIDIARY',
     organization: 'Nusantara AI Technologies, Inc. (Amerika Serikat)',
+    email: 'sarah.jenkins@nusantara-ai.com',
+    jurisdiction: '🇺🇸 Amerika Serikat (Constituent Entity)',
     avatarInitials: 'SJ',
     avatarBg: 'bg-rose-600',
     badge: '🇺🇸 Controller US (Anak Usaha)',
     canViewAll: false,
     accessibleEntityIds: ['ENT-US-004'],
     governanceLevel: 'Level 2 (Single Entity — US IRS Only)',
-    description: 'Karyawan Anak Usaha Amerika Serikat — Akses dibatasi pada entitas lokal AS.',
+    description: 'Karyawan Anak Usaha Amerika Serikat — Akses dibatasi pada entitas lokal AS dan pelaporan pajak federal IRS.',
+    complianceStatus: 'ISO 27001 Segregated Scope • US IRS Constituent',
   },
 ];
 
@@ -1341,7 +1359,9 @@ export default function NexoraApp() {
 
   // Multi-Entity & RBAC Access Control States (International Standard)
   const [activePersonaId, setActivePersonaId] = useState<string>('ceo_parent');
+  const [showAccountDropdown, setShowAccountDropdown] = useState<boolean>(false);
   const [showRbacModal, setShowRbacModal] = useState<boolean>(false);
+  const [rbacModalTab, setRbacModalTab] = useState<'personas' | 'matrix' | 'standards'>('personas');
   const [showConsolidationModal, setShowConsolidationModal] = useState<boolean>(false);
   const [restrictedNoticeEntity, setRestrictedNoticeEntity] = useState<CorporateEntity | null>(null);
 
@@ -1841,23 +1861,34 @@ export default function NexoraApp() {
           </nav>
 
           {/* Right: International Enterprise User Profile & RBAC Persona Switcher */}
-          <div className="flex items-center gap-3">
+          <div className="relative flex items-center gap-3">
             <button
-              onClick={() => setShowRbacModal(true)}
-              className="flex items-center gap-2.5 p-1.5 px-2.5 hover:bg-slate-50 border border-slate-200/90 rounded-xl transition cursor-pointer text-left shadow-2xs hover:shadow-xs hover:border-slate-300"
-              title="Klik untuk mengubah Hak Akses / Peran Karyawan (RBAC Governance)"
+              onClick={() => setShowAccountDropdown((prev) => !prev)}
+              className={`flex items-center gap-2.5 p-1.5 px-2.5 hover:bg-slate-50 border rounded-xl transition cursor-pointer text-left shadow-2xs hover:shadow-xs ${
+                showAccountDropdown
+                  ? 'bg-blue-50/70 border-blue-500 ring-2 ring-blue-500/20'
+                  : 'border-slate-200/90 hover:border-slate-300'
+              }`}
+              title="Klik untuk membuka Menu Akun & Hak Akses (RBAC Governance)"
             >
-              <div
-                className={`w-8 h-8 rounded-lg ${activePersona.avatarBg} text-white flex items-center justify-center font-extrabold text-xs shadow-xs`}
-              >
-                {activePersona.avatarInitials}
+              <div className="relative">
+                <div
+                  className={`w-8 h-8 rounded-lg ${activePersona.avatarBg} text-white flex items-center justify-center font-extrabold text-xs shadow-xs`}
+                >
+                  {activePersona.avatarInitials}
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
               </div>
               <div className="hidden sm:block text-left">
                 <div className="flex items-center gap-1.5">
                   <span className="block text-xs font-bold text-slate-800 leading-tight">
                     {activePersona.name.split(',')[0]}
                   </span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded font-extrabold bg-blue-100 text-[#2563EB]">
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold ${
+                    isGroupCeoOrParentExecutive
+                      ? 'bg-blue-100 text-[#2563EB]'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
                     {activePersona.badge}
                   </span>
                 </div>
@@ -1865,8 +1896,148 @@ export default function NexoraApp() {
                   {activePersona.title}
                 </span>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                  showAccountDropdown ? 'rotate-180 text-blue-600' : ''
+                }`}
+              />
             </button>
+
+            {/* Premium Enterprise Account Dropdown Popover */}
+            {showAccountDropdown && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowAccountDropdown(false)}
+                />
+                <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50 text-slate-900">
+                  {/* Current Active Account Card */}
+                  <div className="flex items-start gap-3 pb-3 border-b border-slate-100">
+                    <div
+                      className={`w-11 h-11 rounded-xl ${activePersona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs`}
+                    >
+                      {activePersona.avatarInitials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="text-xs font-black text-slate-900 truncate">
+                          {activePersona.name}
+                        </h4>
+                        <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          ● Aktif
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-semibold text-slate-600 truncate mt-0.5">
+                        {activePersona.title}
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                        {activePersona.organization}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Governance & Compliance Badge */}
+                  <div className="py-2.5 px-3 my-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#2563EB]">
+                        TATA KELOLA RBAC &amp; ISO 27001
+                      </span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                        isGroupCeoOrParentExecutive
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {isGroupCeoOrParentExecutive ? 'Universal Scope' : 'Restricted Scope'}
+                      </span>
+                    </div>
+                    <p className="text-slate-600 text-[10px] leading-relaxed">
+                      {isGroupCeoOrParentExecutive
+                        ? '👑 Karyawan CEO/setara dari Perusahaan Induk memiliki visibilitas penuh ke seluruh 4 entitas grup.'
+                        : `🔒 Karyawan anak usaha dibatasi pada yurisdiksi lokal (${activePersona.jurisdiction}). Entitas lain terkunci sesuai segregasi ISO 27001.`}
+                    </p>
+                  </div>
+
+                  {/* Quick Role Switcher */}
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-1">
+                      Peralihan Cepat Peran Karyawan (RBAC)
+                    </span>
+                    <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                      {USER_PERSONAS.map((p) => {
+                        const isCurrent = p.id === activePersonaId;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              setActivePersonaId(p.id);
+                              if (!p.canViewAll && !p.accessibleEntityIds.includes(selectedEntityId)) {
+                                setSelectedEntityId(p.accessibleEntityIds[0]);
+                              }
+                              setShowAccountDropdown(false);
+                              triggerToast(`Beralih ke Peran: ${p.name} (${p.title})`);
+                            }}
+                            className={`w-full text-left p-2 rounded-xl transition flex items-center justify-between gap-2.5 cursor-pointer ${
+                              isCurrent
+                                ? 'bg-blue-50 border border-blue-300 shadow-2xs'
+                                : 'hover:bg-slate-50 border border-transparent'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div
+                                className={`w-6 h-6 rounded-md ${p.avatarBg} text-white flex items-center justify-center font-bold text-[10px] shrink-0`}
+                              >
+                                {p.avatarInitials}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="block text-xs font-bold text-slate-800 truncate">
+                                  {p.name.split(',')[0]}
+                                </span>
+                                <span className="block text-[10px] text-slate-500 truncate">
+                                  {p.badge}
+                                </span>
+                              </div>
+                            </div>
+                            {isCurrent ? (
+                              <Check className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Modal Trigger & Actions */}
+                  <div className="pt-3 mt-3 border-t border-slate-100 flex flex-col gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAccountDropdown(false);
+                        setShowRbacModal(true);
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Buka Matriks RBAC &amp; ISO 27001</span>
+                    </button>
+                    {!isGroupCeoOrParentExecutive && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActivePersonaId('ceo_parent');
+                          setShowAccountDropdown(false);
+                          triggerToast('Beralih ke Hak Akses: Ir. Aditya Pratama (Group CEO - Induk)');
+                        }}
+                        className="w-full py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563EB] border border-blue-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Beralih ke Group CEO Induk (Akses Penuh)</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -2226,6 +2397,60 @@ export default function NexoraApp() {
                    =========================================================== */}
                 {corpViewTab === 'directory' && (
                   <div className="space-y-6">
+                    {/* RBAC Governance Status Banner */}
+                    <div className={`p-4 rounded-2xl border text-xs flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs ${
+                      isGroupCeoOrParentExecutive
+                        ? 'bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-white border-emerald-200/90 text-emerald-950'
+                        : 'bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-white border-amber-200/90 text-amber-950'
+                    }`}>
+                      <div className="flex items-start md:items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${
+                          isGroupCeoOrParentExecutive ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
+                        }`}>
+                          {isGroupCeoOrParentExecutive ? <Crown className="w-5 h-5 text-amber-300" /> : <Lock className="w-5 h-5" />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded bg-white/80 border border-slate-200 text-[#2563EB]">
+                              Role-Based Access Control (RBAC) • ISO 27001 &amp; OECD Action 13
+                            </span>
+                            <span className="font-bold text-xs text-slate-800">
+                              {activePersona.name} ({activePersona.badge})
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 mt-0.5">
+                            {isGroupCeoOrParentExecutive
+                              ? 'Sesuai standar tata kelola perusahaan internasional, karyawan dengan posisi CEO/setara dari Perusahaan Induk (Holding) memiliki visibilitas penuh ke seluruh entitas.'
+                              : `Segregasi hak akses aktif: Anda masuk sebagai karyawan anak usaha (${activePersona.organization}). Sesuai ISO 27001, entitas di luar yurisdiksi Anda dikunci. Hanya CEO/setara dari Perusahaan Induk yang berhak melihat semua entitas.`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                        {!isGroupCeoOrParentExecutive ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActivePersonaId('ceo_parent');
+                              triggerToast('Beralih ke Hak Akses: Ir. Aditya Pratama (Group CEO - Induk)');
+                            }}
+                            className="px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                          >
+                            <Crown className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Beralih ke Mode CEO Induk</span>
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => setShowRbacModal(true)}
+                          className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-[#2563EB]" />
+                          <span>Kelola Hak Akses (RBAC)</span>
+                        </button>
+                      </div>
+                    </div>
+
                     {/* 3 Summary KPI Cards matching Figma 2 */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <div className="bg-gradient-to-br from-white to-blue-50/20 rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex items-center gap-4">
@@ -2334,16 +2559,26 @@ export default function NexoraApp() {
                           <tbody className="divide-y divide-slate-200 text-xs sm:text-sm">
                             {filteredCompanies.map((comp) => {
                               const isCurrent = comp.id === selectedEntity.id;
+                              const isAccessible =
+                                activePersona.canViewAll ||
+                                activePersona.accessibleEntityIds.includes(comp.id);
+
                               return (
                                 <tr
                                   key={comp.id}
                                   onClick={() => {
+                                    if (!isAccessible) {
+                                      setRestrictedNoticeEntity(comp);
+                                      return;
+                                    }
                                     setSelectedEntityId(comp.id);
                                     setCorpViewTab('all_in_one');
                                   }}
                                   className={`transition cursor-pointer ${
                                     isCurrent
                                       ? 'bg-blue-50/60'
+                                      : !isAccessible
+                                      ? 'bg-slate-50/40 hover:bg-amber-50/40 opacity-80'
                                       : 'hover:bg-slate-50'
                                   }`}
                                 >
@@ -2353,15 +2588,28 @@ export default function NexoraApp() {
                                         className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border ${
                                           isCurrent
                                             ? 'bg-[#2563EB] text-white border-[#2563EB]'
+                                            : !isAccessible
+                                            ? 'bg-amber-50 text-amber-700 border-amber-200'
                                             : 'bg-blue-50 text-[#2563EB] border-blue-100'
                                         }`}
                                       >
-                                        <Building2 className="w-4 h-4" />
+                                        {!isAccessible ? (
+                                          <Lock className="w-4 h-4 text-amber-600" />
+                                        ) : (
+                                          <Building2 className="w-4 h-4" />
+                                        )}
                                       </div>
                                       <div>
-                                        <span className="font-bold text-slate-900 block">
-                                          {comp.legalName}
-                                        </span>
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="font-bold text-slate-900 block">
+                                            {comp.legalName}
+                                          </span>
+                                          {!isAccessible && (
+                                            <span className="text-[9px] px-1.5 py-0.2 rounded font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                              🔒 Locked (ISO 27001)
+                                            </span>
+                                          )}
+                                        </div>
                                         <span className="text-xs text-slate-500 block">
                                           {comp.taxAuthority}
                                         </span>
@@ -2393,66 +2641,85 @@ export default function NexoraApp() {
                                     </span>
                                   </td>
                                   <td className="py-4 px-5">
-                                    <span
-                                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                                        comp.status === 'ACTIVE'
-                                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                          : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                      }`}
-                                    >
+                                    {!isAccessible ? (
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                        <Lock className="w-3 h-3 text-amber-600" />
+                                        Akses Dibatasi
+                                      </span>
+                                    ) : (
                                       <span
-                                        className={`w-1.5 h-1.5 rounded-full ${
+                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                                           comp.status === 'ACTIVE'
-                                            ? 'bg-emerald-500'
-                                            : 'bg-amber-500'
+                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                            : 'bg-amber-50 text-amber-700 border border-amber-200'
                                         }`}
-                                      />
-                                      {comp.status}
-                                    </span>
+                                      >
+                                        <span
+                                          className={`w-1.5 h-1.5 rounded-full ${
+                                            comp.status === 'ACTIVE'
+                                              ? 'bg-emerald-500'
+                                              : 'bg-amber-500'
+                                          }`}
+                                        />
+                                        {comp.status}
+                                      </span>
+                                    )}
                                   </td>
                                   <td
                                     className="py-4 px-5 text-right"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <div className="inline-flex items-center gap-2 text-xs font-bold">
+                                    {!isAccessible ? (
                                       <button
                                         type="button"
-                                        onClick={() => {
-                                          setSelectedEntityId(comp.id);
-                                          setCorpViewTab('all_in_one');
-                                        }}
-                                        className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#2563EB] border border-blue-200 transition cursor-pointer"
-                                        title="View & Edit Corporate Information Form"
+                                        onClick={() => setRestrictedNoticeEntity(comp)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition cursor-pointer shadow-2xs"
+                                        title="Memerlukan Otorisasi CEO Perusahaan Induk (ISO 27001)"
                                       >
-                                        View Form
+                                        <Lock className="w-3.5 h-3.5 text-amber-600" />
+                                        <span>Otorisasi CEO Induk</span>
                                       </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setSelectedEntityId(comp.id);
-                                          setStructureModalTab('tp_tax');
-                                          setShowStructureModal(true);
-                                        }}
-                                        className="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition cursor-pointer flex items-center gap-1"
-                                        title="View Company Structure & Subsidiaries"
-                                      >
-                                        <GitBranch className="w-3 h-3 text-slate-500" />
-                                        <span>Structure</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          handleDeleteCompany(
-                                            comp.id,
-                                            comp.legalName
-                                          )
-                                        }
-                                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition cursor-pointer"
-                                        title="Delete Company"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
+                                    ) : (
+                                      <div className="inline-flex items-center gap-2 text-xs font-bold">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedEntityId(comp.id);
+                                            setCorpViewTab('all_in_one');
+                                          }}
+                                          className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#2563EB] border border-blue-200 transition cursor-pointer"
+                                          title="View & Edit Corporate Information Form"
+                                        >
+                                          View Form
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedEntityId(comp.id);
+                                            setStructureModalTab('tp_tax');
+                                            setShowStructureModal(true);
+                                          }}
+                                          className="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition cursor-pointer flex items-center gap-1"
+                                          title="View Company Structure & Subsidiaries"
+                                        >
+                                          <GitBranch className="w-3 h-3 text-slate-500" />
+                                          <span>Structure</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleDeleteCompany(
+                                              comp.id,
+                                              comp.legalName
+                                            )
+                                          }
+                                          className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition cursor-pointer"
+                                          title="Delete Company"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    )}
                                   </td>
                                 </tr>
                               );
@@ -5472,111 +5739,491 @@ export default function NexoraApp() {
           (ISO/IEC 27001 & OECD PILLAR TWO GOVERNANCE COMPLIANT)
          ===================================================================== */}
       {showRbacModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-4xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 shadow-2xl space-y-6">
             {/* Header */}
-            <div className="flex items-start justify-between border-b border-slate-200 pb-3.5">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#2563EB] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                  Role-Based Access Control (RBAC) • ISO 27001 &amp; OECD Action 13
-                </span>
-                <h3 className="text-lg font-extrabold text-slate-900 mt-1 flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+            <div className="flex items-start justify-between border-b border-slate-200 pb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#2563EB] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                    ROLE-BASED ACCESS CONTROL (RBAC) • ISO 27001 &amp; OECD ACTION 13
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                    ISO/IEC 27001:2022 Certified
+                  </span>
+                  <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                    OECD Action 13 CbCR Gate
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2 pt-1">
+                  <ShieldCheck className="w-6 h-6 text-[#2563EB]" />
                   Hak Akses &amp; Peran Karyawan Korporasi
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
                   Sesuai standar tata kelola perusahaan internasional, karyawan dengan posisi CEO/setara dari <strong>Perusahaan Induk (Holding)</strong> memiliki visibilitas penuh ke seluruh entitas.
                 </p>
               </div>
               <button
                 onClick={() => setShowRbacModal(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Persona Selection List */}
-            <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
-              {USER_PERSONAS.map((persona) => {
-                const isActive = persona.id === activePersonaId;
-                const isParentExecutive = persona.canViewAll && persona.entityRole === 'PARENT';
-
-                return (
-                  <div
-                    key={persona.id}
-                    onClick={() => {
-                      setActivePersonaId(persona.id);
-                      if (!persona.canViewAll && !persona.accessibleEntityIds.includes(selectedEntityId)) {
-                        setSelectedEntityId(persona.accessibleEntityIds[0]);
-                      }
-                      setShowRbacModal(false);
-                      triggerToast(`Beralih ke Peran: ${persona.name} (${persona.title})`);
-                    }}
-                    className={`p-3.5 rounded-xl border transition cursor-pointer flex items-start justify-between gap-3 ${
-                      isActive
-                        ? 'bg-blue-50/70 border-blue-500 ring-2 ring-blue-500/20 shadow-xs'
-                        : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50/60'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs mt-0.5`}>
-                        {persona.avatarInitials}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-xs font-extrabold text-slate-900">
-                            {persona.name}
-                          </h4>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                            isParentExecutive
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                              : 'bg-amber-100 text-amber-800 border border-amber-300'
-                          }`}>
-                            {persona.badge}
-                          </span>
-                        </div>
-                        <p className="text-[11px] font-semibold text-slate-700 mt-0.5">
-                          {persona.title} • <span className="text-slate-500">{persona.organization}</span>
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                          {persona.description}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2 text-[10px] font-medium text-slate-400">
-                          <span className="font-semibold text-slate-600">Izin Akses:</span>
-                          <span className={`px-1.5 py-0.5 rounded font-bold ${
-                            isParentExecutive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'
-                          }`}>
-                            {persona.governanceLevel}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 flex items-center self-center">
-                      {isActive ? (
-                        <span className="w-6 h-6 rounded-full bg-[#2563EB] text-white flex items-center justify-center shadow-xs">
-                          <Check className="w-3.5 h-3.5" />
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-bold text-slate-400">
-                          Pilih
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+            {/* Segmented Modal Navigation Tabs */}
+            <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setRbacModalTab('personas')}
+                className={`flex-1 py-2 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
+                  rbacModalTab === 'personas'
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Users className="w-4 h-4 text-[#2563EB]" />
+                <span>Pilih Peran Karyawan (RBAC)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRbacModalTab('matrix')}
+                className={`flex-1 py-2 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
+                  rbacModalTab === 'matrix'
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4 text-emerald-600" />
+                <span>Matriks Otorisasi &amp; Hak Akses</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRbacModalTab('standards')}
+                className={`flex-1 py-2 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
+                  rbacModalTab === 'standards'
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <BookOpen className="w-4 h-4 text-purple-600" />
+                <span>Standar ISO 27001 &amp; OECD</span>
+              </button>
             </div>
 
-            {/* International Standard Footer Note */}
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-start gap-2">
-              <ShieldAlert className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <div>
-                <strong>Standar Tata Kelola Perusahaan Internasional:</strong>
-                <p className="text-slate-500 mt-0.5">
-                  Berdasarkan standar <em>OECD Action 13 (Country-by-Country Reporting)</em> dan <em>ISO/IEC 27001 Access Control</em>, data keuangan dan dokumen anak usaha terpisah secara yurisdiksi. Hanya pemegang wewenang eksekutif induk (CEO/CFO) yang diotorisasi mengonsolidasi seluruh anak usaha.
-                </p>
+            {/* TAB 1: PERSONAS SELECTION */}
+            {rbacModalTab === 'personas' && (
+              <div className="space-y-6">
+                {/* Current Active Persona Summary Banner */}
+                <div className={`p-4 rounded-2xl border text-xs flex items-center justify-between gap-4 ${
+                  isGroupCeoOrParentExecutive
+                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                    : 'bg-amber-50/80 border-amber-200 text-amber-950'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl ${activePersona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs`}>
+                      {activePersona.avatarInitials}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-extrabold text-xs">
+                          Peran Saat Ini: {activePersona.name}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                          isGroupCeoOrParentExecutive ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'
+                        }`}>
+                          {activePersona.badge}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-0.5">
+                        {activePersona.title} • {activePersona.organization}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider block text-slate-500">
+                      Cakupan Visibilitas
+                    </span>
+                    <span className="font-black text-xs text-slate-900">
+                      {isGroupCeoOrParentExecutive ? '👑 4/4 Seluruh Entitas Grup' : '🔒 1/4 Entitas Lokal Saja'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* TIER 1: PERUSAHAAN INDUK (HOLDING) - UNIVERSAL VISIBILITY */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-amber-500" />
+                      Tier 1: Perusahaan Induk (Holding) — Akses Universal (Global Scope)
+                    </h4>
+                    <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      Visibilitas 100% Seluruh Entitas
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {USER_PERSONAS.filter((p) => p.entityRole === 'PARENT').map((persona) => {
+                      const isActive = persona.id === activePersonaId;
+                      return (
+                        <div
+                          key={persona.id}
+                          onClick={() => {
+                            setActivePersonaId(persona.id);
+                            setShowRbacModal(false);
+                            triggerToast(`Beralih ke Peran: ${persona.name} (${persona.title})`);
+                          }}
+                          className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col justify-between gap-3 ${
+                            isActive
+                              ? 'bg-blue-50/70 border-blue-500 ring-2 ring-blue-500/25 shadow-sm'
+                              : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50/80 shadow-2xs'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-11 h-11 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs mt-0.5`}>
+                              {persona.avatarInitials}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h5 className="text-xs font-black text-slate-900 truncate">
+                                  {persona.name}
+                                </h5>
+                                <span className="text-[9px] px-1.5 py-0.2 rounded font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  {persona.badge}
+                                </span>
+                              </div>
+                              <p className="text-[11px] font-semibold text-slate-700 truncate mt-0.5">
+                                {persona.title}
+                              </p>
+                              <p className="text-[10px] text-slate-500 truncate">
+                                {persona.organization} • {persona.email}
+                              </p>
+                              <p className="text-[11px] text-slate-600 mt-2 leading-relaxed">
+                                {persona.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-500">Entitas:</span>
+                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">🇮🇩 ID</span>
+                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">🇸🇬 SG</span>
+                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">🇲🇾 MY</span>
+                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">🇺🇸 US</span>
+                            </div>
+                            {isActive ? (
+                              <span className="flex items-center gap-1 text-[11px] font-black text-[#2563EB]">
+                                <CheckCircle2 className="w-4 h-4 text-[#2563EB]" />
+                                Aktif
+                              </span>
+                            ) : (
+                              <span className="text-[11px] font-bold text-slate-400 group-hover:text-slate-700">
+                                Pilih Peran →
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* TIER 2: ANAK PERUSAHAAN (SUBSIDIARIES) - SEGREGATED SINGLE ENTITY */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-purple-600" />
+                      Tier 2: Anak Perusahaan (Subsidiaries) — Akses Terisolasi (Single-Entity Scope)
+                    </h4>
+                    <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                      Segregasi Tugas ISO 27001
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                    {USER_PERSONAS.filter((p) => p.entityRole === 'SUBSIDIARY').map((persona) => {
+                      const isActive = persona.id === activePersonaId;
+                      return (
+                        <div
+                          key={persona.id}
+                          onClick={() => {
+                            setActivePersonaId(persona.id);
+                            if (!persona.accessibleEntityIds.includes(selectedEntityId)) {
+                              setSelectedEntityId(persona.accessibleEntityIds[0]);
+                            }
+                            setShowRbacModal(false);
+                            triggerToast(`Beralih ke Peran: ${persona.name} (${persona.title})`);
+                          }}
+                          className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col justify-between gap-3 ${
+                            isActive
+                              ? 'bg-blue-50/70 border-blue-500 ring-2 ring-blue-500/25 shadow-sm'
+                              : 'bg-white border-slate-200 hover:border-amber-300 hover:bg-slate-50/80 shadow-2xs'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs mt-0.5`}>
+                              {persona.avatarInitials}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h5 className="text-xs font-black text-slate-900 truncate">
+                                  {persona.name.split(',')[0]}
+                                </h5>
+                                <span className="text-[9px] px-1.5 py-0.2 rounded font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
+                                  {persona.badge.split(' ')[0]} {persona.badge.split(' ')[1]}
+                                </span>
+                              </div>
+                              <p className="text-[11px] font-semibold text-slate-700 truncate mt-0.5">
+                                {persona.title}
+                              </p>
+                              <p className="text-[10px] text-slate-500 truncate">
+                                {persona.organization}
+                              </p>
+                              <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">
+                                {persona.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold text-slate-500">Izin:</span>
+                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                {persona.jurisdiction.split(' ')[0]}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded font-bold bg-slate-100 text-slate-400">
+                                🔒 3 Lainnya
+                              </span>
+                            </div>
+                            {isActive ? (
+                              <span className="flex items-center gap-1 text-[11px] font-black text-[#2563EB]">
+                                <CheckCircle2 className="w-4 h-4 text-[#2563EB]" />
+                                Aktif
+                              </span>
+                            ) : (
+                              <span className="text-[11px] font-bold text-slate-400">
+                                Pilih →
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: PERMISSIONS MATRIX */}
+            {rbacModalTab === 'matrix' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-600">
+                    Matriks otorisasi hak akses berdasarkan tata kelola perusahaan internasional (ISO/IEC 27001 Access Control Matrix):
+                  </p>
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                    5 Peran Terdaftar
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600">
+                        <th className="py-3 px-4">FITUR &amp; MODUL SISTEM</th>
+                        <th className="py-3 px-3 text-center bg-blue-50/50">GROUP CEO (INDUK)</th>
+                        <th className="py-3 px-3 text-center bg-blue-50/30">GROUP CFO (INDUK)</th>
+                        <th className="py-3 px-3 text-center">MD SINGAPURA</th>
+                        <th className="py-3 px-3 text-center">DIR MALAYSIA</th>
+                        <th className="py-3 px-3 text-center">CONTROLLER US</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {[
+                        {
+                          module: 'Direktori Perusahaan & Visibilitas Grup',
+                          desc: 'Melihat seluruh entitas induk & 3 anak perusahaan',
+                          ceo: 'Full (4 Entitas)',
+                          cfo: 'Full (4 Entitas)',
+                          sg: 'SG Saja (3 Locked)',
+                          my: 'MY Saja (3 Locked)',
+                          us: 'US Saja (3 Locked)',
+                        },
+                        {
+                          module: 'Formulir Legalitas Korporasi & NPWP',
+                          desc: 'Mengubah 7 field identitas hukum & kontak korporat',
+                          ceo: 'Full Edit (Semua)',
+                          cfo: 'Full Edit (Semua)',
+                          sg: 'Edit SG Saja',
+                          my: 'Edit MY Saja',
+                          us: 'Edit US Saja',
+                        },
+                        {
+                          module: 'Upload Dokumen Statuter (Akta, SK, NPWP)',
+                          desc: 'Unggah dan verifikasi dokumen legal resmi',
+                          ceo: 'Full Upload (Semua)',
+                          cfo: 'Full Upload (Semua)',
+                          sg: 'Upload Dok SG',
+                          my: 'Upload Dok MY',
+                          us: 'Upload Dok US',
+                        },
+                        {
+                          module: 'Pohon Struktur Organisasi & Tambah Node',
+                          desc: 'Mengubah hierarki kepemilikan saham grup',
+                          ceo: 'Full Kelola + Tambah',
+                          cfo: 'Lihat Struktur Penuh',
+                          sg: 'Lihat Node SG Saja',
+                          my: 'Lihat Node MY Saja',
+                          us: 'Lihat Node US Saja',
+                        },
+                        {
+                          module: 'Intermediate Shareholder (Badan Hukum)',
+                          desc: 'Tambah, edit, dan hapus baris pemegang saham perantara',
+                          ceo: 'Tambah / Edit / Hapus',
+                          cfo: 'Tambah / Edit',
+                          sg: 'Lihat SG Saja',
+                          my: 'Lihat MY Saja',
+                          us: 'Lihat US Saja',
+                        },
+                        {
+                          module: 'Konsolidasi Pajak OECD Pillar Two (CbCR)',
+                          desc: 'Agregasi pendapatan multi-yurisdiksi & top-up tax',
+                          ceo: 'Full Konsolidasi',
+                          cfo: 'Full Konsolidasi',
+                          sg: '🔒 Terkunci (SoD)',
+                          my: '🔒 Terkunci (SoD)',
+                          us: '🔒 Terkunci (SoD)',
+                        },
+                        {
+                          module: 'Pengesahan SPT & Pembayaran Pajak',
+                          desc: 'Otorisasi pelaporan SPT tahunan & pembayaran',
+                          ceo: 'Final Group Sign-Off',
+                          cfo: 'Fiscal Sign-Off',
+                          sg: 'Sign-Off IRAS',
+                          my: 'Sign-Off LHDN',
+                          us: 'Sign-Off IRS',
+                        },
+                      ].map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/70">
+                          <td className="py-3 px-4">
+                            <span className="font-extrabold text-slate-900 block">{row.module}</span>
+                            <span className="text-[10px] text-slate-500 block">{row.desc}</span>
+                          </td>
+                          <td className="py-3 px-3 text-center bg-blue-50/20 font-bold text-emerald-700">
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px]">
+                              ✓ {row.ceo}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center bg-blue-50/10 font-bold text-blue-700">
+                            <span className="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px]">
+                              ✓ {row.cfo}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center font-medium text-slate-700">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] ${
+                              row.sg.includes('🔒') ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
+                            }`}>
+                              {row.sg}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center font-medium text-slate-700">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] ${
+                              row.my.includes('🔒') ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
+                            }`}>
+                              {row.my}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center font-medium text-slate-700">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] ${
+                              row.us.includes('🔒') ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
+                            }`}>
+                              {row.us}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: STANDARDS & COMPLIANCE */}
+            {rbacModalTab === 'standards' && (
+              <div className="space-y-4 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                      <h4 className="font-extrabold text-sm text-slate-900">
+                        ISO/IEC 27001:2022 Annex A.9 (Access Control)
+                      </h4>
+                    </div>
+                    <p className="text-slate-600 leading-relaxed text-[11px]">
+                      Standar tata kelola keamanan informasi internasional mewajibkan <em>Segregation of Duties (SoD)</em> untuk membatasi akses personel anak usaha pada yurisdiksinya sendiri. Hal ini mencegah potensi benturan kepentingan, manipulasi faktur lintas batas (cross-border invoice tampering), dan kebocoran informasi antar anak perusahaan.
+                    </p>
+                    <div className="pt-2 border-t border-slate-200/80 text-[10px] text-slate-500 font-mono">
+                      ✓ Control 5.15: Access Control • Control 5.18: Access Rights
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-blue-50/40 border border-blue-200 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Globe2 className="w-5 h-5 text-[#2563EB]" />
+                      <h4 className="font-extrabold text-sm text-slate-900">
+                        OECD BEPS Action 13 &amp; Pillar Two CbCR
+                      </h4>
+                    </div>
+                    <p className="text-slate-600 leading-relaxed text-[11px]">
+                      Berdasarkan kerangka <em>Country-by-Country Reporting (CbCR)</em> OECD, Ultimate Parent Entity (Perusahaan Induk) memiliki mandat hukum untuk mengonsolidasi seluruh laporan keuangan fiskal, transfer pricing, dan perhitungan Effective Tax Rate (ETR) seluruh constituent entities. Oleh karena itu, posisi Group CEO/CFO Induk diberikan hak visibilitas universal.
+                    </p>
+                    <div className="pt-2 border-t border-blue-200/80 text-[10px] text-blue-700 font-mono">
+                      ✓ Master File &amp; Local File Segregation • Pillar Two QDMTT Oversight
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-blue-950 text-white space-y-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-blue-300 flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    Kebijakan Tata Kelola Visibilitas Eksekutif Induk
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Sesuai standar tata kelola perusahaan internasional, karyawan dengan posisi CEO/setara dari <strong>Perusahaan Induk (Holding)</strong> memiliki visibilitas penuh ke seluruh entitas. Karyawan subsidiary yang memerlukan akses dapat meminta persetujuan otorisasi dari CEO Induk melalui mekanisme delegasi wewenang resmi.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Bottom Actions */}
+            <div className="pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-xs text-slate-500">
+                Masuk sebagai: <strong className="text-slate-800">{activePersona.name}</strong> ({activePersona.badge})
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {!isGroupCeoOrParentExecutive && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePersonaId('ceo_parent');
+                      setShowRbacModal(false);
+                      triggerToast('Beralih ke Hak Akses: Ir. Aditya Pratama (Group CEO - Induk)');
+                    }}
+                    className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
+                  >
+                    <Crown className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Masuk sebagai Group CEO Induk</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowRbacModal(false)}
+                  className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                >
+                  Tutup
+                </button>
               </div>
             </div>
           </div>
@@ -5587,43 +6234,63 @@ export default function NexoraApp() {
           MODAL 2: RESTRICTED ACCESS NOTICE (WHEN SUBSIDIARY ROLE CLICKS LOCKED ENTITY)
          ===================================================================== */}
       {restrictedNoticeEntity && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
-              <Lock className="w-6 h-6 text-amber-600" />
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto shadow-xs border border-amber-200">
+              <Lock className="w-7 h-7 text-amber-600" />
             </div>
 
             <div className="text-center space-y-1.5">
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                Akses Terbatas • Standar Tata Kelola ISO 27001
+              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                ROLE-BASED ACCESS CONTROL (RBAC) • ISO 27001 &amp; OECD ACTION 13
               </span>
-              <h3 className="text-base font-extrabold text-slate-900">
-                Memerlukan Otorisasi CEO Perusahaan Induk
+              <h3 className="text-lg font-black text-slate-900 pt-1">
+                Hak Akses Terbatas — Memerlukan Otorisasi CEO Induk
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Anda sedang masuk sebagai <strong className="text-slate-900">{activePersona.name} ({activePersona.title})</strong>. Sesuai standar tata kelola perusahaan internasional, akses ke entitas <strong>{restrictedNoticeEntity.flag} {restrictedNoticeEntity.legalName}</strong> hanya diberikan kepada karyawan dengan posisi <strong>CEO atau setara dari Perusahaan Induk (PT Nusantara Kreasi Digital Tbk)</strong>.
+                Sesuai standar tata kelola perusahaan internasional, karyawan dengan posisi CEO/setara dari <strong>Perusahaan Induk (Holding)</strong> memiliki visibilitas penuh ke seluruh entitas.
               </p>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 space-y-1 font-mono">
-              <div className="flex justify-between">
-                <span>Entitas Sasaran:</span>
-                <span className="font-bold text-slate-900">{restrictedNoticeEntity.legalName}</span>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <div className="flex justify-between items-center text-slate-600">
+                <span className="text-slate-400 font-medium">Akun Saat Ini:</span>
+                <span className="font-bold text-slate-900">{activePersona.name} ({activePersona.badge})</span>
               </div>
-              <div className="flex justify-between">
-                <span>Yurisdiksi:</span>
+              <div className="flex justify-between items-center text-slate-600">
+                <span className="text-slate-400 font-medium">Organisasi Anda:</span>
+                <span className="font-semibold text-slate-800 truncate max-w-[220px]">{activePersona.organization}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
+                <span className="text-slate-400 font-medium">Entitas Sasaran:</span>
+                <span className="font-extrabold text-blue-700 flex items-center gap-1">
+                  <span>{restrictedNoticeEntity.flag}</span>
+                  <span>{restrictedNoticeEntity.legalName}</span>
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-slate-600">
+                <span className="text-slate-400 font-medium">Yurisdiksi Sasaran:</span>
                 <span className="font-semibold text-slate-800">{restrictedNoticeEntity.jurisdictionName}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Hak Akses Minimal:</span>
-                <span className="font-bold text-[#2563EB]">Group CEO / Holding C-Level</span>
+              <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
+                <span className="text-slate-400 font-medium">Tingkat Izin Wajib:</span>
+                <span className="font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[10px]">
+                  Group CEO / Holding C-Level Scope
+                </span>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
+              <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                Prinsip <em>Segregation of Duties (SoD) ISO 27001</em> mengunci akses data entitas di luar yurisdiksi Anda. Anda dapat berpindah ke akun Group CEO untuk meninjau entitas ini.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
               <button
                 onClick={() => setRestrictedNoticeEntity(null)}
-                className="flex-1 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
               >
                 Tutup
               </button>
@@ -5631,13 +6298,14 @@ export default function NexoraApp() {
                 onClick={() => {
                   setActivePersonaId('ceo_parent');
                   setSelectedEntityId(restrictedNoticeEntity.id);
+                  setCorpViewTab('all_in_one');
                   setRestrictedNoticeEntity(null);
                   triggerToast(`Beralih ke Hak Akses: Ir. Aditya Pratama (Group CEO - Induk) • Membuka ${restrictedNoticeEntity.legalName}`);
                 }}
-                className="flex-1 px-4 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 transition cursor-pointer"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 transition cursor-pointer"
               >
                 <Crown className="w-3.5 h-3.5 text-amber-300" />
-                <span>Masuk sebagai Group CEO</span>
+                <span>Masuk sebagai Group CEO Induk</span>
               </button>
             </div>
           </div>
