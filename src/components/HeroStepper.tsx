@@ -9,7 +9,7 @@ import {
   Calculator, 
   FileCheck2, 
   CreditCard,
-  CheckCircle2,
+  Check,
   ChevronRight
 } from 'lucide-react';
 
@@ -20,32 +20,33 @@ export interface HeroStepperProps {
 }
 
 export const HERO_STEPS = [
-  { step: 1, title: 'Entitas & Struktur', icon: Building2, desc: 'Profil korporasi & hierarki' },
-  { step: 2, title: 'Upload & Ekstraksi', icon: FileText, desc: 'Document AI & OCR' },
-  { step: 3, title: 'Deteksi Risiko', icon: ShieldAlert, desc: 'TBTS, Z-Score & Anomali' },
-  { step: 4, title: 'Review Manusia', icon: UserCheck, desc: 'Verifikasi bukti & catatan' },
-  { step: 5, title: 'Rekonsiliasi Fiskal', icon: Calculator, desc: 'Laba komersial ke fiskal' },
-  { step: 6, title: 'Draf SPT & Approval', icon: FileCheck2, desc: 'Maker-checker & ekspor' },
-  { step: 7, title: 'Billing & Kalender', icon: CreditCard, desc: 'Kode bayar & tenggat' },
+  { step: 1, title: 'Struktur Entitas', icon: Building2, desc: 'UPE & Hierarki' },
+  { step: 2, title: 'Scanner Dokumen', icon: FileText, desc: 'e-Faktur & Dokumen' },
+  { step: 3, title: 'Deteksi Risiko', icon: ShieldAlert, desc: 'TBTS & Z-Score' },
+  { step: 4, title: 'Review Temuan', icon: UserCheck, desc: 'Verifikasi Bukti' },
+  { step: 5, title: 'Rekonsiliasi Fiskal', icon: Calculator, desc: 'Koreksi & Pasal 31E' },
+  { step: 6, title: 'Draf SPT 1771', icon: FileCheck2, desc: 'Maker-Checker' },
+  { step: 7, title: 'Billing & Jadwal', icon: CreditCard, desc: 'e-Billing & NTPN' },
 ];
 
 export function HeroStepper({ currentStep, onSelectStep, entityName }: HeroStepperProps) {
   return (
-    <div className="bg-slate-900 border-b border-slate-800 text-white px-4 py-2.5 shadow-inner">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-600/30 text-blue-400 border border-blue-500/30">
-            HERO FLOW SIKLUS KEPATUHAN
+    <div className="bg-white border-b border-slate-200/90 shadow-2xs py-2 px-4 sm:px-8">
+      <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        {/* Left Badge & Context */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
+            SIKLUS KEPATUHAN PAJAK
           </span>
           {entityName && (
-            <span className="text-xs text-slate-300 font-medium truncate max-w-[200px]">
-              • {entityName}
+            <span className="text-xs text-slate-700 font-semibold truncate max-w-[240px]">
+              {entityName}
             </span>
           )}
         </div>
 
-        {/* Horizontal Stepper */}
-        <div className="flex items-center overflow-x-auto w-full md:w-auto scrollbar-none py-1 gap-1">
+        {/* Horizontal Modern Stepper */}
+        <div className="flex items-center overflow-x-auto w-full md:w-auto scrollbar-none py-0.5 gap-1.5">
           {HERO_STEPS.map((s, idx) => {
             const Icon = s.icon;
             const isCompleted = s.step < currentStep;
@@ -56,24 +57,29 @@ export function HeroStepper({ currentStep, onSelectStep, entityName }: HeroStepp
                 <button
                   type="button"
                   onClick={() => onSelectStep(s.step)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     isCurrent
-                      ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400'
+                      ? 'bg-rose-600 text-white shadow-xs font-bold ring-2 ring-rose-600/20'
                       : isCompleted
-                      ? 'bg-slate-800/80 text-emerald-400 hover:bg-slate-800'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                      : 'bg-slate-50 text-slate-600 border border-slate-200/80 hover:bg-slate-100 hover:text-slate-900'
                   }`}
-                  title={`${s.step}. ${s.title}: ${s.desc}`}
                 >
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  ) : (
-                    <Icon className={`w-3.5 h-3.5 shrink-0 ${isCurrent ? 'text-white' : 'text-slate-400'}`} />
-                  )}
-                  <span>{s.step}. {s.title}</span>
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    isCurrent
+                      ? 'bg-white text-rose-700'
+                      : isCompleted
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-200 text-slate-700'
+                  }`}>
+                    {isCompleted ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : s.step}
+                  </span>
+                  <Icon className={`w-3.5 h-3.5 ${isCurrent ? 'text-white' : isCompleted ? 'text-emerald-700' : 'text-slate-400'}`} />
+                  <span>{s.title}</span>
                 </button>
+
                 {idx < HERO_STEPS.length - 1 && (
-                  <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0 hidden lg:block" />
                 )}
               </React.Fragment>
             );
