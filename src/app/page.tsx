@@ -34,6 +34,7 @@ import {
   ShieldAlert,
   ChevronDown,
   ArrowLeft,
+  Bell,
 } from 'lucide-react';
 import {
   MULTI_COUNTRY_DATA,
@@ -41,6 +42,17 @@ import {
   formatCurrency,
 } from '@/data/multiCountryTaxData';
 import { parseBlockMarkdown, renderInlines } from '@/lib/chatMarkdown';
+import { HeroStepper } from '@/components/HeroStepper';
+import { CalculationTab } from '@/components/CalculationTab';
+import { TaxReturnTab } from '@/components/TaxReturnTab';
+import { PaymentTab } from '@/components/PaymentTab';
+import { IndividualShareholdersTab } from '@/components/IndividualShareholdersTab';
+import { StudiesTab } from '@/components/StudiesTab';
+import { TaxCalendarTab } from '@/components/TaxCalendarTab';
+import { ReportsTab } from '@/components/ReportsTab';
+import { CommandPalette } from '@/components/CommandPalette';
+import { NotificationCenter } from '@/components/NotificationCenter';
+import { DataPersistenceControl } from '@/components/DataPersistenceControl';
 
 type PrimaryNav = 'companies' | 'calculation' | 'tax_return' | 'payment';
 type SubNav = 'corporate' | 'individual' | 'studies' | 'calendar' | 'reports';
@@ -1319,6 +1331,44 @@ export default function NexoraApp() {
   const [indInputMode, setIndInputMode] = useState<'search_existing' | 'manual'>('manual');
   const [isDocAiRunning, setIsDocAiRunning] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+  const [currentHeroStep, setCurrentHeroStep] = useState(1);
+
+  const handleHeroStepSelect = (step: number) => {
+    setCurrentHeroStep(step);
+    if (step === 1) {
+      setPrimaryNav('companies');
+      setSubNav('corporate');
+      setCorpViewTab('directory');
+    } else if (step === 2) {
+      setPrimaryNav('companies');
+      setSubNav('corporate');
+      setCorpViewTab('corporate_form');
+    } else if (step === 3) {
+      setPrimaryNav('companies');
+      setSubNav('studies');
+    } else if (step === 4) {
+      setPrimaryNav('companies');
+      setSubNav('corporate');
+      setCorpViewTab('all_in_one');
+    } else if (step === 5) {
+      setPrimaryNav('calculation');
+    } else if (step === 6) {
+      setPrimaryNav('tax_return');
+    } else if (step === 7) {
+      setPrimaryNav('payment');
+    }
+  };
+
+  const handleResetSampleData = () => {
+    setCompanies(INITIAL_COMPANIES);
+    setSelectedEntityId('ENT-ID-001');
+    setPrimaryNav('companies');
+    setSubNav('corporate');
+    setCorpViewTab('directory');
+    triggerToast('Dataset contoh lengkap multi-entitas (ID, SG, MY, US) berhasil dimuat ulang!');
+  };
 
   // Add Subsidiary Form fields (inside Frame 3 Company Structure Modal)
   const [newSubName, setNewSubName] = useState<string>('Nusantara Pacific Pty. Ltd.');
@@ -1860,8 +1910,38 @@ export default function NexoraApp() {
             })}
           </nav>
 
-          {/* Right: International Enterprise User Profile & RBAC Persona Switcher */}
-          <div className="relative flex items-center gap-3">
+          {/* Right: Search, Notifications & RBAC Switcher */}
+          <div className="relative flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => setShowCommandPalette(true)}
+              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+              title="Pencarian Global & Command Palette (Cmd+K)"
+            >
+              <Search className="w-4 h-4 text-slate-600" />
+              <span className="hidden xl:inline text-[11px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 font-mono">⌘K</span>
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setShowNotificationCenter(!showNotificationCenter)}
+                className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer relative"
+                title="Pusat Notifikasi Kepatuhan"
+              >
+                <Bell className="w-4 h-4 text-slate-600" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
+              </button>
+
+              <NotificationCenter
+                isOpen={showNotificationCenter}
+                onClose={() => setShowNotificationCenter(false)}
+                onNavigate={(p, s, c) => {
+                  if (p) setPrimaryNav(p);
+                  if (s) setSubNav(s);
+                  if (c) setCorpViewTab(c);
+                }}
+              />
+            </div>
+
             <button
               onClick={() => setShowAccountDropdown((prev) => !prev)}
               className={`flex items-center gap-2.5 p-1.5 px-2.5 hover:bg-slate-50 border rounded-xl transition cursor-pointer text-left shadow-2xs hover:shadow-xs ${
@@ -2078,20 +2158,24 @@ export default function NexoraApp() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
-              <span className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700/60 text-[10px] font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Google Cloud Document AI + BigQuery Connected
-              </span>
+              <DataPersistenceControl onResetSampleData={handleResetSampleData} />
               <div className="flex items-center gap-2 text-[11px] text-slate-300 bg-slate-800/60 px-3 py-1 rounded-full border border-slate-700/60">
                 <span className="w-2 h-2 rounded-full bg-blue-400" />
                 <span>
-                  Active Entity: <strong>{selectedEntity.flag} {selectedEntity.legalName}</strong> ({selectedEntity.entityType})
+                  Active: <strong>{selectedEntity.flag} {selectedEntity.legalName}</strong>
                 </span>
               </div>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Hero Flow Stepper */}
+      <HeroStepper
+        currentStep={currentHeroStep}
+        onSelectStep={handleHeroStepSelect}
+        entityName={`${selectedEntity.flag} ${selectedEntity.legalName}`}
+      />
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -3986,402 +4070,41 @@ export default function NexoraApp() {
                 SUB-NAV 1C: INDIVIDUAL SHAREHOLDER DEDICATED VIEW
                --------------------------------------------------------------- */}
             {subNav === 'individual' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                      INDIVIDUAL SHAREHOLDER & ULTIMATE BENEFICIAL OWNER (UBO) WORKSPACE
-                    </span>
-                    <h1 className="text-2xl font-extrabold text-slate-900 mt-1">
-                      {selectedEntity.flag} {selectedEntity.legalName} — Individual Shareholders & Personal Dividend Tax
-                    </h1>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Cross-border individual shareholders & UBOs, personal tax ID validation, and individual dividend tax optimisation.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <button
-                      onClick={() => setShowIndividualModal(true)}
-                      className="px-4 py-2.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>+ Add Individual Shareholder</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Summary Cards for Individual Shareholders */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                      <Users className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-extrabold text-slate-900">
-                        {selectedEntity.individualShareholders.length}
-                      </div>
-                      <span className="text-[11px] font-bold uppercase text-slate-400">
-                        REGISTERED INDIVIDUAL SHAREHOLDERS / UBO
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center">
-                      <ShieldCheck className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-extrabold text-slate-900">
-                        100%
-                      </div>
-                      <span className="text-[11px] font-bold uppercase text-slate-400">
-                        DOCUMENT AI KYC & PEP/FATF VERIFIED
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                      <Calculator className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-lg font-extrabold text-emerald-700">
-                        0% – 15% Effective
-                      </div>
-                      <span className="text-[11px] font-bold uppercase text-slate-400">
-                        INDIVIDUAL DIVIDEND TAX OPTIMIZATION
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Full Individual Shareholder Table */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-extrabold text-slate-900">
-                      List of Individual Shareholders ({selectedEntity.legalName})
-                    </h3>
-                    <button
-                      onClick={() => {
-                        setSubNav('corporate');
-                        setCorpViewTab('all_in_one');
-                      }}
-                      className="text-xs font-bold text-[#2563EB] hover:underline cursor-pointer"
-                    >
-                      ← Kembali ke Full Corporate & Shareholder Form
-                    </button>
-                  </div>
-
-                  <div className="overflow-x-auto rounded-xl border border-slate-200">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-blue-100/90 text-slate-800 font-bold border-b border-blue-200">
-                          <th className="py-3 px-4">Type</th>
-                          <th className="py-3 px-4">ID</th>
-                          <th className="py-3 px-4">Name Individual Shareholder & Role</th>
-                          <th className="py-3 px-4">Nationality & Personal Tax ID</th>
-                          <th className="py-3 px-4">Direct / Effective %</th>
-                          <th className="py-3 px-4">Dividend Tax Treatment</th>
-                          <th className="py-3 px-4 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {selectedEntity.individualShareholders.map((ind) => (
-                          <tr key={ind.id} className="hover:bg-slate-50">
-                            <td className="py-3 px-4 font-semibold text-emerald-700">
-                              {ind.type}
-                            </td>
-                            <td className="py-3 px-4 font-mono font-bold">
-                              {ind.id}
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="font-bold text-slate-900 block">
-                                {ind.fullName}
-                              </span>
-                              <span className="text-[11px] text-slate-500">
-                                {ind.roleTitle}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="font-semibold block">
-                                {ind.nationality}
-                              </span>
-                              <span className="font-mono text-[11px] text-slate-500">
-                                {ind.personalTaxId}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 font-mono font-bold">
-                              {ind.directSharePercent}% / {ind.effectiveSharePercent}%
-                            </td>
-                            <td className="py-3 px-4 max-w-xs text-[11px] text-slate-700">
-                              {ind.dividendTaxRegime}
-                            </td>
-                            <td className="py-3 px-4 text-right font-bold space-x-2">
-                              <button
-                                onClick={() => setShowIndividualModal(true)}
-                                className="text-[#2563EB] hover:underline cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleAskFloatingAi(
-                                    `Analisis pajak dividen orang pribadi dan persyaratan pelaporan SPT/UBO untuk ${ind.fullName} (${ind.personalTaxId}) pada ${selectedEntity.legalName}.`
-                                  )
-                                }
-                                className="px-2.5 py-1 rounded bg-blue-50 text-[#2563EB] border border-blue-200 text-[10px] cursor-pointer"
-                              >
-                                Analyze AI
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleDeleteIndividualShareholder(ind.id)
-                                }
-                                className="text-rose-600 hover:underline cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+              <IndividualShareholdersTab />
             )}
 
             {/* ---------------------------------------------------------------
-                SUB-NAV 2: STUDIES (FULL-WIDTH FORENSIC AUDIT & TRANSFER PRICING)
+                SUB-NAV 2: STUDIES (KNOWLEDGE & TREATY SIMULATOR)
                --------------------------------------------------------------- */}
             {subNav === 'studies' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-2xs flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#2563EB]">
-                      BIGQUERY ML + VERTEX AI FORENSIC STUDIES
-                    </span>
-                    <h1 className="text-2xl font-extrabold text-slate-900 mt-1">
-                      {selectedEntity.flag} {selectedEntity.legalName} — Tax Anomaly, Fraud & Transfer Pricing Studies
-                    </h1>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Deteksi otomatis {cfg.fraudSchemeName}, selisih pemotongan pajak, dan analisis Tax Treaty antar anak perusahaan. Gunakan AI Copilot di kanan bawah untuk konsultasi mendalam.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setIsChatOpen(true)}
-                    className="px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Buka AI Tax Chatbot di Kanan →</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200 p-6 space-y-4">
-                    <h3 className="text-base font-extrabold text-slate-900">
-                      Flagged Transactions & Forensic Z-Score Analysis ({cfg.authorityShort})
-                    </h3>
-                    {cfg.auditTransactions.map((trx) => {
-                      const isRemediated = remediatedTrxIds.includes(trx.id);
-                      return (
-                        <div
-                          key={trx.id}
-                          className={`p-4 rounded-xl border transition space-y-2 ${
-                            isRemediated
-                              ? 'border-l-4 border-l-emerald-500 bg-emerald-50/40 border-slate-200'
-                              : trx.riskLevel === 'CRITICAL'
-                              ? 'border-l-4 border-l-rose-500 bg-rose-50/30 border-slate-200 hover:border-slate-300'
-                              : 'border-l-4 border-l-amber-500 bg-amber-50/20 border-slate-200 hover:border-slate-300'
-                          }`}
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono tabular-nums text-xs font-bold text-slate-500">
-                                {trx.id}
-                              </span>
-                              <span className="text-sm font-bold text-slate-900">
-                                {trx.vendor}
-                              </span>
-                              <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                  isRemediated
-                                    ? 'bg-emerald-600 text-white'
-                                    : trx.riskLevel === 'CRITICAL'
-                                    ? 'bg-rose-600 text-white'
-                                    : trx.riskLevel === 'HIGH'
-                                    ? 'bg-amber-100 text-amber-800'
-                                    : 'bg-emerald-100 text-emerald-800'
-                                }`}
-                              >
-                                {isRemediated
-                                  ? 'REMEDIATED'
-                                  : `Risk ${trx.riskScore}/100 (${trx.riskLevel})`}
-                              </span>
-                            </div>
-                            <span className="font-mono tabular-nums text-sm font-extrabold text-slate-900">
-                              {formatCurrency(trx.amount, activeCountry)}
-                            </span>
-                          </div>
-                          <p className="text-xs font-semibold text-rose-600">
-                            {trx.anomalyTag} • BigQuery Z-Score:{' '}
-                            <span className="font-mono tabular-nums font-bold">
-                              {trx.bqZScore}σ
-                            </span>
-                          </p>
-                          <p className="text-xs text-slate-600 leading-relaxed">
-                            {trx.aiExplanation}
-                          </p>
-                          <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-                            <span className="text-emerald-700 font-medium">
-                              Rekomendasi: {trx.mitigationStep}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setChatInput(
-                                    `Jelaskan mitigasi hukum atas anomali transaksi ${trx.id} (${trx.vendor}) senilai ${formatCurrency(trx.amount, activeCountry)} pada ${selectedEntity.legalName}.`
-                                  );
-                                  setIsChatOpen(true);
-                                }}
-                                className="px-2.5 py-1 rounded bg-blue-50 text-[#2563EB] border border-blue-200 font-bold text-[11px] cursor-pointer hover:bg-blue-100 transition"
-                              >
-                                Tanya AI Copilot
-                              </button>
-                              {!isRemediated && trx.riskLevel !== 'LOW' && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleRemediateTransaction(trx.id, trx.vendor)
-                                  }
-                                  className="px-3 py-1 rounded bg-[#2563EB] text-white font-bold text-[11px] cursor-pointer hover:bg-blue-700 transition"
-                                >
-                                  Auto-Remediate
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200 p-6 space-y-4">
-                    <h3 className="text-base font-extrabold text-slate-900">
-                      Cross-Border Tax Treaty Relief ({selectedEntity.flag} {selectedEntity.jurisdictionName})
-                    </h3>
-                    <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 space-y-2 text-xs">
-                      <span className="font-bold text-[#2563EB] block">
-                        Koridor: {cfg.name} ⇄ {cfg.crossBorderTreatyNote.partnerCountry}
-                      </span>
-                      <p className="text-slate-700">
-                        <strong>Tarif Domestik:</strong>{' '}
-                        {cfg.crossBorderTreatyNote.standardWhtRate}
-                      </p>
-                      <p className="text-emerald-700 font-bold">
-                        <strong>Tarif Tax Treaty (DTA/P3B):</strong>{' '}
-                        {cfg.crossBorderTreatyNote.treatyWhtRate}
-                      </p>
-                      <p className="text-slate-600">
-                        <strong>Dokumen Wajib:</strong>{' '}
-                        {cfg.crossBorderTreatyNote.requiredForm}
-                      </p>
-                      <p className="text-slate-900 font-bold pt-1">
-                        Potensi Penghematan Pajak:{' '}
-                        {formatCurrency(
-                          cfg.crossBorderTreatyNote.annualTreatySaving,
-                          activeCountry
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <StudiesTab
+                onAskCopilot={(q) => {
+                  setChatInput(q);
+                  setIsChatOpen(true);
+                }}
+              />
             )}
 
             {/* ---------------------------------------------------------------
                 SUB-NAV 3: TAX CALENDAR
                --------------------------------------------------------------- */}
             {subNav === 'calendar' && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
-                <h2 className="text-xl font-extrabold text-slate-900">
-                  Multi-Subsidiary Statutory Tax Calendar (Oktober – Desember 2026)
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
-                    <span className="font-bold text-[#2563EB] block">
-                      🇮🇩 PT Nusantara Kreasi Digital Tbk (Induk — DJP Coretax)
-                    </span>
-                    <p className="font-semibold">15 Nov 2026: Setor PPh Unifikasi & PPh 21 TER</p>
-                    <p className="text-slate-600">20 Nov 2026: Lapor SPT Masa PPh Unifikasi & e-SKD PPh 26</p>
-                    <p className="text-slate-600">30 Nov 2026: Setor & Lapor SPT Masa PPN 1111</p>
-                  </div>
-                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
-                    <span className="font-bold text-[#2563EB] block">
-                      🇸🇬 Nusantara FinTech Pte. Ltd. (Anak Usaha SG — IRAS)
-                    </span>
-                    <p className="font-semibold">15 Nov 2026: Section 45 Non-Resident WHT Filing</p>
-                    <p className="text-slate-600">30 Nov 2026: Corporate Income Tax Form C-S / C</p>
-                  </div>
-                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
-                    <span className="font-bold text-[#2563EB] block">
-                      🇲🇾 Nusantara Digital Solutions Sdn. Bhd. (Anak Usaha MY — LHDN)
-                    </span>
-                    <p className="font-semibold">15 Nov 2026: CP204 Monthly Tax Instalment</p>
-                    <p className="text-slate-600">30 Nov 2026: RMCD SST-02 Return & MyInvois Sync</p>
-                  </div>
-                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
-                    <span className="font-bold text-[#2563EB] block">
-                      🇺🇸 Nusantara AI Technologies, Inc. (Anak Usaha US — IRS)
-                    </span>
-                    <p className="font-semibold">15 Nov 2026: EFTPS Payroll & Form 945 Backup WHT</p>
-                    <p className="text-slate-600">15 Dec 2026: Q4 Corporate Estimated Tax & Form 5472</p>
-                  </div>
-                </div>
-              </div>
+              <TaxCalendarTab
+                countryCode={activeCountry}
+                entityName={selectedEntity.legalName}
+                onTriggerToast={triggerToast}
+              />
             )}
 
             {/* ---------------------------------------------------------------
-                SUB-NAV 4: REPORTS
+                SUB-NAV 4: REPORTS & AUDIT TRAIL
                --------------------------------------------------------------- */}
             {subNav === 'reports' && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h2 className="text-xl font-extrabold text-slate-900 mb-1">
-                  Authority Risk Benchmarking — {selectedEntity.flag} {selectedEntity.legalName} ({cfg.authorityShort})
-                </h2>
-                <p className="text-xs text-slate-500 mb-4">
-                  Perbandingan rasio keuangan entitas terhadap benchmark otoritas pajak untuk mencegah {cfg.riskNoticeName}
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {cfg.industryBenchmarks.map((b) => (
-                    <div
-                      key={b.code}
-                      className="p-4 rounded-xl border border-slate-200 bg-slate-50"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-900">
-                          {b.metric}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            b.status === 'SAFE'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-rose-100 text-rose-800'
-                          }`}
-                        >
-                          {b.status}
-                        </span>
-                      </div>
-                      <p className="text-xs font-mono font-bold mt-2">
-                        Aktual: {b.companyValue}
-                        {b.unit} (Standar Industri: {b.industryIdealMin}
-                        {b.unit} – {b.industryIdealMax}
-                        {b.unit})
-                      </p>
-                      <p className="text-xs text-slate-600 mt-1">{b.insight}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ReportsTab
+                countryCode={activeCountry}
+                entityName={selectedEntity.legalName}
+                onTriggerToast={triggerToast}
+              />
             )}
           </>
         )}
@@ -4390,261 +4113,41 @@ export default function NexoraApp() {
             PRIMARY TAB 2: CALCULATION
            =================================================================== */}
         {primaryNav === 'calculation' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <span className="text-[11px] font-bold uppercase text-[#2563EB]">
-                    SUBSIDIARY & CORPORATE TAX OPTIMIZATION SIMULATOR
-                  </span>
-                  <h2 className="text-xl font-extrabold text-slate-900 mt-0.5">
-                    {selectedEntity.flag} {selectedEntity.legalName} — Simulasi Insentif Pajak Legal ({cfg.authorityShort})
-                  </h2>
-                </div>
-                <div className="flex items-center gap-3 text-xs">
-                  <SlidersHorizontal className="w-4 h-4 text-[#2563EB]" />
-                  <span className="font-semibold text-slate-700">
-                    Skala Proyeksi Laba Fiskal: {simulatedRevenueMultiplier}%
-                  </span>
-                  <input
-                    type="range"
-                    min={50}
-                    max={200}
-                    step={10}
-                    value={simulatedRevenueMultiplier}
-                    onChange={(e) =>
-                      setSimulatedRevenueMultiplier(Number(e.target.value))
-                    }
-                    className="w-32 accent-[#2563EB]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
-                  <span className="text-slate-500 font-semibold block">
-                    Skenario 1: Tarif Korporasi Standar (Tanpa Insentif)
-                  </span>
-                  <span className="text-lg font-mono font-extrabold text-slate-900 mt-1 block">
-                    {formatCurrency(
-                      Math.round(
-                        cfg.company.annualGrossRevenue *
-                          0.22 *
-                          cfg.corporateTaxNormalRate *
-                          (simulatedRevenueMultiplier / 100)
-                      ),
-                      activeCountry
-                    )}
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-xl border border-emerald-300 bg-emerald-50/60">
-                  <span className="text-emerald-800 font-bold block">
-                    Skenario 2 (Rekomendasi Nexora): Skema Insentif {cfg.authorityShort}
-                  </span>
-                  <span className="text-lg font-mono font-extrabold text-emerald-700 mt-1 block">
-                    {formatCurrency(
-                      Math.round(
-                        cfg.company.annualGrossRevenue *
-                          0.22 *
-                          (cfg.corporateTaxNormalRate * 0.58) *
-                          (simulatedRevenueMultiplier / 100)
-                      ),
-                      activeCountry
-                    )}
-                  </span>
-                  <span className="text-[11px] text-emerald-700 font-semibold mt-1 block">
-                    {cfg.smeSpecialRateLabel}
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/60">
-                  <span className="text-[#2563EB] font-bold block">
-                    Penghematan Tax Treaty Antar Anak Perusahaan
-                  </span>
-                  <span className="text-lg font-mono font-extrabold text-[#2563EB] mt-1 block">
-                    {formatCurrency(
-                      Math.round(
-                        cfg.crossBorderTreatyNote.annualTreatySaving *
-                          (simulatedRevenueMultiplier / 100)
-                      ),
-                      activeCountry
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-              <h1 className="text-xl font-extrabold text-slate-900 mb-4">
-                {selectedEntity.flag} {selectedEntity.legalName} — Kertas Kerja Rekonsiliasi Fiskal ({cfg.currencyCode})
-              </h1>
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-left border-collapse text-xs">
-                  <caption className="sr-only">Kertas Kerja Rekonsiliasi Fiskal Multi-Negara</caption>
-                  <thead>
-                    <tr className="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                      <th className="py-3 px-4">Kode & Akun</th>
-                      <th className="py-3 px-4 text-right">Komersial (Book)</th>
-                      <th className="py-3 px-4 text-right">Koreksi Positif (+)</th>
-                      <th className="py-3 px-4 text-right">Koreksi Negatif (-)</th>
-                      <th className="py-3 px-4 text-right">Fiskal ({cfg.authorityShort})</th>
-                      <th className="py-3 px-4">Dasar Hukum</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {cfg.fiscalReconciliation.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-3 px-4 font-semibold text-slate-800">
-                          <span className="font-mono tabular-nums text-slate-500 mr-1.5">[{item.accountCode}]</span>
-                          {item.accountName}
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-700">
-                          {formatCurrency(item.commercialAmount, activeCountry)}
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums text-emerald-600 font-bold">
-                          {item.positiveCorrection > 0
-                            ? formatCurrency(item.positiveCorrection, activeCountry)
-                            : '-'}
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums text-rose-600 font-bold">
-                          {item.negativeCorrection > 0
-                            ? `(${formatCurrency(item.negativeCorrection, activeCountry)})`
-                            : '-'}
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono tabular-nums font-extrabold text-slate-900">
-                          {formatCurrency(item.fiscalAmount, activeCountry)}
-                        </td>
-                        <td className="py-3 px-4 text-slate-600">
-                          <strong className="block text-slate-800">
-                            {item.legalBasis}
-                          </strong>
-                          <span>{item.correctionReason}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+          <CalculationTab
+            countryCode={activeCountry}
+            entityName={selectedEntity.legalName}
+            onNavigateToFinding={() => {
+              setPrimaryNav('companies');
+              setSubNav('studies');
+            }}
+            onProceedToReturn={() => setPrimaryNav('tax_return')}
+          />
         )}
 
         {/* ===================================================================
             PRIMARY TAB 3: TAX RETURN
            =================================================================== */}
         {primaryNav === 'tax_return' && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
-              <div>
-                <span className="text-[11px] font-bold uppercase text-[#2563EB]">
-                  E-FILING & DOCUMENT AI VALIDATION ({cfg.eInvoiceSystem})
-                </span>
-                <h1 className="text-2xl font-extrabold text-slate-900 mt-1">
-                  {selectedEntity.flag} {selectedEntity.legalName} — {cfg.filingFormName}
-                </h1>
-              </div>
-              <button
-                onClick={() =>
-                  triggerToast(
-                    `Draf ${cfg.filingFormName} untuk ${selectedEntity.legalName} berhasil diekspor!`
-                  )
-                }
-                className="px-4 py-2.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export Official Tax Return (.JSON / .XML)</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {cfg.sampleDocuments.map((doc) => (
-                <div
-                  key={doc.id}
-                  className={`p-5 rounded-xl border ${
-                    doc.status === 'RISIKO_FRAUD'
-                      ? 'bg-rose-50/60 border-rose-300'
-                      : 'bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-900">
-                      {doc.title}
-                    </span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                        doc.status === 'PATUH'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-rose-600 text-white'
-                      }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </div>
-                  <p className="text-xs font-mono text-slate-600 mt-1">
-                    {doc.vendorName} • {doc.docNumber} • DPP:{' '}
-                    {formatCurrency(doc.dpp, activeCountry)} • Pajak:{' '}
-                    {formatCurrency(doc.taxAmount, activeCountry)}
-                  </p>
-                  <p className="text-xs text-slate-700 mt-2 leading-relaxed">
-                    {doc.aiAuditSummary}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <TaxReturnTab
+            countryCode={activeCountry}
+            entityName={selectedEntity.legalName}
+            taxId={selectedEntity.taxId}
+            activeRole={activePersona.id === 'ceo_parent' ? 'CEO Grup' : activePersona.id === 'cfo_parent' ? 'Head of Tax' : 'Konsultan Pajak'}
+            onProceedToPayment={() => setPrimaryNav('payment')}
+            onTriggerToast={triggerToast}
+          />
         )}
 
         {/* ===================================================================
             PRIMARY TAB 4: PAYMENT
            =================================================================== */}
         {primaryNav === 'payment' && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
-            <div>
-              <span className="text-[11px] font-bold uppercase text-[#2563EB]">
-                MULTI-SUBSIDIARY TAX TREASURY & E-BILLING GATEWAY
-              </span>
-              <h1 className="text-2xl font-extrabold text-slate-900 mt-1">
-                {selectedEntity.flag} {selectedEntity.legalName} — Tax Payment & Settlement
-              </h1>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
-                <span className="text-slate-500 block">
-                  YTD Taxes Settled ({cfg.currencyCode})
-                </span>
-                <span className="text-xl font-mono font-extrabold text-slate-900 mt-1 block">
-                  {formatCurrency(cfg.company.ytdTaxPaid, activeCountry)}
-                </span>
-              </div>
-              <div className="p-4 rounded-xl border border-slate-200 bg-emerald-50/60">
-                <span className="text-emerald-700 font-semibold block">
-                  Fraudulent Overpayment Blocked by AI
-                </span>
-                <span className="text-xl font-mono font-extrabold text-emerald-700 mt-1 block">
-                  {formatCurrency(
-                    cfg.company.potentialFraudPrevented,
-                    activeCountry
-                  )}
-                </span>
-              </div>
-              <div className="p-4 rounded-xl border border-slate-200 bg-blue-50/60 flex flex-col justify-between">
-                <span className="text-[#2563EB] font-semibold block">
-                  Generate Official Tax Billing Code ({cfg.authorityShort})
-                </span>
-                <button
-                  onClick={() =>
-                    triggerToast(
-                      `Kode Pembayaran Pajak (${cfg.authorityShort}) untuk ${selectedEntity.legalName} berhasil diterbitkan!`
-                    )
-                  }
-                  className="mt-2 py-2 px-4 rounded-lg bg-[#2563EB] text-white font-bold cursor-pointer"
-                >
-                  Generate Billing ID ({cfg.authorityShort})
-                </button>
-              </div>
-            </div>
-          </div>
+          <PaymentTab
+            countryCode={activeCountry}
+            entityName={selectedEntity.legalName}
+            taxId={selectedEntity.taxId}
+            onTriggerToast={triggerToast}
+          />
         )}
       </main>
 
@@ -6495,6 +5998,18 @@ export default function NexoraApp() {
           </div>
         </div>
       )}
+
+      {/* Global Command Palette (Cmd+K) */}
+      <CommandPalette
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        onNavigate={(p, s, c) => {
+          if (p) setPrimaryNav(p);
+          if (s) setSubNav(s);
+          if (c) setCorpViewTab(c);
+        }}
+        onSelectEntity={(id) => setSelectedEntityId(id)}
+      />
     </div>
   );
 }
