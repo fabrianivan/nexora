@@ -5,17 +5,21 @@ import { workspaceRepository } from '@/lib/mysql';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  if (!process.env.MYSQL_URL?.trim()) return Response.json({ error: 'Database belum dikonfigurasi. Tambahkan MYSQL_URL.' }, { status: 503 });
   try {
     const workspace = await workspaceRepository.load();
-    return Response.json({ workspace });
-  } catch {
-    return Response.json({ error: 'MySQL tidak dapat diakses. Periksa konfigurasi dan koneksi database.' }, { status: 503 });
+    return Response.json({ 
+      workspace,
+      storageType: workspaceRepository.isLive() ? 'mysql' : 'memory_fallback' 
+    });
+  } catch (err: unknown) {
+    return Response.json({ 
+      error: 'Workspace tidak dapat dimuat.', 
+      details: err instanceof Error ? err.message : String(err) 
+    }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
-  if (!process.env.MYSQL_URL?.trim()) return Response.json({ error: 'Database belum dikonfigurasi. Tambahkan MYSQL_URL.' }, { status: 503 });
   const reader = request.body?.getReader();
   if (!reader) return Response.json({ error: 'Request body kosong.' }, { status: 400 });
   const chunks: Uint8Array[] = [];
@@ -36,13 +40,21 @@ export async function PUT(request: NextRequest) {
     let offset = 0;
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
     body = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
-  } catch { return Response.json({ error: 'Request body harus berupa JSON yang valid.' }, { status: 400 }); }
+  } catch { 
+    return Response.json({ error: 'Request body harus berupa JSON yang valid.' }, { status: 400 }); 
+  }
   const parsed = workspaceSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: 'Data workspace tidak valid.' }, { status: 400 });
+  if (!parsed.success) return Response.json({ error: 'Data workspace tidak valid.', issues: parsed.error.issues }, { status: 400 });
   try {
     await workspaceRepository.save(parsed.data);
-    return Response.json({ saved: true });
-  } catch {
-    return Response.json({ error: 'Penyimpanan ke MySQL gagal. Perubahan belum tersimpan.' }, { status: 503 });
+    return Response.json({ 
+      saved: true, 
+      storageType: workspaceRepository.isLive() ? 'mysql' : 'memory_fallback' 
+    });
+  } catch (err: unknown) {
+    return Response.json({ 
+      error: 'Penyimpanan workspace gagal.', 
+      details: err instanceof Error ? err.message : String(err) 
+    }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import { emptyWorkspace, workspaceSchema, type Workspace } from './domain';
 declare global {
   var nexoraMysqlPool: Pool | undefined;
   var nexoraWorkspaceTableReady: Promise<void> | undefined;
+  var nexoraMemoryWorkspace: Workspace | undefined;
 }
 
 export function getMysqlPool(): Pool {
@@ -31,9 +32,28 @@ export async function ensureWorkspaceTable(): Promise<void> {
 export interface WorkspaceRepository {
   load(): Promise<Workspace>;
   save(workspace: Workspace): Promise<void>;
+  isLive(): boolean;
+}
+
+export class MemoryWorkspaceRepository implements WorkspaceRepository {
+  isLive(): boolean {
+    return false; // in-memory fallback
+  }
+
+  async load(): Promise<Workspace> {
+    return globalThis.nexoraMemoryWorkspace ?? emptyWorkspace;
+  }
+
+  async save(workspace: Workspace): Promise<void> {
+    globalThis.nexoraMemoryWorkspace = workspaceSchema.parse(workspace);
+  }
 }
 
 export class MysqlWorkspaceRepository implements WorkspaceRepository {
+  isLive(): boolean {
+    return true;
+  }
+
   async load(): Promise<Workspace> {
     await ensureWorkspaceTable();
     const [rows] = await getMysqlPool().query('SELECT payload FROM nexora_workspaces WHERE workspace_key = ?', ['default']);
@@ -54,4 +74,6 @@ export class MysqlWorkspaceRepository implements WorkspaceRepository {
   }
 }
 
-export const workspaceRepository: WorkspaceRepository = new MysqlWorkspaceRepository();
+export const workspaceRepository: WorkspaceRepository = process.env.MYSQL_URL?.trim()
+  ? new MysqlWorkspaceRepository()
+  : new MemoryWorkspaceRepository();
