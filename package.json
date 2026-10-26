@@ -4,7 +4,7 @@
   "private": true,
   "description": "Nexora — Global Corporate Tax Compliance, Document Intelligence & Financial Fraud Prevention Platform on Google Cloud Vertex AI",
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p ${PORT:-8080}",
     "lint": "eslint .",
