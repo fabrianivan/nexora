@@ -149,7 +149,7 @@ const USER_PERSONAS: UserPersona[] = [
     canViewAll: false,
     accessibleEntityIds: ['ENT-MY-003'],
     governanceLevel: 'Level 2 (Single Entity — Malaysia LHDN Only)',
-    description: 'Karyawan Anak Usaha Malaysia — Akses dibatasi pada entitas lokal Malaysia. Data grup dan entitas lain terkunci sesuai protokol segregasi ISO 27001.',
+    description: 'Karyawan Anak Usaha Malaysia — Akses dibatasi pada entitas lokal Malaysia.',
     complianceStatus: 'ISO 27001 Segregated Scope • Malaysia LHDN Constituent',
   },
   {
@@ -166,7 +166,7 @@ const USER_PERSONAS: UserPersona[] = [
     canViewAll: false,
     accessibleEntityIds: ['ENT-US-004'],
     governanceLevel: 'Level 2 (Single Entity — US IRS Only)',
-    description: 'Karyawan Anak Usaha Amerika Serikat — Akses dibatasi pada entitas lokal AS dan pelaporan pajak federal IRS.',
+    description: 'Karyawan Anak Usaha Amerika Serikat — Akses dibatasi pada entitas lokal AS.',
     complianceStatus: 'ISO 27001 Segregated Scope • US IRS Constituent',
   },
 ];
@@ -1406,6 +1406,7 @@ export default function NexoraApp() {
   const [activePersonaId, setActivePersonaId] = useState<string>('ceo_parent');
   const [showAccountDropdown, setShowAccountDropdown] = useState<boolean>(false);
   const [showRbacModal, setShowRbacModal] = useState<boolean>(false);
+  const [showEntityQuickSelect, setShowEntityQuickSelect] = useState<boolean>(false);
   const [rbacModalTab, setRbacModalTab] = useState<'personas' | 'matrix' | 'standards'>('personas');
   const [showConsolidationModal, setShowConsolidationModal] = useState<boolean>(false);
   const [restrictedNoticeEntity, setRestrictedNoticeEntity] = useState<CorporateEntity | null>(null);
@@ -1931,15 +1932,12 @@ export default function NexoraApp() {
 
             <button
               onClick={() => {
-                setShowAccountDropdown((prev) => !prev);
+                setShowRbacModal(true);
+                setShowAccountDropdown(false);
                 setShowNotificationCenter(false);
               }}
-              className={`flex items-center gap-2.5 p-1.5 px-2.5 hover:bg-slate-50 border rounded-xl transition cursor-pointer text-left shadow-2xs hover:shadow-xs ${
-                showAccountDropdown
-                  ? 'bg-rose-50/70 border-rose-400 ring-2 ring-rose-500/20'
-                  : 'border-slate-200/90 hover:border-slate-300'
-              }`}
-              title="Klik untuk membuka Menu Akun & Hak Akses (RBAC Governance)"
+              className="flex items-center gap-2.5 p-1.5 px-3 hover:bg-slate-50 border border-slate-200/90 hover:border-slate-300 rounded-xl transition cursor-pointer text-left shadow-2xs hover:shadow-xs"
+              title="Hak Akses & Peran Karyawan Korporasi (RBAC Governance)"
             >
               <div className="relative">
                 <div
@@ -1952,7 +1950,7 @@ export default function NexoraApp() {
               <div className="hidden sm:block text-left">
                 <div className="flex items-center gap-1.5">
                   <span className="block text-xs font-bold text-slate-800 leading-tight">
-                    {activePersona.name.split(',')[0]}
+                    {activePersona.name}
                   </span>
                   <span className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold ${
                     isGroupCeoOrParentExecutive
@@ -1962,15 +1960,11 @@ export default function NexoraApp() {
                     {activePersona.badge}
                   </span>
                 </div>
-                <span className="block text-[10px] text-slate-500 truncate max-w-[220px]">
+                <span className="block text-[10px] text-slate-500 truncate max-w-[240px]">
                   {activePersona.title}
                 </span>
               </div>
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                  showAccountDropdown ? 'rotate-180 text-rose-600' : ''
-                }`}
-              />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </button>
 
             {/* Premium Enterprise Account Dropdown Popover */}
@@ -2149,11 +2143,84 @@ export default function NexoraApp() {
 
             <div className="hidden md:flex items-center gap-3">
               <DataPersistenceControl onResetSampleData={handleResetSampleData} />
-              <div className="flex items-center gap-2 text-xs text-slate-700 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>
-                  Entitas Aktif: <strong className="text-slate-900">{selectedEntity.flag} {selectedEntity.legalName}</strong>
-                </span>
+              
+              {/* Interactive Multi-Country Active Entity Switcher */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowEntityQuickSelect((prev) => !prev)}
+                  className="flex items-center gap-2 text-xs text-slate-700 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 shadow-2xs transition cursor-pointer"
+                  title="Pilih Entitas Aktif (Holding & Anak Perusahaan)"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>
+                    Entitas Aktif: <strong className="text-slate-900">{selectedEntity.flag} {selectedEntity.legalName}</strong>
+                  </span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${showEntityQuickSelect ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showEntityQuickSelect && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowEntityQuickSelect(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2.5 z-50 text-slate-900 space-y-1">
+                      <div className="px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 flex items-center justify-between">
+                        <span>Pilih Entitas Aktif</span>
+                        <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded ${
+                          isGroupCeoOrParentExecutive ? 'bg-blue-50 text-[#2563EB]' : 'bg-amber-50 text-amber-800'
+                        }`}>
+                          {isGroupCeoOrParentExecutive ? '👑 Holding Scope' : '🔒 Segregated Scope'}
+                        </span>
+                      </div>
+                      {companies.map((comp) => {
+                        const isSelected = comp.id === selectedEntity.id;
+                        const isAllowed = isGroupCeoOrParentExecutive || activePersona.accessibleEntityIds.includes(comp.id);
+                        return (
+                          <button
+                            key={comp.id}
+                            type="button"
+                            onClick={() => {
+                              if (!isAllowed) {
+                                setShowEntityQuickSelect(false);
+                                setRestrictedNoticeEntity(comp);
+                                return;
+                              }
+                              setSelectedEntityId(comp.id);
+                              setShowEntityQuickSelect(false);
+                              triggerToast(`Beralih ke entitas: ${comp.flag} ${comp.legalName}`);
+                            }}
+                            className={`w-full text-left p-2 rounded-xl transition flex items-center justify-between gap-2.5 cursor-pointer ${
+                              isSelected
+                                ? 'bg-blue-50 text-[#2563EB] font-bold border border-blue-200 shadow-2xs'
+                                : isAllowed
+                                ? 'hover:bg-slate-50 text-slate-700'
+                                : 'opacity-55 hover:opacity-85 text-slate-400 bg-slate-50/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="text-lg shrink-0">{comp.flag}</span>
+                              <div className="min-w-0">
+                                <span className="block text-xs truncate font-bold text-slate-800">
+                                  {comp.legalName}
+                                </span>
+                                <span className="block text-[10px] text-slate-400 truncate">
+                                  {comp.jurisdictionName} • {comp.taxAuthority.split('(')[0].trim()}
+                                </span>
+                              </div>
+                            </div>
+                            {isSelected ? (
+                              <Check className="w-4 h-4 text-[#2563EB] shrink-0" />
+                            ) : !isAllowed ? (
+                              <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -5349,72 +5416,74 @@ export default function NexoraApp() {
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
                       <Crown className="w-4 h-4 text-amber-500" />
-                      Tier 1: Perusahaan Induk (Holding) — Akses Universal (Global Scope)
+                      Perusahaan Induk (Holding) — Akses Universal (Global Scope)
                     </h4>
-                    <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      Visibilitas 100% Seluruh Entitas
+                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      Level 5 • Visibilitas 100% Seluruh Entitas
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {USER_PERSONAS.filter((p) => p.entityRole === 'PARENT').map((persona) => {
                       const isActive = persona.id === activePersonaId;
                       return (
                         <div
                           key={persona.id}
-                          onClick={() => {
-                            setActivePersonaId(persona.id);
-                            setShowRbacModal(false);
-                            triggerToast(`Beralih ke Peran: ${persona.name} (${persona.title})`);
-                          }}
-                          className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col justify-between gap-3 ${
+                          className={`p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 ${
                             isActive
-                              ? 'bg-blue-50/70 border-blue-500 ring-2 ring-blue-500/25 shadow-sm'
-                              : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50/80 shadow-2xs'
+                              ? 'bg-blue-50/70 border-blue-600 ring-2 ring-blue-500/25 shadow-sm'
+                              : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs'
                           }`}
                         >
-                          <div className="flex items-start gap-3">
-                            <div className={`w-11 h-11 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs mt-0.5`}>
+                          <div className="flex items-start gap-3.5">
+                            <div className={`w-12 h-12 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs mt-0.5`}>
                               {persona.avatarInitials}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <h5 className="text-xs font-black text-slate-900 truncate">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <h5 className="text-sm font-black text-slate-900">
                                   {persona.name}
                                 </h5>
-                                <span className="text-[9px] px-1.5 py-0.2 rounded font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <span className="text-[10px] px-2 py-0.5 rounded font-extrabold bg-blue-100 text-[#2563EB] border border-blue-200">
                                   {persona.badge}
                                 </span>
                               </div>
-                              <p className="text-[11px] font-semibold text-slate-700 truncate mt-0.5">
-                                {persona.title}
+                              <p className="text-xs font-semibold text-slate-700 leading-tight">
+                                {persona.title} • {persona.organization}
                               </p>
-                              <p className="text-[10px] text-slate-500 truncate">
-                                {persona.organization} • {persona.email}
-                              </p>
-                              <p className="text-[11px] text-slate-600 mt-2 leading-relaxed">
+                              <p className="text-xs text-slate-600 mt-2.5 leading-relaxed">
                                 {persona.description}
                               </p>
                             </div>
                           </div>
 
-                          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-slate-500">Entitas:</span>
-                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">🇮🇩 ID</span>
-                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">🇸🇬 SG</span>
-                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">🇲🇾 MY</span>
-                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">🇺🇸 US</span>
+                          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            <div>
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Izin Akses:
+                              </span>
+                              <span className="inline-block text-xs font-black px-2 py-0.5 rounded mt-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                {persona.governanceLevel}
+                              </span>
                             </div>
+
                             {isActive ? (
-                              <span className="flex items-center gap-1 text-[11px] font-black text-[#2563EB]">
-                                <CheckCircle2 className="w-4 h-4 text-[#2563EB]" />
+                              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-xs self-start sm:self-center">
+                                <CheckCircle2 className="w-4 h-4" />
                                 Aktif
                               </span>
                             ) : (
-                              <span className="text-[11px] font-bold text-slate-400 group-hover:text-slate-700">
-                                Pilih Peran →
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActivePersonaId(persona.id);
+                                  setShowRbacModal(false);
+                                  triggerToast(`Beralih ke Peran: ${persona.name} (${persona.title})`);
+                                }}
+                                className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer shadow-xs hover:shadow self-start sm:self-center"
+                              >
+                                Pilih
+                              </button>
                             )}
                           </div>
                         </div>
@@ -5424,87 +5493,100 @@ export default function NexoraApp() {
                 </div>
 
                 {/* TIER 2: ANAK PERUSAHAAN (SUBSIDIARIES) - SEGREGATED SINGLE ENTITY */}
-                <div className="space-y-3">
+                <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-purple-600" />
-                      Tier 2: Anak Perusahaan (Subsidiaries) — Akses Terisolasi (Single-Entity Scope)
+                      Anak Perusahaan (Subsidiaries) — Akses Terisolasi (Single-Entity Scope)
                     </h4>
-                    <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                      Segregasi Tugas ISO 27001
+                    <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                      Level 2 • Segregasi Tugas ISO 27001
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {USER_PERSONAS.filter((p) => p.entityRole === 'SUBSIDIARY').map((persona) => {
                       const isActive = persona.id === activePersonaId;
                       return (
                         <div
                           key={persona.id}
-                          onClick={() => {
-                            setActivePersonaId(persona.id);
-                            if (!persona.accessibleEntityIds.includes(selectedEntityId)) {
-                              setSelectedEntityId(persona.accessibleEntityIds[0]);
-                            }
-                            setShowRbacModal(false);
-                            triggerToast(`Beralih ke Peran: ${persona.name} (${persona.title})`);
-                          }}
-                          className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col justify-between gap-3 ${
+                          className={`p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 ${
                             isActive
-                              ? 'bg-blue-50/70 border-blue-500 ring-2 ring-blue-500/25 shadow-sm'
-                              : 'bg-white border-slate-200 hover:border-amber-300 hover:bg-slate-50/80 shadow-2xs'
+                              ? 'bg-blue-50/70 border-blue-600 ring-2 ring-blue-500/25 shadow-sm'
+                              : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60 shadow-2xs'
                           }`}
                         >
-                          <div className="flex items-start gap-3">
-                            <div className={`w-10 h-10 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs mt-0.5`}>
+                          <div className="flex items-start gap-3.5">
+                            <div className={`w-11 h-11 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs mt-0.5`}>
                               {persona.avatarInitials}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <h5 className="text-xs font-black text-slate-900 truncate">
-                                  {persona.name.split(',')[0]}
+                              <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                                <h5 className="text-xs font-black text-slate-900">
+                                  {persona.name}
                                 </h5>
                                 <span className="text-[9px] px-1.5 py-0.2 rounded font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
-                                  {persona.badge.split(' ')[0]} {persona.badge.split(' ')[1]}
+                                  {persona.badge}
                                 </span>
                               </div>
-                              <p className="text-[11px] font-semibold text-slate-700 truncate mt-0.5">
-                                {persona.title}
+                              <p className="text-[11px] font-semibold text-slate-700 leading-tight">
+                                {persona.title} • {persona.organization}
                               </p>
-                              <p className="text-[10px] text-slate-500 truncate">
-                                {persona.organization}
-                              </p>
-                              <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">
+                              <p className="text-xs text-slate-600 mt-2.5 leading-relaxed">
                                 {persona.description}
                               </p>
                             </div>
                           </div>
 
-                          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                            <div className="flex items-center gap-1">
-                              <span className="font-bold text-slate-500">Izin:</span>
-                              <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                {persona.jurisdiction.split(' ')[0]}
+                          <div className="pt-3 border-t border-slate-100 flex flex-col justify-between gap-2.5">
+                            <div>
+                              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Izin Akses:
                               </span>
-                              <span className="px-1.5 py-0.2 rounded font-bold bg-slate-100 text-slate-400">
-                                🔒 3 Lainnya
+                              <span className="inline-block text-[11px] font-black px-2 py-0.5 rounded mt-0.5 bg-amber-50 text-amber-900 border border-amber-200 leading-snug">
+                                {persona.governanceLevel}
                               </span>
                             </div>
-                            {isActive ? (
-                              <span className="flex items-center gap-1 text-[11px] font-black text-[#2563EB]">
-                                <CheckCircle2 className="w-4 h-4 text-[#2563EB]" />
-                                Aktif
-                              </span>
-                            ) : (
-                              <span className="text-[11px] font-bold text-slate-400">
-                                Pilih →
-                              </span>
-                            )}
+
+                            <div className="pt-1 flex items-center justify-between">
+                              {isActive ? (
+                                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-xs">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Aktif
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActivePersonaId(persona.id);
+                                    if (!persona.accessibleEntityIds.includes(selectedEntityId)) {
+                                      setSelectedEntityId(persona.accessibleEntityIds[0]);
+                                    }
+                                    setShowRbacModal(false);
+                                    triggerToast(`Beralih ke Peran: ${persona.name} (${persona.title})`);
+                                  }}
+                                  className="w-full py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer shadow-xs hover:shadow text-center"
+                                >
+                                  Pilih
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
+                </div>
+
+                {/* Standar Tata Kelola Perusahaan Internasional Footer Banner */}
+                <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1.5 mt-2">
+                  <div className="flex items-center gap-2 font-black text-slate-900 text-xs">
+                    <ShieldCheck className="w-4 h-4 text-[#2563EB]" />
+                    <span>Standar Tata Kelola Perusahaan Internasional:</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Berdasarkan standar OECD Action 13 (Country-by-Country Reporting) dan ISO/IEC 27001 Access Control, data keuangan dan dokumen anak usaha terpisah secara yurisdiksi. Hanya pemegang wewenang eksekutif induk (CEO/CFO) yang diotorisasi mengonsolidasi seluruh anak usaha.
+                  </p>
                 </div>
               </div>
             )}
