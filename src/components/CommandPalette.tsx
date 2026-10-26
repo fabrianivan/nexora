@@ -10,7 +10,6 @@ import {
   BookOpen, 
   Calendar, 
   BarChart3, 
-  ShieldAlert, 
   X,
   ArrowRight
 } from 'lucide-react';
@@ -18,7 +17,7 @@ import {
 export interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (primaryNav: any, subNav?: any, corpTab?: any) => void;
+  onNavigate: (primaryNav: string, subNav?: string, corpTab?: string) => void;
   onSelectEntity?: (entityId: string) => void;
 }
 

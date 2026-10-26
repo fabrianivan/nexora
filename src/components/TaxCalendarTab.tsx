@@ -2,17 +2,8 @@
 
 import React, { useState } from 'react';
 import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
   Plus, 
-  Download, 
-  Filter, 
-  User, 
-  ChevronLeft, 
-  ChevronRight,
-  ArrowRight
+  Download
 } from 'lucide-react';
 import { CountryCode } from '@/data/multiCountryTaxData';
 
@@ -145,7 +136,7 @@ export function TaxCalendarTab({ countryCode, entityName, onTriggerToast }: TaxC
 
   // Real .ics Calendar File Exporter
   const handleExportICS = () => {
-    let icsContent = [
+    const icsContent = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'PRODID:-//Nexora Tax Compliance//Statutory Calendar//ID',

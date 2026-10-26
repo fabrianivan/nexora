@@ -5,15 +5,7 @@ import {
   CreditCard, 
   Copy, 
   Check, 
-  Clock, 
-  AlertCircle, 
-  CheckCircle2, 
-  FileText, 
-  Plus, 
-  ShieldCheck, 
-  Calendar,
-  ExternalLink,
-  DollarSign
+  Calendar
 } from 'lucide-react';
 import { CountryCode, formatCurrency } from '@/data/multiCountryTaxData';
 

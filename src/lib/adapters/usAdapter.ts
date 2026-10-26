@@ -1,8 +1,9 @@
-import { CountryAdapter, TaxIdValidationResult } from './types';
+import { CountryAdapter, TaxIdValidationResult, CorporateTaxCalculationParams, CorporateTaxCalculationResult, DeadlineItem, ReturnDraftParams } from './types';
 import usRules from '@/config/taxRules.us.json';
 
 export const usAdapter: CountryAdapter = {
   code: 'US',
+  countryCode: 'US',
   name: 'United States',
   authority: usRules.taxAuthority,
   currency: usRules.currency,
@@ -10,59 +11,106 @@ export const usAdapter: CountryAdapter = {
   taxIdLabel: 'EIN (Employer Identification Number)',
   taxIdFormat: /^\d{2}-?\d{7}$/,
   status: 'preview',
+  isSupported: true,
 
   validateTaxId(taxId: string): TaxIdValidationResult {
-    const cleaned = taxId.trim().replace(/\s+/g, '');
+    const cleaned = taxId.trim();
     if (!cleaned) return { valid: false, formatted: taxId, reason: 'EIN cannot be blank' };
     const isValid = this.taxIdFormat.test(cleaned);
-    const formatted = cleaned.length === 9 && !cleaned.includes('-')
-      ? `${cleaned.slice(0, 2)}-${cleaned.slice(2)}`
-      : cleaned;
+    const digitsOnly = cleaned.replace(/\D/g, '');
+    const formatted = digitsOnly.length === 9 ? `${digitsOnly.slice(0, 2)}-${digitsOnly.slice(2)}` : cleaned;
     return {
-      valid: isValid,
+      valid: isValid && digitsOnly.length === 9,
       formatted,
       reason: isValid ? undefined : 'Invalid US EIN format (must be 9 digits, e.g. 12-3456789)',
     };
   },
 
+  calculateCorporateTax(params: CorporateTaxCalculationParams): CorporateTaxCalculationResult {
+    const { taxableIncome } = params;
+    const rate = 0.21;
+    const taxDue = Math.round(taxableIncome * rate);
+    const effectiveRate = taxableIncome > 0 ? rate : 0;
+
+    return {
+      taxableIncome,
+      taxDue,
+      effectiveRate,
+      breakdown: {
+        'Federal Taxable Income': taxableIncome,
+        'Federal Corporate Tax @ 21%': taxDue,
+      },
+      explanation: 'US Federal Corporate Income Tax: Flat 21% under Internal Revenue Code Section 11.',
+    };
+  },
+
+  getDeadlines(year = 2026): DeadlineItem[] {
+    return [
+      {
+        id: 'us-form-1120',
+        key: 'us-form-1120',
+        label: 'U.S. Corporation Income Tax Return (Form 1120)',
+        dueDate: `${year}-04-15`,
+        obligationType: 'Federal CIT',
+        status: 'pending',
+        daysLeft: 76,
+        finePenalty: 'IRC Section 6651 late filing penalty (5% per month up to 25%)',
+      },
+    ];
+  },
+
+  generateReturnDraft(params: ReturnDraftParams) {
+    return {
+      id: `draft_us_${params.entity.id}_${params.fiscalYear}`,
+      formType: 'Form 1120',
+      status: 'draft',
+      fiscalYear: params.fiscalYear,
+      entity: params.entity,
+      induk: {
+        netIncome: params.taxableIncome,
+        taxPayable: params.taxDue,
+        tariffs: '21% (IRC Section 11 Flat Rate)',
+      },
+      adjustments: params.adjustments || [],
+      makerChecker: {
+        draftedBy: params.creator,
+        approvedBy: null,
+        status: 'Draft',
+      },
+    };
+  },
+
   documentTypes: [
     { type: 'deed', label: 'Certificate of Incorporation & Bylaws', required: true, acceptedMimeTypes: ['application/pdf'] },
-    { type: 'financial_statement', label: 'Audited US GAAP Financial Statements', required: true, acceptedMimeTypes: ['application/pdf'] },
-    { type: 'previous_tax_return', label: 'Prior Year Form 1120 / Schedule M-3', required: true, acceptedMimeTypes: ['application/pdf'] },
+    { type: 'financial_statement', label: 'US GAAP Audited Financial Statements', required: true, acceptedMimeTypes: ['application/pdf'] },
+    { type: 'e_invoice', label: 'Commercial Invoice / W-9 Forms', required: false, acceptedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png'] },
   ],
 
   riskRules: [
     {
-      id: 'US_TP_SECTION_482_01',
-      name: 'IRC Section 482 Intercompany Transfer Pricing Exposure',
-      category: 'transfer_pricing',
+      id: 'US_BEAT_SECTION_59A',
+      name: 'Base Erosion and Anti-Abuse Tax (BEAT) Risk',
+      category: 'beps',
       severity: 'high',
-      description: 'Cross-border intercompany services or intangible transfers outside arm’s-length range.',
-      regulationBasis: 'Internal Revenue Code Section 482 & Treas. Reg. § 1.482',
+      description: 'Deductible payments to foreign related parties exceed 3% base erosion percentage.',
+      regulationBasis: 'IRC Section 59A Base Erosion Minimum Tax Amount',
     },
     {
-      id: 'US_BEAT_SECTION_59A_02',
-      name: 'Base Erosion and Anti-Abuse Tax (BEAT) Trigger Risk',
-      category: 'beps',
-      severity: 'medium',
-      description: 'Deductible payments to foreign affiliates exceeding 3% base erosion percentage.',
-      regulationBasis: 'IRC Section 59A',
+      id: 'US_ECONOMIC_SUBSTANCE',
+      name: 'Economic Substance Doctrine Violation',
+      category: 'compliance',
+      severity: 'critical',
+      description: 'Transaction lacks meaningful economic substance apart from federal tax benefits.',
+      regulationBasis: 'IRC Section 7701(o)',
     },
   ],
 
   fiscalAdjustmentRules: [
     {
-      id: 'US_ADJ_MEALS_ENTERTAINMENT',
-      description: 'Section 274 Disallowance of Entertainment and 50% Meals Limit',
+      id: 'US_ADJ_SECTION_162_MEALS',
+      description: '50% Disallowance of Business Meals and 100% Entertainment Disallowance',
       type: 'positive',
-      regulationBasis: 'Internal Revenue Code Section 274(a)',
-      verified: true,
-    },
-    {
-      id: 'US_ADJ_MACRS_DEPRECIATION',
-      description: 'Tax MACRS Bonus Depreciation vs Book Straight-Line Difference',
-      type: 'negative',
-      regulationBasis: 'IRC Section 168(k)',
+      regulationBasis: 'IRC Section 274(a) & 274(n)',
       verified: true,
     },
   ],
@@ -70,9 +118,9 @@ export const usAdapter: CountryAdapter = {
   deadlineRules: [
     {
       key: 'US_FORM_1120',
-      label: 'US Corporation Income Tax Return (Form 1120)',
-      obligationType: 'Federal CIT Return',
-      deadlineRule: '15th day of the 4th month following the close of the tax year (April 15)',
+      label: 'U.S. Corporation Income Tax Return (Form 1120)',
+      obligationType: 'Federal Corporate Income Tax',
+      deadlineRule: '15th day of 4th month following close of tax year (April 15)',
       regulation: 'IRC Section 6072(b)',
       defaultDueDay: 15,
     },
@@ -80,11 +128,11 @@ export const usAdapter: CountryAdapter = {
 
   paymentCodeGenerators: [
     {
-      taxType: 'Federal Corporate Tax Deposit (Form 1120)',
+      taxType: 'Federal Tax Deposit (EFTPS Form 1120)',
       generateCode(entityTaxId, period) {
-        return `EFTPS-${entityTaxId.replace('-', '')}-${period.slice(0, 4)}`;
+        return `EFTPS-${entityTaxId.replace(/\D/g, '')}-${period.slice(0, 4)}`;
       },
-      formatInstructions: 'Deposit electronically via EFTPS (Electronic Federal Tax Payment System).',
+      formatInstructions: 'Pay via Electronic Federal Tax Payment System (EFTPS).',
     },
   ],
 

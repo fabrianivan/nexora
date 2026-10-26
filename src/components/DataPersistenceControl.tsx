@@ -2,11 +2,9 @@
 
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
   RotateCcw, 
   Check, 
   HelpCircle, 
-  ShieldCheck, 
   Cpu 
 } from 'lucide-react';
 

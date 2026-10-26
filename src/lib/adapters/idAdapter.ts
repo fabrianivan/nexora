@@ -1,8 +1,9 @@
-import { CountryAdapter, TaxIdValidationResult } from './types';
+import { CountryAdapter, TaxIdValidationResult, CorporateTaxCalculationParams, CorporateTaxCalculationResult, DeadlineItem, ReturnDraftParams } from './types';
 import idRules from '@/config/taxRules.id.json';
 
 export const idAdapter: CountryAdapter = {
   code: 'ID',
+  countryCode: 'ID',
   name: 'Indonesia',
   authority: idRules.taxAuthority,
   currency: idRules.currency,
@@ -10,6 +11,7 @@ export const idAdapter: CountryAdapter = {
   taxIdLabel: 'NPWP (Nomor Pokok Wajib Pajak)',
   taxIdFormat: /^\d{15,16}$/,
   status: 'full',
+  isSupported: true,
 
   validateTaxId(taxId: string): TaxIdValidationResult {
     const cleaned = taxId.replace(/[ .\-]/g, '');
@@ -32,6 +34,117 @@ export const idAdapter: CountryAdapter = {
       : cleaned;
 
     return { valid: true, formatted };
+  },
+
+  calculateCorporateTax(params: CorporateTaxCalculationParams): CorporateTaxCalculationResult {
+    const { taxableIncome } = params;
+    const grossRevenue = params.grossRevenue ?? 10_000_000_000;
+    const standardRate = 0.22;
+    const thresholdSmall = 4_800_000_000;
+    const thresholdMedium = 50_000_000_000;
+
+    let taxDue = 0;
+    let explanation = '';
+    const breakdown: Record<string, number> = {};
+
+    if (grossRevenue <= thresholdSmall) {
+      // 50% discount on standard rate = 11%
+      taxDue = Math.round(taxableIncome * (standardRate * 0.5));
+      breakdown['Fasilitas Pasal 31E Penuh (11%)'] = taxDue;
+      explanation = `Peredaran bruto ≤ Rp 4,8 Miliar: Mendapat fasilitas Pasal 31E UU PPh berupa pengurangan tarif 50% dari 22% (tarif efektif 11%) atas seluruh Penghasilan Kena Pajak.`;
+    } else if (grossRevenue > thresholdMedium) {
+      taxDue = Math.round(taxableIncome * standardRate);
+      breakdown['Tarif Standar PPh Badan (22%)'] = taxDue;
+      explanation = `Peredaran bruto > Rp 50 Miliar: Dikenakan tarif umum PPh Badan 22% tanpa fasilitas Pasal 31E.`;
+    } else {
+      // Revenue between 4.8B and 50B
+      const facilityPortion = Math.round((thresholdSmall / grossRevenue) * taxableIncome);
+      const nonFacilityPortion = taxableIncome - facilityPortion;
+      const facilityTax = Math.round(facilityPortion * (standardRate * 0.5));
+      const nonFacilityTax = Math.round(nonFacilityPortion * standardRate);
+      taxDue = facilityTax + nonFacilityTax;
+      breakdown['Bagian PKP Fasilitas Pasal 31E (11%)'] = facilityTax;
+      breakdown['Bagian PKP Non-Fasilitas (22%)'] = nonFacilityTax;
+      explanation = `Peredaran bruto antara Rp 4,8 M dan Rp 50 M: Memperoleh fasilitas pengurangan tarif 50% secara proporsional atas PKP sebesar (Rp 4,8 M / Omzet) × PKP.`;
+    }
+
+    const effectiveRate = taxableIncome > 0 ? Number((taxDue / taxableIncome).toFixed(4)) : 0;
+    return {
+      taxableIncome,
+      taxDue,
+      effectiveRate,
+      breakdown,
+      explanation,
+    };
+  },
+
+  getDeadlines(year = 2026): DeadlineItem[] {
+    return [
+      {
+        id: 'ppn-masa-jan',
+        key: 'ppn-masa-jan',
+        label: 'SPT Masa PPN 1111 (Masa Jan)',
+        dueDate: `${year}-02-28`,
+        obligationType: 'PPN Masa',
+        status: 'pending',
+        daysLeft: 30,
+        finePenalty: 'Rp 500.000 (Pasal 7 UU KUP)',
+      },
+      {
+        id: 'pph-unifikasi-jan',
+        key: 'pph-unifikasi-jan',
+        label: 'SPT Masa PPh Unifikasi (21/23/4(2))',
+        dueDate: `${year}-02-20`,
+        obligationType: 'PPh Unifikasi',
+        status: 'pending',
+        daysLeft: 22,
+        finePenalty: 'Rp 100.000 (Pasal 7 UU KUP)',
+      },
+      {
+        id: 'spt-tahunan-badan',
+        key: 'spt-tahunan-badan',
+        label: 'SPT Tahunan PPh Badan 1771',
+        dueDate: `${year}-04-30`,
+        obligationType: 'PPh Badan Tahunan',
+        status: 'urgent',
+        daysLeft: 91,
+        finePenalty: 'Rp 1.000.000 (Pasal 7 UU KUP) + Bunga Pasal 9 (2b)',
+      },
+    ];
+  },
+
+  generateReturnDraft(params: ReturnDraftParams) {
+    const positiveCorrections = (params.adjustments || [])
+      .filter((a) => a.adjustmentType === 'positive')
+      .reduce((sum, a) => sum + a.adjustmentAmount, 0);
+    const negativeCorrections = (params.adjustments || [])
+      .filter((a) => a.adjustmentType === 'negative')
+      .reduce((sum, a) => sum + a.adjustmentAmount, 0);
+
+    return {
+      id: `draft_${params.entity.id}_${params.fiscalYear}`,
+      formType: 'SPT 1771',
+      status: 'draft',
+      fiscalYear: params.fiscalYear,
+      entity: params.entity,
+      induk: {
+        netIncome: params.taxableIncome,
+        taxPayable: params.taxDue,
+        tariffs: '22% (UU HPP No. 7/2021 jo. Pasal 31E)',
+      },
+      lampiranI: {
+        commercialProfit: params.taxableIncome - positiveCorrections + negativeCorrections,
+        positiveCorrections,
+        negativeCorrections,
+        taxableIncome: params.taxableIncome,
+      },
+      adjustments: params.adjustments || [],
+      makerChecker: {
+        draftedBy: params.creator,
+        approvedBy: null,
+        status: 'Draft',
+      },
+    };
   },
 
   documentTypes: [

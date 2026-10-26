@@ -3,18 +3,12 @@
 import React, { useState } from 'react';
 import { 
   BarChart3, 
-  Download, 
   FileSpreadsheet, 
   Printer, 
-  ShieldCheck, 
-  Filter, 
   Search, 
-  Clock, 
-  CheckCircle2, 
-  AlertTriangle,
-  FileText
+  Clock 
 } from 'lucide-react';
-import { CountryCode, formatCurrency } from '@/data/multiCountryTaxData';
+import { CountryCode } from '@/data/multiCountryTaxData';
 
 interface AuditLogRecord {
   id: string;
@@ -141,7 +135,7 @@ export function ReportsTab({ countryCode, entityName, onTriggerToast }: ReportsT
               </span>
             </div>
             <h1 className="text-2xl font-black text-slate-900 mt-1">
-              Laporan Eksekutif Kepatuhan & Log Audit Trail
+              Laporan Eksekutif Kepatuhan & Log Audit Trail ({countryCode})
             </h1>
           </div>
 

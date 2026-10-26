@@ -2,18 +2,11 @@
 
 import React, { useState } from 'react';
 import { 
-  BookOpen, 
   Search, 
   Sparkles, 
   SlidersHorizontal, 
-  ExternalLink, 
-  CheckCircle2, 
-  Globe2, 
-  FileText,
-  HelpCircle,
-  TrendingDown
+  Globe2
 } from 'lucide-react';
-import { formatCurrency } from '@/data/multiCountryTaxData';
 
 interface StudyItem {
   id: string;
@@ -102,7 +95,7 @@ export function StudiesTab({ onAskCopilot }: StudiesTabProps) {
 
   // Calculate Treaty Rates
   const treatyCalculation = () => {
-    let statutoryRate = 0.20; // 20% normal PPh 26
+    const statutoryRate = 0.20; // 20% normal PPh 26
     let treatyRate = 0.15;
     let ruleRef = '';
 
@@ -237,7 +230,7 @@ export function StudiesTab({ onAskCopilot }: StudiesTabProps) {
               <label className="font-bold text-slate-700 block mb-1">Negara Sumber Penghasilan</label>
               <select
                 value={sourceJurisdiction}
-                onChange={(e) => setSourceJurisdiction(e.target.value as any)}
+                onChange={(e) => setSourceJurisdiction(e.target.value as 'ID' | 'SG' | 'MY' | 'US')}
                 className="w-full p-2 rounded border border-slate-300 font-semibold"
               >
                 <option value="ID">🇮🇩 Indonesia (DJP)</option>
@@ -249,7 +242,7 @@ export function StudiesTab({ onAskCopilot }: StudiesTabProps) {
               <label className="font-bold text-slate-700 block mb-1">Negara Domisili Penerima (SPLN)</label>
               <select
                 value={residenceJurisdiction}
-                onChange={(e) => setResidenceJurisdiction(e.target.value as any)}
+                onChange={(e) => setResidenceJurisdiction(e.target.value as 'ID' | 'SG' | 'MY' | 'US')}
                 className="w-full p-2 rounded border border-slate-300 font-semibold"
               >
                 <option value="SG">🇸🇬 Singapore (IRAS Tax Resident)</option>
@@ -262,7 +255,7 @@ export function StudiesTab({ onAskCopilot }: StudiesTabProps) {
               <label className="font-bold text-slate-700 block mb-1">Jenis Penghasilan</label>
               <select
                 value={incomeType}
-                onChange={(e) => setIncomeType(e.target.value as any)}
+                onChange={(e) => setIncomeType(e.target.value as 'dividend' | 'interest' | 'royalty')}
                 className="w-full p-2 rounded border border-slate-300 font-semibold"
               >
                 <option value="dividend">Dividen Saham (Pasal 10 P3B)</option>

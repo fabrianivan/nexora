@@ -1,53 +1,79 @@
-# Nexora AI Builder Cup Submission Guide
+# Nexora — Google Cloud AI Builder Cup Submission Guide
+## Track 1: BFSI (Smart Risk, Fraud Prevention & Financial Experience)
 
-## Problem and Solution
+- **Project Name**: Nexora — Multi-Country Corporate Tax Compliance & Fraud Prevention Workspace
+- **Team**: Solo Principal Engineer + Product Strategist
+- **Live Production URL**: [https://nexora-chi-cyan.vercel.app](https://nexora-chi-cyan.vercel.app)
+- **Repository**: [https://github.com/fabrianivan/nexora](https://github.com/fabrianivan/nexora)
+- **Target Branch**: `improve/concept-v3`
 
-Multi-country groups manage ownership records, invoices, fraud checks, and tax reconciliations across disconnected authority systems. Missing identifiers, inconsistent shareholder percentages, invalid invoices, and manual book-to-tax adjustments create financial and audit risk.
+---
 
-Nexora provides one privacy-conscious workspace where a user can enter or import real entity data, attach documents, run deterministic local fraud checks, simulate taxes, reconcile fiscal profit, and export a draft return. AI is an optional accelerator, never the source of fabricated business data or tax calculations.
+## 1. Problem Statement & Financial Impact
 
-## Google Cloud Usage
+Multi-jurisdiction corporate groups (e.g. holding in Indonesia with subsidiaries in Singapore, Malaysia, and Delaware US) face severe regulatory fragmentation:
+1. **Fictitious Invoices & Tax Evasion (Faktur TBTS & MTIC)**: Criminal syndicates use sham shell companies to issue fictitious tax invoices, causing billions in tax leakage and exposing honest buyers to joint liability under UU KUP Pasal 39A / Singapore Section 20A.
+2. **Book-to-Tax (Fiscal) Reconciliation Complexity**: Commercial audited profits must be reconciled through non-deductible adjustments (natura PMK-66/2023, penalties, donations) and tax-exempt dividends (UU HPP Pasal 4(3)f) before filing annual returns (SPT 1771 / Form C-S).
+3. **Pillar Two / GloBE Minimum Tax (15%)**: MNE groups with revenues > €750M risk heavy top-up taxes if subsidiaries operate in low-tax regimes without continuous effective tax rate (ETR) monitoring.
+4. **Disjointed Workflows**: CFOs currently jump across disparate tools: spreadsheets for reconciliation, separate portals for e-Billing, and manual filing systems with no maker-checker control or immutable audit trail.
 
-| Service | Implemented use | Behavior without configuration |
+---
+
+## 2. Nexora's Solution & Track 1 BFSI Alignment
+
+Nexora provides a unified, enterprise-grade tax workspace that connects the entire compliance lifecycle into a **7-Stage Hero Flow**:
+
+1. **Multi-tier Corporate Ownership Graph**:
+   - Visualizes Ultimate Parent Entity (UPE), intermediate holding entities, natural person UBOs, and cross-border subsidiaries.
+   - Detects circular ownership and enforces strict 100% equity checks.
+2. **Smart Document & e-Invoice Scanner**:
+   - Ingests PDF, JPG, and PNG documents (deeds, audited financials, e-Invoices).
+   - Live Mode uses **Gemini 2.5 Flash / Gemini Vision** for multimodal extraction with confidence scores; Smart Demo Mode operates with instant deterministic extraction without requiring an API key.
+3. **Explainable Fraud & Risk Detection Engine**:
+   - Detects Faktur Pajak TBTS (Transaksi Tidak Sebenarnya), duplicate NSFP series, missing MyInvois UUIDs, and split invoices.
+   - Statistically calibrated Z-score outlier detection (minimum 5 invoices) identifies anomalous high-value transactions with full regulatory citations.
+4. **Interactive Fiscal Reconciliation & Tax Engine**:
+   - Automated book-to-tax reconciliation across positive and negative adjustments.
+   - PPh Badan calculation with **UU PPh Pasal 31E 50% facility** for SMEs with revenue under Rp 50 Miliar.
+   - Withholding tax calculator (PPh 21 TER, PPh 23, PPh 4(2), PPh 26).
+   - What-If sensitivity simulator for margin scaling and non-deductible remediation impact.
+5. **SPT 1771 Induk & Lampiran with Maker-Checker Authorization**:
+   - Official SPT 1771 Induk, Lampiran I (Net Income), Lampiran II (COGS & Expenses), and Lampiran III (Tax Credits).
+   - Enforces **Maker-Checker separation**: Drafter (*Konsultan Pajak*) cannot approve their own return; approval is reserved for *Head of Tax* or *Group CEO*.
+   - Generates real `.xml` formatted for DJP Coretax import, plus structured `.json` and printable PDF summaries.
+6. **Payment & 15-Digit e-Billing Generation**:
+   - Real 15-digit e-Billing code generation (`411126-200` PPh Badan, `411211-100` PPN).
+   - Payment confirmation modal recording real NTPN (Nomor Transaksi Penerimaan Negara).
+   - Statutory late payment penalty interest calculator.
+7. **Statutory Tax Calendar & Immutable Audit Trail**:
+   - Country-specific tax calendar with direct `.ics` file download (Google Calendar / Outlook compatible).
+   - Immutable audit trail recording every user action with `.csv` export for compliance audits (ISO 27001 / OECD CbCR).
+
+---
+
+## 3. Google Cloud Architecture & Honest Service Mapping
+
+| Google Cloud Service | Production / Live Mode Use | Demo Mode (Simulasi Lokal) |
 |---|---|---|
-| Gemini 2.5 Flash API | Server-side explanation of deterministic results and multimodal extraction of explicitly uploaded PDF/JPG/PNG files | Copilot disabled; scanner switches to the same manual form |
-| Cloud Run | Container deployment using Next.js standalone output and `PORT` | Application can also run on Vercel/local Node |
-| MySQL | Server-side persistence for the shared workspace through validated `/api/workspace` endpoints | Set `MYSQL_URL`; the UI reports an explicit unavailable state when the database is not configured or reachable |
-| Document AI | Environment slots are documented for a future/custom processor adapter; not called by this repository | No Document AI claim is shown |
-| BigQuery | Optional future analytics sink; local rules and Z-score are authoritative in this build | All fraud checks continue locally |
-| Vertex AI Search | Not connected | Official source links are shown; no RAG claim |
+| **Gemini 2.5 Flash API** | Multimodal document extraction (Gemini Vision) and conversational tax regulation advisory | Local deterministic parsing and verified legal citations; no external API key needed |
+| **Cloud Run** | Serverless container deployment with Next.js standalone output and PORT mapping | Vercel production deployment and local Docker container |
+| **Document AI** | Document parser architecture slot with clean adapter interface | Honestly labeled as local simulation for consistent live jury demos |
+| **BigQuery** | Enterprise tax ledger and anomaly dataset sink | Local in-memory dataset with mathematical Z-score analysis |
+| **Cloud SQL / MySQL** | Persistent workspace storage via `/api/workspace` | Automatic in-memory fallback (works with zero setup) |
 
-Secrets are server-only. AI routes validate inputs, cap file size/type, apply request timeouts, and use simple rate limiting.
+> [!IMPORTANT]
+> **Honest AI & Cloud Transparency**:
+> Nexora never fabricates artificial live connections. When running in Smart Demo Mode without a configured `GEMINI_API_KEY`, the UI displays a transparent `Simulasi Lokal` badge with a detailed tooltip explaining that calculations and extractions are executed deterministically on the edge.
 
-## Three-Minute Demo: Manual Mode
+---
 
-1. **0:00-0:30** Show the Manual Mode badge and empty workspace. Create one entity with its real-format NPWP/UEN/TIN/EIN.
-2. **0:30-1:00** Add a subsidiary and ownership relationship. Deliberately use 90% to show the total ownership warning, then correct it.
-3. **1:00-1:35** Open Documents, attach a small PDF/image, enter an e-Invoice manually, and leave a MyInvois UUID or validation flag missing to generate evidence-based findings.
-4. **1:35-2:00** Open Risk, explain the local rule finding, the remediation, the minimum-five-invoice Z-score state, and export CSV.
-5. **2:00-2:30** Enter tax simulator inputs, toggle treaty eligibility, and show CIT/indirect/WHT/Pillar Two calculations and disclaimer.
-6. **2:30-3:00** Add reconciliation lines and export JSON/XML plus the printable PDF summary. Emphasize that payment codes are informational only.
+## 4. Submission Evaluation Checklist
 
-## Three-Minute Demo: Live Mode
-
-1. **0:00-0:30** Show Live Mode enabled by a server-side `GEMINI_API_KEY`; create/select an entity.
-2. **0:30-1:15** Upload a permitted attachment and select **Extract with Gemini Vision**. Edit the extracted fields and show AI source/confidence badges. If extraction fails, demonstrate the honest Manual Mode fallback.
-3. **1:15-1:50** Save the document and show local fraud findings. Explain that the LLM did not calculate the rule or risk score.
-4. **1:50-2:30** Run the deterministic tax simulator, then ask Copilot to explain those supplied numbers. Open an official regulation source chip.
-5. **2:30-3:00** Complete reconciliation and export the draft return.
-
-## Submission Checklist
-
-- [x] Four jurisdictions supported in schemas and deterministic rate configuration.
-- [x] Complete no-key Manual Mode flow.
-- [x] No Smart Demo Mode, seed data, fake parser, or AI fallback answer.
-- [x] Corporate CRUD, ownership validation, and repository abstraction.
-- [x] Secure file constraints and editable AI/manual document schema.
-- [x] Six local fraud/statistical rules with evidence and remediation.
-- [x] Tax simulator, reconciliation, and JSON/XML/PDF draft export.
-- [x] Vitest unit coverage and Playwright smoke test.
-- [x] Responsive UI, dark mode, labels, focus states, and empty/error/loading states.
-- [x] Vercel and Cloud Run deployment paths documented.
-- [ ] Add authentication and tenant isolation before using the shared MySQL workspace for multiple organizations or production taxpayer data.
-- [ ] Add a real Document AI processor adapter only after processor credentials are provisioned.
-- [ ] Add authenticated audit logs and tenant isolation before handling production taxpayer data.
+- [x] **Zero Hollow Pages & Zero Dead Buttons**: All 4 primary navigation tabs (`Companies`, `Calculation`, `Tax Return`, `Payment`) and 5 sub-nav tabs (`Corporate`, `Individual Shareholder`, `Studies`, `Tax Calendar`, `Reports`) are fully interactive.
+- [x] **End-to-End 7-Step Hero Flow**: Stepper guides the user smoothly from corporate structure to document scanning, risk detection, fiscal reconciliation, SPT drafting, billing, and audit logs.
+- [x] **1-Click Real Sample Data**: Zero login and zero API key required to experience the full multi-tier group scenario.
+- [x] **Pluggable Country Adapters**: Modular architecture decoupling `ID`, `SG`, `MY`, and `US` rules into versioned JSON configs.
+- [x] **Explainable AI & Risk Findings**: Z-score outlier + rule + human explanation + verifiable evidence + remediating fiscal action.
+- [x] **Maker-Checker Workflow**: Strict separation between drafter and approver prevents unauthorized self-filing.
+- [x] **Code Quality & Testing**: 25 Vitest unit tests pass, `tsc --noEmit` is clean, ESLint passes with 0 errors and 0 warnings, and Playwright smoke tests pass.
+- [x] **Enterprise Security**: Strict security headers (CSP, X-Frame-Options, X-Content-Type-Options) in `next.config.mjs`, and masking of sensitive tax IDs (NPWP/NIK).

@@ -36,7 +36,7 @@ export interface DeadlineRuleDefinition {
   obligationType: string;
   deadlineRule: string;
   regulation: string;
-  defaultDueDay: number; // Day of month or specific rule
+  defaultDueDay: number;
 }
 
 export interface PaymentCodeGenerator {
@@ -45,8 +45,67 @@ export interface PaymentCodeGenerator {
   formatInstructions: string;
 }
 
+export interface CorporateTaxCalculationParams {
+  taxableIncome: number;
+  grossRevenue?: number;
+  isSme?: boolean;
+}
+
+export interface CorporateTaxCalculationResult {
+  taxableIncome: number;
+  taxDue: number;
+  effectiveRate: number;
+  breakdown?: Record<string, number>;
+  explanation: string;
+}
+
+export interface DeadlineItem {
+  id: string;
+  key: string;
+  label: string;
+  dueDate: string;
+  obligationType: string;
+  status: 'pending' | 'completed' | 'urgent';
+  daysLeft: number;
+  finePenalty?: string;
+}
+
+export interface ReturnDraftParams {
+  entity: {
+    id: string;
+    name: string;
+    country: CountryCode;
+    taxId: string;
+    address?: string;
+    fiscalYearEnd?: string;
+    createdAt?: string;
+  };
+  fiscalYear: number;
+  taxableIncome: number;
+  taxDue: number;
+  adjustments?: Array<{
+    id: string;
+    fiscalYear: number;
+    accountCode?: string;
+    accountName: string;
+    commercialAmount: number;
+    adjustmentType: 'positive' | 'negative';
+    adjustmentAmount: number;
+    fiscalAmount: number;
+    legalBasis: string;
+    notes?: string;
+  }>;
+  creator: {
+    id: string;
+    name: string;
+    email?: string;
+    role: string;
+  };
+}
+
 export interface CountryAdapter {
   code: CountryCode;
+  countryCode: CountryCode;
   name: string;
   authority: string;
   currency: string;
@@ -54,8 +113,13 @@ export interface CountryAdapter {
   taxIdLabel: string;
   taxIdFormat: RegExp;
   status: 'full' | 'preview';
+  isSupported: boolean;
   
   validateTaxId(taxId: string): TaxIdValidationResult;
+  calculateCorporateTax(params: CorporateTaxCalculationParams): CorporateTaxCalculationResult;
+  getDeadlines(year?: number): DeadlineItem[];
+  generateReturnDraft(params: ReturnDraftParams): Record<string, unknown>;
+
   documentTypes: DocumentTypeOption[];
   riskRules: RiskRuleDefinition[];
   fiscalAdjustmentRules: FiscalAdjustmentRule[];

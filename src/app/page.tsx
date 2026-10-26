@@ -10,19 +10,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   Users,
-  Calculator,
   Calendar,
   BarChart3,
   BookOpen,
-  Sparkles,
-  Download,
   X,
   Bot,
   Send,
   RefreshCw,
   ShieldCheck,
   Globe2,
-  SlidersHorizontal,
   Trash2,
   Minimize2,
   Maximize2,
@@ -39,7 +35,6 @@ import {
 import {
   MULTI_COUNTRY_DATA,
   CountryCode,
-  formatCurrency,
 } from '@/data/multiCountryTaxData';
 import { parseBlockMarkdown, renderInlines } from '@/lib/chatMarkdown';
 import { HeroStepper } from '@/components/HeroStepper';
@@ -1427,8 +1422,7 @@ export default function NexoraApp() {
   const [isChatExpanded, setIsChatExpanded] = useState<boolean>(false);
   const [chatInput, setChatInput] = useState<string>('');
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
-  const [remediatedTrxIds, setRemediatedTrxIds] = useState<string[]>([]);
-  const [simulatedRevenueMultiplier, setSimulatedRevenueMultiplier] = useState<number>(100);
+
 
   // Close floating chatbot with Escape key
   useEffect(() => {
@@ -1791,21 +1785,7 @@ export default function NexoraApp() {
     triggerToast(`Entitas ${compName} telah dihapus dari daftar.`);
   }
 
-  function handleRemediateTransaction(trxId: string, vendorName: string) {
-    if (!remediatedTrxIds.includes(trxId)) {
-      setRemediatedTrxIds((prev) => [...prev, trxId]);
-      setCompanies((prev) =>
-        prev.map((c) =>
-          c.id === selectedEntity.id
-            ? { ...c, aiComplianceScore: Math.min(99, c.aiComplianceScore + 4) }
-            : c
-        )
-      );
-      triggerToast(
-        `Anomali transaksi ${trxId} (${vendorName}) pada ${selectedEntity.legalName} berhasil dikoreksi secara fiskal!`
-      );
-    }
-  }
+
 
   async function handleAskFloatingAi(customPrompt?: string) {
     const q = (customPrompt ?? chatInput).trim();
@@ -1935,9 +1915,9 @@ export default function NexoraApp() {
                 isOpen={showNotificationCenter}
                 onClose={() => setShowNotificationCenter(false)}
                 onNavigate={(p, s, c) => {
-                  if (p) setPrimaryNav(p);
-                  if (s) setSubNav(s);
-                  if (c) setCorpViewTab(c);
+                  if (p) setPrimaryNav(p as PrimaryNav);
+                  if (s) setSubNav(s as SubNav);
+                  if (c) setCorpViewTab(c as CorporateViewTab);
                 }}
               />
             </div>
@@ -6004,9 +5984,9 @@ export default function NexoraApp() {
         isOpen={showCommandPalette}
         onClose={() => setShowCommandPalette(false)}
         onNavigate={(p, s, c) => {
-          if (p) setPrimaryNav(p);
-          if (s) setSubNav(s);
-          if (c) setCorpViewTab(c);
+          if (p) setPrimaryNav(p as PrimaryNav);
+          if (s) setSubNav(s as SubNav);
+          if (c) setCorpViewTab(c as CorporateViewTab);
         }}
         onSelectEntity={(id) => setSelectedEntityId(id)}
       />

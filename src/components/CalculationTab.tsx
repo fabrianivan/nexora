@@ -6,13 +6,9 @@ import {
   SlidersHorizontal, 
   Plus, 
   Trash2, 
-  AlertCircle, 
   CheckCircle2, 
   ArrowRight, 
-  ShieldCheck, 
   FileText,
-  HelpCircle,
-  TrendingDown,
   Layers
 } from 'lucide-react';
 import { FiscalReconciliationItem, fiscalReconciliationData as initialFiscalData } from '@/data/indonesiaTaxData';
@@ -57,7 +53,7 @@ export function CalculationTab({
   const [whtHasNpwp, setWhtHasNpwp] = useState<boolean>(true);
 
   // Reconciliation Totals
-  const { totalCommercialRevenue, totalCommercialExpense, commercialProfit, totalPositiveCorrection, totalNegativeCorrection, taxableIncome, citDue, taxCredits, citUnderpayment } = useMemo(() => {
+  const { totalCommercialRevenue, commercialProfit, totalPositiveCorrection, totalNegativeCorrection, taxableIncome, citDue, taxCredits, citUnderpayment } = useMemo(() => {
     let rev = 0;
     let exp = 0;
     let pos = 0;
@@ -487,7 +483,7 @@ export function CalculationTab({
                 <label className="font-bold text-slate-700 block mb-1">Pilih Jenis Pajak Pemotongan</label>
                 <select
                   value={whtType}
-                  onChange={(e) => setWhtType(e.target.value as any)}
+                  onChange={(e) => setWhtType(e.target.value as 'pph23_jasa' | 'pph4_2_sewa' | 'pph21_bukan_pegawai' | 'pph26_luar_negeri')}
                   className="w-full p-2.5 rounded-lg border border-slate-300 font-semibold"
                 >
                   <option value="pph23_jasa">PPh 23 — Jasa Manajemen / Konsultan / Teknik (2%)</option>
@@ -561,17 +557,28 @@ export function CalculationTab({
                 Uji dampak perubahan pendapatan bruto atau kepatuhan nominatif terhadap beban PPh Badan.
               </p>
             </div>
-            <div className="flex items-center gap-3 text-xs font-semibold text-slate-700">
-              <span>Pertumbuhan Omzet: {whatIfMultiplier}%</span>
-              <input
-                type="range"
-                min={50}
-                max={200}
-                step={10}
-                value={whatIfMultiplier}
-                onChange={(e) => setWhatIfMultiplier(Number(e.target.value))}
-                className="w-32 accent-blue-600"
-              />
+            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-700">
+              <label className="flex items-center gap-2 cursor-pointer bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                <input
+                  type="checkbox"
+                  checked={excludeNonDeductibles}
+                  onChange={(e) => setExcludeNonDeductibles(e.target.checked)}
+                  className="rounded text-blue-600 focus:ring-blue-500"
+                />
+                <span>Eliminasi Non-Deductible (Remediasi)</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <span>Skala Laba: {whatIfMultiplier}%</span>
+                <input
+                  type="range"
+                  min={50}
+                  max={200}
+                  step={10}
+                  value={whatIfMultiplier}
+                  onChange={(e) => setWhatIfMultiplier(Number(e.target.value))}
+                  className="w-28 accent-blue-600"
+                />
+              </div>
             </div>
           </div>
 
@@ -595,7 +602,9 @@ export function CalculationTab({
             </div>
 
             <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50">
-              <span className="font-bold text-blue-900 block">Hasil Simulasi ({whatIfMultiplier}%)</span>
+              <span className="font-bold text-blue-900 block">
+                Hasil Simulasi ({whatIfMultiplier}%) {excludeNonDeductibles ? '• Remediasi Aktif' : ''}
+              </span>
               <div className="mt-3 space-y-1 font-mono">
                 <div className="flex justify-between">
                   <span>Simulasi Laba Bersih:</span>
@@ -603,11 +612,18 @@ export function CalculationTab({
                 </div>
                 <div className="flex justify-between">
                   <span>Simulasi Koreksi:</span>
-                  <span>+{formatCurrency(totalPositiveCorrection * (whatIfMultiplier / 100), countryCode)}</span>
+                  <span>+{formatCurrency(excludeNonDeductibles ? 0 : totalPositiveCorrection * (whatIfMultiplier / 100), countryCode)}</span>
                 </div>
                 <div className="flex justify-between font-bold border-t border-blue-200 pt-1 text-blue-900">
                   <span>Estimasi PPh Terutang:</span>
-                  <span>{formatCurrency(citDue * (whatIfMultiplier / 100), countryCode)}</span>
+                  <span>
+                    {formatCurrency(
+                      excludeNonDeductibles 
+                        ? Math.round(commercialProfit * (whatIfMultiplier / 100) * 0.22)
+                        : Math.round(citDue * (whatIfMultiplier / 100)),
+                      countryCode
+                    )}
+                  </span>
                 </div>
               </div>
             </div>
@@ -643,7 +659,7 @@ export function CalculationTab({
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Komersial (IDR)</label>
                   <input
@@ -655,11 +671,21 @@ export function CalculationTab({
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-rose-700 block mb-1">Koreksi Positif (+)</label>
+                  <label className="font-bold text-rose-700 block mb-1">Koreksi Pos (+)</label>
                   <input
                     type="number"
                     value={newPositiveCorrection}
                     onChange={(e) => setNewPositiveCorrection(e.target.value)}
+                    className="w-full p-2 rounded border border-slate-300 font-mono"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-emerald-700 block mb-1">Koreksi Neg (-)</label>
+                  <input
+                    type="number"
+                    value={newNegativeCorrection}
+                    onChange={(e) => setNewNegativeCorrection(e.target.value)}
                     className="w-full p-2 rounded border border-slate-300 font-mono"
                     required
                   />

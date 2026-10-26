@@ -2,18 +2,11 @@
 
 import React, { useState } from 'react';
 import { 
-  Users, 
-  ShieldCheck, 
   Search, 
   Plus, 
-  Trash2, 
-  UserCheck, 
-  DollarSign, 
-  HelpCircle,
-  CheckCircle2,
-  AlertCircle
+  CheckCircle2
 } from 'lucide-react';
-import { formatCurrency, CountryCode } from '@/data/multiCountryTaxData';
+import { formatCurrency } from '@/data/multiCountryTaxData';
 
 interface IndividualShareholderData {
   id: string;

@@ -2,16 +2,10 @@
 
 import React, { useState } from 'react';
 import { 
-  FileCheck2, 
   Download, 
   CheckCircle2, 
-  Clock, 
-  ShieldAlert, 
-  UserCheck, 
   ArrowRight,
-  Printer,
   FileCode,
-  FileSpreadsheet,
   AlertTriangle
 } from 'lucide-react';
 import { CountryCode, formatCurrency } from '@/data/multiCountryTaxData';

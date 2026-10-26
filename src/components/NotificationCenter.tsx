@@ -5,10 +5,8 @@ import {
   Bell, 
   ShieldAlert, 
   Clock, 
-  CheckCircle2, 
   FileCheck2, 
-  X, 
-  ArrowRight 
+  X 
 } from 'lucide-react';
 
 export interface NotificationItem {
@@ -24,7 +22,7 @@ export interface NotificationItem {
 export interface NotificationCenterProps {
   isOpen: boolean;
   onClose: () => void;
-  onNavigate: (primaryNav: any, subNav?: any, corpTab?: any) => void;
+  onNavigate: (primaryNav: string, subNav?: string, corpTab?: string) => void;
 }
 
 export function NotificationCenter({ isOpen, onClose, onNavigate }: NotificationCenterProps) {

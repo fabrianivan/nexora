@@ -22,3 +22,12 @@ export function getCountryAdapter(countryCode: CountryCode): CountryAdapter {
   }
   return adapter;
 }
+
+export function getAdapter(countryCode: string): CountryAdapter {
+  const code = (countryCode?.toUpperCase() || 'ID') as CountryCode;
+  return countryAdapters[code] || idAdapter;
+}
+
+export function listAdapters(): CountryAdapter[] {
+  return [idAdapter, sgAdapter, myAdapter, usAdapter];
+}
