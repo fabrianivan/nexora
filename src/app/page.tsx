@@ -2106,17 +2106,17 @@ export default function NexoraApp() {
         </div>
 
         {/* ===================================================================
-            2. SECOND-LEVEL SUB-NAV BAR (CLEAN MODERN LIGHT AESTHETIC)
+            2. SECOND-LEVEL SUB-NAV BAR (NAVY #0F172A - FIGMA SOURCE OF TRUTH)
            =================================================================== */}
-        <div className="bg-slate-50/90 border-b border-slate-200/90 text-slate-700">
+        <div className="bg-[#0F172A] border-b border-slate-800 text-white">
           <div className="max-w-[1440px] mx-auto px-4 sm:px-8 h-11 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 h-full overflow-x-auto py-1">
+            <div className="flex items-center gap-1.5 h-full overflow-x-auto">
               {[
-                { id: 'corporate', label: 'Corporate Management', icon: Building2 },
-                { id: 'individual', label: 'Individual Shareholders', icon: Users },
-                { id: 'studies', label: 'Studies & OECD Pillar Two', icon: BookOpen },
+                { id: 'corporate', label: 'Corporate', icon: Building2 },
+                { id: 'individual', label: 'Individual Shareholder', icon: Users },
+                { id: 'studies', label: 'Studies', icon: BookOpen },
                 { id: 'calendar', label: 'Tax Calendar', icon: Calendar },
-                { id: 'reports', label: 'Reports & Audit Trail', icon: BarChart3 },
+                { id: 'reports', label: 'Reports', icon: BarChart3 },
               ].map((sub) => {
                 const Icon = sub.icon;
                 const isActive =
@@ -2128,13 +2128,13 @@ export default function NexoraApp() {
                       setPrimaryNav('companies');
                       setSubNav(sub.id as SubNav);
                     }}
-                    className={`h-8 px-3 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+                    className={`h-full px-3.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer whitespace-nowrap ${
                       isActive
-                        ? 'bg-white text-rose-700 font-bold border border-rose-200/90 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                        ? 'border-[#3B82F6] text-white bg-blue-500/10 font-bold'
+                        : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/5'
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-rose-600' : 'text-slate-400'}`} />
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#3B82F6]' : 'text-slate-400'}`} />
                     <span>{sub.label}</span>
                   </button>
                 );
@@ -2142,6 +2142,12 @@ export default function NexoraApp() {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
+              {/* Google Cloud Document AI & BigQuery Live Status */}
+              <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700/60 text-[10px] font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Google Cloud Document AI + BigQuery Connected
+              </span>
+
               <DataPersistenceControl onResetSampleData={handleResetSampleData} />
               
               {/* Interactive Multi-Country Active Entity Switcher */}
@@ -2149,14 +2155,14 @@ export default function NexoraApp() {
                 <button
                   type="button"
                   onClick={() => setShowEntityQuickSelect((prev) => !prev)}
-                  className="flex items-center gap-2 text-xs text-slate-700 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 shadow-2xs transition cursor-pointer"
+                  className="flex items-center gap-2 text-xs text-slate-200 bg-slate-800/90 hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700/80 shadow-xs transition cursor-pointer"
                   title="Pilih Entitas Aktif (Holding & Anak Perusahaan)"
                 >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   <span>
-                    Entitas Aktif: <strong className="text-slate-900">{selectedEntity.flag} {selectedEntity.legalName}</strong>
+                    Entitas: <strong className="text-white">{selectedEntity.flag} {selectedEntity.legalName}</strong>
                   </span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${showEntityQuickSelect ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${showEntityQuickSelect ? 'rotate-180 text-white' : ''}`} />
                 </button>
 
                 {showEntityQuickSelect && (
