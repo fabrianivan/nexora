@@ -1903,8 +1903,15 @@ export default function NexoraApp() {
 
             <div className="relative">
               <button
-                onClick={() => setShowNotificationCenter(!showNotificationCenter)}
-                className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer relative"
+                onClick={() => {
+                  setShowNotificationCenter((prev) => !prev);
+                  setShowAccountDropdown(false);
+                }}
+                className={`p-2 rounded-xl border text-slate-600 hover:text-slate-900 cursor-pointer relative transition-colors ${
+                  showNotificationCenter
+                    ? 'bg-rose-50 border-rose-300 text-rose-700 ring-2 ring-rose-500/20'
+                    : 'border-slate-200 hover:bg-slate-50'
+                }`}
                 title="Pusat Notifikasi Kepatuhan"
               >
                 <Bell className="w-4 h-4 text-slate-600" />
@@ -1923,10 +1930,13 @@ export default function NexoraApp() {
             </div>
 
             <button
-              onClick={() => setShowAccountDropdown((prev) => !prev)}
+              onClick={() => {
+                setShowAccountDropdown((prev) => !prev);
+                setShowNotificationCenter(false);
+              }}
               className={`flex items-center gap-2.5 p-1.5 px-2.5 hover:bg-slate-50 border rounded-xl transition cursor-pointer text-left shadow-2xs hover:shadow-xs ${
                 showAccountDropdown
-                  ? 'bg-blue-50/70 border-blue-500 ring-2 ring-blue-500/20'
+                  ? 'bg-rose-50/70 border-rose-400 ring-2 ring-rose-500/20'
                   : 'border-slate-200/90 hover:border-slate-300'
               }`}
               title="Klik untuk membuka Menu Akun & Hak Akses (RBAC Governance)"
@@ -1952,13 +1962,13 @@ export default function NexoraApp() {
                     {activePersona.badge}
                   </span>
                 </div>
-                <span className="block text-[10px] text-slate-500 truncate max-w-[170px]">
+                <span className="block text-[10px] text-slate-500 truncate max-w-[220px]">
                   {activePersona.title}
                 </span>
               </div>
               <ChevronDown
                 className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                  showAccountDropdown ? 'rotate-180 text-blue-600' : ''
+                  showAccountDropdown ? 'rotate-180 text-rose-600' : ''
                 }`}
               />
             </button>
@@ -1967,10 +1977,10 @@ export default function NexoraApp() {
             {showAccountDropdown && (
               <>
                 <div
-                  className="fixed inset-0 z-40"
+                  className="fixed inset-0 z-40 bg-slate-900/10 backdrop-blur-[1px]"
                   onClick={() => setShowAccountDropdown(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 z-50 text-slate-900">
+                <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-[440px] md:w-[460px] bg-white rounded-2xl border border-slate-200/90 shadow-2xl p-4 sm:p-5 z-50 text-slate-900">
                   {/* Current Active Account Card */}
                   <div className="flex items-start gap-3 pb-3 border-b border-slate-100">
                     <div
@@ -2348,13 +2358,13 @@ export default function NexoraApp() {
                             <div className="space-y-1.5 mb-3 text-[10px]">
                               <div className="flex items-center justify-between text-slate-700 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200/80 font-mono tabular-nums">
                                 <span className="text-slate-500 font-sans">Tax ID:</span>
-                                <span className="font-bold text-slate-800 truncate max-w-[140px]">
+                                <span className="font-bold text-slate-800 truncate ml-2 text-right">
                                   {comp.taxId}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between text-slate-500 text-[10px] px-1">
                                 <span>Otoritas:</span>
-                                <span className="text-slate-700 truncate max-w-[150px] font-medium">
+                                <span className="text-slate-700 truncate ml-2 text-right font-medium">
                                   {comp.taxAuthority.split('(')[0].trim()}
                                 </span>
                               </div>

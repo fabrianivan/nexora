@@ -57,7 +57,7 @@ export function HeroStepper({ currentStep, onSelectStep, entityName }: HeroStepp
                 <button
                   type="button"
                   onClick={() => onSelectStep(s.step)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     isCurrent
                       ? 'bg-rose-600 text-white shadow-xs font-bold ring-2 ring-rose-600/20'
                       : isCompleted
@@ -79,7 +79,7 @@ export function HeroStepper({ currentStep, onSelectStep, entityName }: HeroStepp
                 </button>
 
                 {idx < HERO_STEPS.length - 1 && (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0 hidden lg:block" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0 hidden xl:block" />
                 )}
               </React.Fragment>
             );
