@@ -1,38 +1,44 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RotateCcw, Check } from 'lucide-react';
+import { RefreshCw, Check } from 'lucide-react';
 
 export interface DataPersistenceControlProps {
   onResetSampleData?: () => void;
   isLiveGemini?: boolean;
+  className?: string;
 }
 
-export function DataPersistenceControl({ onResetSampleData }: DataPersistenceControlProps) {
+export function DataPersistenceControl({ onResetSampleData, className }: DataPersistenceControlProps) {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSync = () => {
     setIsSyncing(true);
     onResetSampleData?.();
-    setTimeout(() => setIsSyncing(false), 1200);
+    setTimeout(() => setIsSyncing(false), 900);
   };
 
   return (
     <button
       type="button"
       onClick={handleSync}
-      className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer border border-slate-200 transition-colors shadow-2xs hover:border-slate-300"
-      title="Sinkronisasi ulang data buku besar & entitas korporasi"
+      disabled={isSyncing}
+      className={`group relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer disabled:cursor-not-allowed border ${
+        isSyncing
+          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 ring-1 ring-emerald-500/20'
+          : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white border-slate-700/70 hover:border-slate-600 shadow-2xs hover:shadow-xs'
+      } ${className || ''}`}
+      title="Sinkronisasi ulang & muat ulang data default korporasi"
     >
       {isSyncing ? (
         <>
-          <Check className="w-3.5 h-3.5 text-emerald-600 animate-in zoom-in-75 duration-150" />
-          <span className="text-emerald-700 font-bold">Tersinkronisasi</span>
+          <Check className="w-3.5 h-3.5 text-emerald-400 animate-in zoom-in-75 duration-150 shrink-0" />
+          <span className="font-semibold text-emerald-300 tracking-tight">Tersinkron</span>
         </>
       ) : (
         <>
-          <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-600 hover:text-slate-900">Sinkron Data</span>
+          <RefreshCw className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400 group-hover:rotate-180 transition-transform duration-500 shrink-0" />
+          <span className="tracking-tight text-slate-300 group-hover:text-white">Sinkron Data</span>
         </>
       )}
     </button>
