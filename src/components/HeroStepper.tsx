@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Building2, 
   FileText, 
@@ -10,7 +10,8 @@ import {
   FileCheck2, 
   CreditCard,
   Check,
-  ChevronRight
+  ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 
 export interface HeroStepperProps {
@@ -30,61 +31,77 @@ export const HERO_STEPS = [
 ];
 
 export function HeroStepper({ currentStep, onSelectStep, entityName }: HeroStepperProps) {
+  const [isExpanded, setIsExpanded] = useState<boolean>(true);
+
   return (
-    <div className="bg-white border-b border-slate-200/90 shadow-2xs py-2 px-4 sm:px-8">
-      <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+    <div className="bg-white border-b border-slate-200/80 shadow-2xs py-1.5 px-4 sm:px-8 transition-all">
+      <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
         {/* Left Badge & Context */}
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
-            SIKLUS KEPATUHAN PAJAK
-          </span>
-          {entityName && (
-            <span className="text-xs text-slate-700 font-semibold truncate max-w-[240px]">
-              {entityName}
+        <div className="flex items-center justify-between w-full md:w-auto gap-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-[#2563EB] border border-blue-200">
+              Siklus Kepatuhan Fiskal
             </span>
-          )}
+            {entityName && (
+              <span className="text-xs text-slate-700 font-semibold truncate max-w-[200px] sm:max-w-[260px]">
+                {entityName}
+              </span>
+            )}
+          </div>
+
+          {/* Mobile / Compact Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="md:hidden text-slate-400 hover:text-slate-600 p-1"
+            title="Toggle Stepper"
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </button>
         </div>
 
         {/* Horizontal Modern Stepper */}
-        <div className="flex items-center overflow-x-auto w-full md:w-auto scrollbar-none py-0.5 gap-1.5">
-          {HERO_STEPS.map((s, idx) => {
-            const Icon = s.icon;
-            const isCompleted = s.step < currentStep;
-            const isCurrent = s.step === currentStep;
+        {isExpanded && (
+          <div className="flex items-center overflow-x-auto w-full md:w-auto scrollbar-none py-0.5 gap-1.5">
+            {HERO_STEPS.map((s, idx) => {
+              const Icon = s.icon;
+              const isCompleted = s.step < currentStep;
+              const isCurrent = s.step === currentStep;
 
-            return (
-              <React.Fragment key={s.step}>
-                <button
-                  type="button"
-                  onClick={() => onSelectStep(s.step)}
-                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                    isCurrent
-                      ? 'bg-rose-600 text-white shadow-xs font-bold ring-2 ring-rose-600/20'
-                      : isCompleted
-                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
-                      : 'bg-slate-50 text-slate-600 border border-slate-200/80 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    isCurrent
-                      ? 'bg-white text-rose-700'
-                      : isCompleted
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-slate-200 text-slate-700'
-                  }`}>
-                    {isCompleted ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : s.step}
-                  </span>
-                  <Icon className={`w-3.5 h-3.5 ${isCurrent ? 'text-white' : isCompleted ? 'text-emerald-700' : 'text-slate-400'}`} />
-                  <span>{s.title}</span>
-                </button>
+              return (
+                <React.Fragment key={s.step}>
+                  <button
+                    type="button"
+                    onClick={() => onSelectStep(s.step)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                      isCurrent
+                        ? 'bg-[#2563EB] text-white shadow-xs font-bold ring-2 ring-blue-500/20'
+                        : isCompleted
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-slate-50 text-slate-600 border border-slate-200/80 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                      isCurrent
+                        ? 'bg-white text-[#2563EB]'
+                        : isCompleted
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {isCompleted ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : s.step}
+                    </span>
+                    <Icon className={`w-3.5 h-3.5 ${isCurrent ? 'text-white' : isCompleted ? 'text-emerald-700' : 'text-slate-400'}`} />
+                    <span className="text-[11px]">{s.title}</span>
+                  </button>
 
-                {idx < HERO_STEPS.length - 1 && (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0 hidden xl:block" />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
+                  {idx < HERO_STEPS.length - 1 && (
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0 hidden 2xl:block" />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
