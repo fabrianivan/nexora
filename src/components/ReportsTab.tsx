@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { CountryCode } from '@/data/multiCountryTaxData';
 
-interface AuditLogRecord {
+export interface AuditLogRecord {
   id: string;
   timestamp: string;
   actor: string;
@@ -20,64 +20,75 @@ interface AuditLogRecord {
   details: string;
 }
 
+const DEFAULT_AUDIT_LOGS: AuditLogRecord[] = [
+  {
+    id: 'LOG-1092',
+    timestamp: '2026-10-26 07:15:20 WIB',
+    actor: 'Sri Mulyani Dewi, S.E., CA',
+    role: 'Group CFO',
+    action: 'APPROVE_TAX_RETURN',
+    target: 'Draf SPT 1771 Tahun 2026',
+    details: 'Persetujuan draf final SPT Tahunan setelah verifikasi koreksi fiskal positif CV Mega Suplai (Rp 120.000.000).',
+  },
+  {
+    id: 'LOG-1088',
+    timestamp: '2026-10-26 06:45:10 WIB',
+    actor: 'Bambang Soeprapto, BKP',
+    role: 'Konsultan Pajak',
+    action: 'RECONCILIATION_UPDATE',
+    target: 'Tabel Rekonsiliasi Fiskal (SPT 1771-I)',
+    details: 'Penyesuaian koreksi fiskal positif atas Biaya Entertainment tanpa Daftar Nominatif Rp 20.350.000.',
+  },
+  {
+    id: 'LOG-1074',
+    timestamp: '2026-10-25 16:30:00 WIB',
+    actor: 'Ir. Aditya Pratama, M.Sc.',
+    role: 'Group CEO',
+    action: 'GENERATE_BILLING_CODE',
+    target: 'PPh Pasal 29 Tahunan',
+    details: 'Penerbitan Kode Billing 0100139482142026 sebesar Rp 39.545.000.',
+  },
+  {
+    id: 'LOG-1061',
+    timestamp: '2026-10-25 14:10:44 WIB',
+    actor: 'Nexora AI Document Engine',
+    role: 'Sistem Otomasi AI',
+    action: 'DOCUMENT_EXTRACTION',
+    target: 'e-Faktur PPN Masukan (DOC-2026-001)',
+    details: 'Ekstraksi 12 field OCR berhasil dengan confidence score 99.4%. NPWP 16 digit tervalidasi.',
+  },
+  {
+    id: 'LOG-1050',
+    timestamp: '2026-10-25 11:20:18 WIB',
+    actor: 'Nexora Risk & Fraud Model',
+    role: 'Sistem Otomasi AI',
+    action: 'FRAUD_FLAG_RAISED',
+    target: 'CV Mega Suplai Abadi (TRX-2610-089)',
+    details: 'Deteksi Faktur Pajak TBTS: NPWP non-aktif dalam daftar pengawasan DJP. Skor risiko 96/100.',
+  },
+];
+
 interface ReportsTabProps {
   countryCode: CountryCode;
   entityName: string;
+  initialAuditLogs?: AuditLogRecord[];
   onTriggerToast?: (msg: string) => void;
 }
 
-export function ReportsTab({ countryCode, entityName, onTriggerToast }: ReportsTabProps) {
+export function ReportsTab({ countryCode, entityName, initialAuditLogs, onTriggerToast }: ReportsTabProps) {
   const [activeReportTab, setActiveReportTab] = useState<'executive_summary' | 'audit_trail' | 'benchmarks'>('executive_summary');
   const [auditFilterActor, setAuditFilterActor] = useState<string>('ALL');
   const [auditSearch, setAuditSearch] = useState<string>('');
 
-  const auditLogs: AuditLogRecord[] = [
-    {
-      id: 'LOG-1092',
-      timestamp: '2026-10-26 07:15:20 WIB',
-      actor: 'Sri Mulyani Dewi, S.E., CA',
-      role: 'Group CFO',
-      action: 'APPROVE_TAX_RETURN',
-      target: 'Draf SPT 1771 Tahun 2026',
-      details: 'Persetujuan draf final SPT Tahunan setelah verifikasi koreksi fiskal positif CV Mega Suplai (Rp 120.000.000).',
-    },
-    {
-      id: 'LOG-1088',
-      timestamp: '2026-10-26 06:45:10 WIB',
-      actor: 'Bambang Soeprapto, BKP',
-      role: 'Konsultan Pajak',
-      action: 'RECONCILIATION_UPDATE',
-      target: 'Tabel Rekonsiliasi Fiskal (SPT 1771-I)',
-      details: 'Penyesuaian koreksi fiskal positif atas Biaya Entertainment tanpa Daftar Nominatif Rp 20.350.000.',
-    },
-    {
-      id: 'LOG-1074',
-      timestamp: '2026-10-25 16:30:00 WIB',
-      actor: 'Ir. Aditya Pratama, M.Sc.',
-      role: 'Group CEO',
-      action: 'GENERATE_BILLING_CODE',
-      target: 'PPh Pasal 29 Tahunan',
-      details: 'Penerbitan Kode Billing 0100139482142026 sebesar Rp 39.545.000.',
-    },
-    {
-      id: 'LOG-1061',
-      timestamp: '2026-10-25 14:10:44 WIB',
-      actor: 'Nexora AI Document Engine',
-      role: 'Sistem Otomasi AI',
-      action: 'DOCUMENT_EXTRACTION',
-      target: 'e-Faktur PPN Masukan (DOC-2026-001)',
-      details: 'Ekstraksi 12 field OCR berhasil dengan confidence score 99.4%. NPWP 16 digit tervalidasi.',
-    },
-    {
-      id: 'LOG-1050',
-      timestamp: '2026-10-25 11:20:18 WIB',
-      actor: 'Nexora Risk & Fraud Model',
-      role: 'Sistem Otomasi AI',
-      action: 'FRAUD_FLAG_RAISED',
-      target: 'CV Mega Suplai Abadi (TRX-2610-089)',
-      details: 'Deteksi Faktur Pajak TBTS: NPWP non-aktif dalam daftar pengawasan DJP. Skor risiko 96/100.',
-    },
-  ];
+  const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>(
+    initialAuditLogs && initialAuditLogs.length > 0 ? initialAuditLogs : DEFAULT_AUDIT_LOGS
+  );
+
+  React.useEffect(() => {
+    if (initialAuditLogs && initialAuditLogs.length > 0) {
+      setAuditLogs(initialAuditLogs);
+    }
+  }, [initialAuditLogs]);
 
   const filteredLogs = auditLogs.filter((log) => {
     const matchActor = auditFilterActor === 'ALL' || log.role.includes(auditFilterActor);

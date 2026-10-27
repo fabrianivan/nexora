@@ -16,6 +16,18 @@ interface TaxReturnTabProps {
   entityName: string;
   taxId: string;
   activeRole: UserRole;
+  initialData?: {
+    returnStatus?: 'Draft' | 'Review' | 'Approved' | 'Ready';
+    approver?: { name: string; role: string } | null;
+    creator?: { name: string; role: string };
+    figures?: Record<string, number>;
+  } | null;
+  onDataChange?: (data: {
+    returnStatus: 'Draft' | 'Review' | 'Approved' | 'Ready';
+    approver: { name: string; role: string } | null;
+    creator: { name: string; role: string };
+    figures: Record<string, number>;
+  }) => void;
   onProceedToPayment?: () => void;
   onTriggerToast?: (msg: string) => void;
 }
@@ -25,20 +37,37 @@ export function TaxReturnTab({
   entityName,
   taxId,
   activeRole,
+  initialData,
+  onDataChange,
   onProceedToPayment,
   onTriggerToast
 }: TaxReturnTabProps) {
-  // Workflow Status: Draft -> Review -> Approved -> Ready
-  const [returnStatus, setReturnStatus] = useState<'Draft' | 'Review' | 'Approved' | 'Ready'>('Review');
+  // Workflow Status: Draft -> Review -> Approved -> Ready (Database Synced)
+  const [returnStatus, setReturnStatus] = useState<'Draft' | 'Review' | 'Approved' | 'Ready'>(
+    initialData?.returnStatus || 'Review'
+  );
   const [activeFormSection, setActiveFormSection] = useState<'induk' | 'lampiran_1' | 'lampiran_2' | 'lampiran_3'>('induk');
-  const [creator] = useState<{ name: string; role: string }>({
-    name: 'Bambang Soeprapto, BKP',
-    role: 'Konsultan Pajak'
-  });
-  const [approver, setApprover] = useState<{ name: string; role: string } | null>(null);
+  const [creator] = useState<{ name: string; role: string }>(
+    initialData?.creator || {
+      name: 'Bambang Soeprapto, BKP',
+      role: 'Konsultan Pajak'
+    }
+  );
+  const [approver, setApprover] = useState<{ name: string; role: string } | null>(
+    initialData?.approver || null
+  );
+
+  React.useEffect(() => {
+    if (initialData?.returnStatus) {
+      setReturnStatus(initialData.returnStatus);
+    }
+    if (initialData?.approver !== undefined) {
+      setApprover(initialData.approver);
+    }
+  }, [initialData]);
 
   // Return Figures (Linked to reconciliation)
-  const figures = {
+  const figures = initialData?.figures || {
     revenue: 4650000000,
     cogs: 1690000000, // Post-positive correction of CV Mega Suplai 120M
     expenses: 1985000000,
@@ -58,12 +87,25 @@ export function TaxReturnTab({
   const handleSubmitForReview = () => {
     setReturnStatus('Review');
     onTriggerToast?.('Draf SPT telah diajukan ke Head of Tax untuk review persetujuan.');
+    onDataChange?.({
+      returnStatus: 'Review',
+      approver,
+      creator,
+      figures,
+    });
   };
 
   const handleApprove = () => {
+    const nextApprover = { name: 'Sri Mulyani Dewi, S.E., Ak., CA', role: activeRole };
     setReturnStatus('Approved');
-    setApprover({ name: 'Sri Mulyani Dewi, S.E., Ak., CA', role: activeRole });
+    setApprover(nextApprover);
     onTriggerToast?.('Draf SPT 1771 telah disetujui (Maker-Checker Verified). Status: Siap Bayar.');
+    onDataChange?.({
+      returnStatus: 'Approved',
+      approver: nextApprover,
+      creator,
+      figures,
+    });
   };
 
   // Real XML/JSON Exporter

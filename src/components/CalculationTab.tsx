@@ -17,6 +17,9 @@ import { formatCurrency, CountryCode } from '@/data/multiCountryTaxData';
 interface CalculationTabProps {
   countryCode: CountryCode;
   entityName: string;
+  initialItems?: FiscalReconciliationItem[];
+  initialApply31EFacility?: boolean;
+  onDataChange?: (data: { items: FiscalReconciliationItem[]; apply31EFacility: boolean }) => void;
   onNavigateToFinding?: (findingId: string) => void;
   onProceedToReturn?: () => void;
 }
@@ -24,15 +27,31 @@ interface CalculationTabProps {
 export function CalculationTab({
   countryCode,
   entityName,
+  initialItems,
+  initialApply31EFacility = true,
+  onDataChange,
   onNavigateToFinding,
   onProceedToReturn
 }: CalculationTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<'cit_recon' | 'vat_recon' | 'wht_calc' | 'what_if'>('cit_recon');
   
-  // Fiscal Reconciliation State
-  const [items, setItems] = useState<FiscalReconciliationItem[]>(initialFiscalData);
-  const [apply31EFacility, setApply31EFacility] = useState<boolean>(true);
+  // Fiscal Reconciliation State (Database Synced)
+  const [items, setItems] = useState<FiscalReconciliationItem[]>(initialItems && initialItems.length > 0 ? initialItems : initialFiscalData);
+  const [apply31EFacility, setApply31EFacility] = useState<boolean>(initialApply31EFacility);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+
+  // Sync when initial props change from DB bootstrap
+  React.useEffect(() => {
+    if (initialItems && initialItems.length > 0) {
+      setItems(initialItems);
+    }
+  }, [initialItems]);
+
+  React.useEffect(() => {
+    if (typeof initialApply31EFacility === 'boolean') {
+      setApply31EFacility(initialApply31EFacility);
+    }
+  }, [initialApply31EFacility]);
 
   // New Adjustment Row Form
   const [newAccountCode, setNewAccountCode] = useState('6900');
@@ -126,12 +145,16 @@ export function CalculationTab({
       correctionReason: newReason,
       legalBasis: newLegalBasis,
     };
-    setItems([...items, newItem]);
+    const nextItems = [...items, newItem];
+    setItems(nextItems);
     setShowAddModal(false);
+    onDataChange?.({ items: nextItems, apply31EFacility });
   };
 
   const handleDeleteItem = (id: string) => {
-    setItems(items.filter((i) => i.id !== id));
+    const nextItems = items.filter((i) => i.id !== id);
+    setItems(nextItems);
+    onDataChange?.({ items: nextItems, apply31EFacility });
   };
 
   // WHT Calculator Math
@@ -308,7 +331,11 @@ export function CalculationTab({
                   <input
                     type="checkbox"
                     checked={apply31EFacility}
-                    onChange={(e) => setApply31EFacility(e.target.checked)}
+                    onChange={(e) => {
+                      const nextVal = e.target.checked;
+                      setApply31EFacility(nextVal);
+                      onDataChange?.({ items, apply31EFacility: nextVal });
+                    }}
                     className="rounded text-blue-600 accent-blue-600"
                   />
                   <span>Terapkan Fasilitas Pasal 31E (Diskon 50%)</span>

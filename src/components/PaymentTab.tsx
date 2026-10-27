@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { CountryCode, formatCurrency } from '@/data/multiCountryTaxData';
 
-interface PaymentLiability {
+export interface PaymentLiability {
   id: string;
   taxType: string;
   kapKjs: string; // Kode Akun Pajak & Jenis Setoran
@@ -22,10 +22,57 @@ interface PaymentLiability {
   paidAt?: string;
 }
 
+const DEFAULT_LIABILITIES: PaymentLiability[] = [
+  {
+    id: 'PAY-01',
+    taxType: 'PPh Badan Tahunan (Pasal 29)',
+    kapKjs: '411126-200 (PPh Badan Tahunan)',
+    period: 'Tahun Pajak 2026',
+    amount: 39545000,
+    dueDate: '30 April 2027',
+    status: 'Belum dibayar',
+    billingCode: '0100139482142026',
+  },
+  {
+    id: 'PAY-02',
+    taxType: 'PPN Masa Dalam Negeri',
+    kapKjs: '411211-100 (Setoran Masa PPN)',
+    period: 'Masa Oktober 2026',
+    amount: 32550000,
+    dueDate: '30 November 2026',
+    status: 'Belum dibayar',
+    billingCode: '0200139482141026',
+  },
+  {
+    id: 'PAY-03',
+    taxType: 'PPh 21 TER Karyawan & Honorarium',
+    kapKjs: '411121-100 (PPh 21 Bulanan)',
+    period: 'Masa Oktober 2026',
+    amount: 14800000,
+    dueDate: '10 November 2026',
+    status: 'Dibayar',
+    billingCode: '0300139482141026',
+    ntpn: '7A920F819203BC11',
+    paidAt: '05 Nov 2026, 14:22 WIB',
+  },
+  {
+    id: 'PAY-04',
+    taxType: 'PPh 23 Jasa Manajemen Afiliasi',
+    kapKjs: '411124-104 (Jasa Manajemen)',
+    period: 'Masa September 2026',
+    amount: 4500000,
+    dueDate: '10 Oktober 2026',
+    status: 'Terlambat',
+    billingCode: '0400139482140926',
+  },
+];
+
 interface PaymentTabProps {
   countryCode: CountryCode;
   entityName: string;
   taxId: string;
+  initialLiabilities?: PaymentLiability[];
+  onDataChange?: (liabilities: PaymentLiability[]) => void;
   onTriggerToast?: (msg: string) => void;
 }
 
@@ -33,52 +80,19 @@ export function PaymentTab({
   countryCode,
   entityName,
   taxId,
+  initialLiabilities,
+  onDataChange,
   onTriggerToast
 }: PaymentTabProps) {
-  const [liabilities, setLiabilities] = useState<PaymentLiability[]>([
-    {
-      id: 'PAY-01',
-      taxType: 'PPh Badan Tahunan (Pasal 29)',
-      kapKjs: '411126-200 (PPh Badan Tahunan)',
-      period: 'Tahun Pajak 2026',
-      amount: 39545000,
-      dueDate: '30 April 2027',
-      status: 'Belum dibayar',
-      billingCode: '0100139482142026',
-    },
-    {
-      id: 'PAY-02',
-      taxType: 'PPN Masa Dalam Negeri',
-      kapKjs: '411211-100 (Setoran Masa PPN)',
-      period: 'Masa Oktober 2026',
-      amount: 32550000,
-      dueDate: '30 November 2026',
-      status: 'Belum dibayar',
-      billingCode: '0200139482141026',
-    },
-    {
-      id: 'PAY-03',
-      taxType: 'PPh 21 TER Karyawan & Honorarium',
-      kapKjs: '411121-100 (PPh 21 Bulanan)',
-      period: 'Masa Oktober 2026',
-      amount: 14800000,
-      dueDate: '10 November 2026',
-      status: 'Dibayar',
-      billingCode: '0300139482141026',
-      ntpn: '7A920F819203BC11',
-      paidAt: '05 Nov 2026, 14:22 WIB',
-    },
-    {
-      id: 'PAY-04',
-      taxType: 'PPh 23 Jasa Manajemen Afiliasi',
-      kapKjs: '411124-104 (Jasa Manajemen)',
-      period: 'Masa September 2026',
-      amount: 4500000,
-      dueDate: '10 Oktober 2026',
-      status: 'Terlambat',
-      billingCode: '0400139482140926',
-    },
-  ]);
+  const [liabilities, setLiabilities] = useState<PaymentLiability[]>(
+    initialLiabilities && initialLiabilities.length > 0 ? initialLiabilities : DEFAULT_LIABILITIES
+  );
+
+  React.useEffect(() => {
+    if (initialLiabilities && initialLiabilities.length > 0) {
+      setLiabilities(initialLiabilities);
+    }
+  }, [initialLiabilities]);
 
   const [activeBillingSlip, setActiveBillingSlip] = useState<PaymentLiability | null>(liabilities[0]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -102,32 +116,32 @@ export function PaymentTab({
     e.preventDefault();
     if (!targetPayLiability) return;
 
-    setLiabilities(
-      liabilities.map((l) =>
-        l.id === targetPayLiability.id
-          ? {
-              ...l,
-              status: 'Dibayar',
-              ntpn: inputNtpn,
-              paidAt: new Date().toLocaleString('id-ID'),
-            }
-          : l
-      )
+    const nextLiabilities: PaymentLiability[] = liabilities.map((l) =>
+      l.id === targetPayLiability.id
+        ? {
+            ...l,
+            status: 'Dibayar',
+            ntpn: inputNtpn,
+            paidAt: new Date().toLocaleString('id-ID'),
+          }
+        : l
     );
+    setLiabilities(nextLiabilities);
     setShowPayModal(false);
+    onDataChange?.(nextLiabilities);
     onTriggerToast?.(`Pembayaran ${targetPayLiability.taxType} berhasil dicatat dengan NTPN: ${inputNtpn}`);
   };
 
   // Generate New Billing ID
   const handleGenerateNewBilling = (liabilityId: string) => {
     const randomCode = '0' + Math.floor(100000000000000 + Math.random() * 900000000000000).toString();
-    setLiabilities(
-      liabilities.map((l) =>
-        l.id === liabilityId
-          ? { ...l, billingCode: randomCode }
-          : l
-      )
+    const nextLiabilities: PaymentLiability[] = liabilities.map((l) =>
+      l.id === liabilityId
+        ? { ...l, billingCode: randomCode }
+        : l
     );
+    setLiabilities(nextLiabilities);
+    onDataChange?.(nextLiabilities);
     onTriggerToast?.(`Kode Billing baru diterbitkan dari DJP Coretax: ${randomCode}`);
   };
 

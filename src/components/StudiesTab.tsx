@@ -8,7 +8,7 @@ import {
   Globe2
 } from 'lucide-react';
 
-interface StudyItem {
+export interface StudyItem {
   id: string;
   title: string;
   category: 'P3B / Tax Treaty' | 'BEPS 2.0 / Pillar Two' | 'Transfer Pricing' | 'PPN / VAT' | 'Fraud Case Study';
@@ -19,11 +19,55 @@ interface StudyItem {
   simulationType: 'treaty_relief' | 'pillar_two_etr' | 'tp_markup' | 'none';
 }
 
+const DEFAULT_STUDIES_LIST: StudyItem[] = [
+  {
+    id: 'STUDY-01',
+    title: 'P3B Indonesia–Singapura: Ketentuan Pemotongan Dividen, Royalti & Bunga (Pasal 10, 11, 12)',
+    category: 'P3B / Tax Treaty',
+    summary: 'Perjanjian Penghindaran Pajak Berganda (P3B) terbaru Indonesia-Singapura membatasi tarif pemotongan dividen menjadi 10% (kepemilikan langsung min. 25%) atau 15% (lainnya), serta tarif royalti maksimal 10%. Membutuhkan validasi e-SKD aktif di DJP Coretax.',
+    source: 'P3B RI–Singapura (Berlaku Efektif 2022) & PER-25/PJ/2018',
+    tags: ['P3B', 'Tax Treaty', 'e-SKD', 'Withholding Tax', 'Pasal 26'],
+    applicableJurisdictions: ['🇮🇩 Indonesia', '🇸🇬 Singapore'],
+    simulationType: 'treaty_relief',
+  },
+  {
+    id: 'STUDY-02',
+    title: 'OECD Pillar Two: Ambang Batas GloBE €750M & Ketentuan Top-up Tax 15%',
+    category: 'BEPS 2.0 / Pillar Two',
+    summary: 'Grup korporasi multinasional dengan omzet konsolidasi melebihi €750 Juta wajib menerapkan minimum effective tax rate (ETR) 15%. Jika anak usaha di yurisdiksi hub dikenai ETR di bawah 15%, Ultimate Parent Entity (UPE) wajib menyetor Top-Up Tax (IIR).',
+    source: 'OECD/G20 Inclusive Framework on BEPS — Pillar Two Model Rules & PMK Implementasi',
+    tags: ['Pillar Two', 'GloBE', 'Top-up Tax', 'CbCR', 'ETR'],
+    applicableJurisdictions: ['🇮🇩 Indonesia', '🇸🇬 Singapore', '🇲🇾 Malaysia', '🇺🇸 United States'],
+    simulationType: 'pillar_two_etr',
+  },
+  {
+    id: 'STUDY-03',
+    title: 'Studi Kasus Pembongkaran Sindikat Penerbit Faktur Pajak TBTS (Pasal 39A UU KUP)',
+    category: 'Fraud Case Study',
+    summary: 'Analisis forensik penipuan PPN melalui modus shell company (perusahaan cangkang) tanpa karyawan riil yang menerbitkan Faktur Pajak Masukan fiktif. Deteksi algoritma Nexora mengidentifikasi anomali lewat perbandingan Z-score histori transaksi dan ketiadaan arus kas riil.',
+    source: 'Yurisprudensi Pengadilan Pajak & DJP Surat Edaran SE-26/PJ/2015',
+    tags: ['Faktur TBTS', 'Pasal 39A', 'PPN Masukan', 'Z-Score Anomaly', 'Fraud Prevention'],
+    applicableJurisdictions: ['🇮🇩 Indonesia'],
+    simulationType: 'none',
+  },
+  {
+    id: 'STUDY-04',
+    title: 'Transfer Pricing Jasa Manajemen Antar-Grup: Metode TNMM vs Cost Plus (PMK 172/2023)',
+    category: 'Transfer Pricing',
+    summary: 'Panduan penyusunan Local File & Master File TP Doc atas alokasi biaya manajemen regional. Uji kewajaran mensyaratkan rentang interkuartil (interquartile range) markup 5% - 8% dari penyedia jasa independen sejenis.',
+    source: 'PMK No. 172 Tahun 2023 tentang Penerapan Prinsip Kewajaran dan Kelaziman Usaha',
+    tags: ['Transfer Pricing', 'TNMM', 'Arm’s Length', 'Interquartile Range', 'PMK 172/2023'],
+    applicableJurisdictions: ['🇮🇩 Indonesia', '🇸🇬 Singapore', '🇲🇾 Malaysia'],
+    simulationType: 'tp_markup',
+  },
+];
+
 interface StudiesTabProps {
+  initialStudies?: StudyItem[];
   onAskCopilot?: (question: string) => void;
 }
 
-export function StudiesTab({ onAskCopilot }: StudiesTabProps) {
+export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
@@ -41,48 +85,15 @@ export function StudiesTab({ onAskCopilot }: StudiesTabProps) {
   const [jurisdictionEtr, setJurisdictionEtr] = useState<number>(11.5); // 11.5% in SG/low-tax hub
   const [coveredEarnings, setCoveredEarnings] = useState<number>(50000000); // €50M
 
-  const studiesList: StudyItem[] = [
-    {
-      id: 'STUDY-01',
-      title: 'P3B Indonesia–Singapura: Ketentuan Pemotongan Dividen, Royalti & Bunga (Pasal 10, 11, 12)',
-      category: 'P3B / Tax Treaty',
-      summary: 'Perjanjian Penghindaran Pajak Berganda (P3B) terbaru Indonesia-Singapura membatasi tarif pemotongan dividen menjadi 10% (kepemilikan langsung min. 25%) atau 15% (lainnya), serta tarif royalti maksimal 10%. Membutuhkan validasi e-SKD aktif di DJP Coretax.',
-      source: 'P3B RI–Singapura (Berlaku Efektif 2022) & PER-25/PJ/2018',
-      tags: ['P3B', 'Tax Treaty', 'e-SKD', 'Withholding Tax', 'Pasal 26'],
-      applicableJurisdictions: ['🇮🇩 Indonesia', '🇸🇬 Singapore'],
-      simulationType: 'treaty_relief',
-    },
-    {
-      id: 'STUDY-02',
-      title: 'OECD Pillar Two: Ambang Batas GloBE €750M & Ketentuan Top-up Tax 15%',
-      category: 'BEPS 2.0 / Pillar Two',
-      summary: 'Grup korporasi multinasional dengan omzet konsolidasi melebihi €750 Juta wajib menerapkan minimum effective tax rate (ETR) 15%. Jika anak usaha di yurisdiksi hub dikenai ETR di bawah 15%, Ultimate Parent Entity (UPE) wajib menyetor Top-Up Tax (IIR).',
-      source: 'OECD/G20 Inclusive Framework on BEPS — Pillar Two Model Rules & PMK Implementasi',
-      tags: ['Pillar Two', 'GloBE', 'Top-up Tax', 'CbCR', 'ETR'],
-      applicableJurisdictions: ['🇮🇩 Indonesia', '🇸🇬 Singapore', '🇲🇾 Malaysia', '🇺🇸 United States'],
-      simulationType: 'pillar_two_etr',
-    },
-    {
-      id: 'STUDY-03',
-      title: 'Studi Kasus Pembongkaran Sindikat Penerbit Faktur Pajak TBTS (Pasal 39A UU KUP)',
-      category: 'Fraud Case Study',
-      summary: 'Analisis forensik penipuan PPN melalui modus shell company (perusahaan cangkang) tanpa karyawan riil yang menerbitkan Faktur Pajak Masukan fiktif. Deteksi algoritma Nexora mengidentifikasi anomali lewat perbandingan Z-score histori transaksi dan ketiadaan arus kas riil.',
-      source: 'Yurisprudensi Pengadilan Pajak & DJP Surat Edaran SE-26/PJ/2015',
-      tags: ['Faktur TBTS', 'Pasal 39A', 'PPN Masukan', 'Z-Score Anomaly', 'Fraud Prevention'],
-      applicableJurisdictions: ['🇮🇩 Indonesia'],
-      simulationType: 'none',
-    },
-    {
-      id: 'STUDY-04',
-      title: 'Transfer Pricing Jasa Manajemen Antar-Grup: Metode TNMM vs Cost Plus (PMK 172/2023)',
-      category: 'Transfer Pricing',
-      summary: 'Panduan penyusunan Local File & Master File TP Doc atas alokasi biaya manajemen regional. Uji kewajaran mensyaratkan rentang interkuartil (interquartile range) markup 5% - 8% dari penyedia jasa independen sejenis.',
-      source: 'PMK No. 172 Tahun 2023 tentang Penerapan Prinsip Kewajaran dan Kelaziman Usaha',
-      tags: ['Transfer Pricing', 'TNMM', 'Arm’s Length', 'Interquartile Range', 'PMK 172/2023'],
-      applicableJurisdictions: ['🇮🇩 Indonesia', '🇸🇬 Singapore', '🇲🇾 Malaysia'],
-      simulationType: 'tp_markup',
-    },
-  ];
+  const [studiesList, setStudiesList] = useState<StudyItem[]>(
+    initialStudies && initialStudies.length > 0 ? initialStudies : DEFAULT_STUDIES_LIST
+  );
+
+  React.useEffect(() => {
+    if (initialStudies && initialStudies.length > 0) {
+      setStudiesList(initialStudies);
+    }
+  }, [initialStudies]);
 
   const filtered = studiesList.filter((s) => {
     const matchCat = selectedCategory === 'ALL' || s.category === selectedCategory;

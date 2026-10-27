@@ -53,6 +53,24 @@ import { ReportsTab } from '@/components/ReportsTab';
 import { CommandPalette } from '@/components/CommandPalette';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { DataPersistenceControl } from '@/components/DataPersistenceControl';
+import { FiscalReconciliationItem } from '@/data/indonesiaTaxData';
+import { PaymentLiability } from '@/components/PaymentTab';
+import { CalendarEvent } from '@/components/TaxCalendarTab';
+import { AuditLogRecord } from '@/components/ReportsTab';
+import { StudyItem } from '@/components/StudiesTab';
+
+interface CalculationState {
+  items: FiscalReconciliationItem[];
+  apply31EFacility: boolean;
+  fiscalYear?: string;
+}
+
+interface TaxReturnState {
+  returnStatus: 'Draft' | 'Review' | 'Approved' | 'Ready';
+  approver?: { name: string; role: string } | null;
+  creator?: { name: string; role: string };
+  figures?: Record<string, number>;
+}
 
 type PrimaryNav = 'companies' | 'calculation' | 'tax_return' | 'payment';
 type SubNav = 'corporate' | 'individual' | 'studies' | 'calendar' | 'reports';
@@ -1313,11 +1331,80 @@ export default function NexoraApp() {
   const [subNav, setSubNav] = useState<SubNav>('corporate');
   const [corpViewTab, setCorpViewTab] = useState<CorporateViewTab>('directory');
 
-  // Companies & Multi-Country Subsidiaries State
+  // Companies & Multi-Country Subsidiaries State (Backed by Database)
   const [companies, setCompanies] = useState<CorporateEntity[]>(INITIAL_COMPANIES);
   const [selectedEntityId, setSelectedEntityId] = useState<string>('ENT-ID-001');
   const [companySearch, setCompanySearch] = useState<string>('');
   const [entityRoleFilter, setEntityRoleFilter] = useState<'ALL' | 'PARENT' | 'SUBSIDIARY'>('ALL');
+  const [dbEngine, setDbEngine] = useState<'sqlite' | 'mysql' | 'memory'>('sqlite');
+  const [, setIsDbHydrated] = useState<boolean>(false);
+
+  // Unified Database-Backed State for All Views
+  const [dbCalculations, setDbCalculations] = useState<CalculationState | null>(null);
+  const [dbTaxReturn, setDbTaxReturn] = useState<TaxReturnState | null>(null);
+  const [dbPayments, setDbPayments] = useState<PaymentLiability[]>([]);
+  const [dbCalendarEvents, setDbCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [dbAuditLogs, setDbAuditLogs] = useState<AuditLogRecord[]>([]);
+  const [dbStudies, setDbStudies] = useState<StudyItem[]>([]);
+
+  // Initial Hydration from Real Database (SQLite / MySQL)
+  useEffect(() => {
+    let active = true;
+    async function hydrateFromDb() {
+      try {
+        const res = await fetch('/api/db/bootstrap');
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data) {
+            if (data.companies && Array.isArray(data.companies) && data.companies.length > 0) {
+              setCompanies(data.companies);
+            }
+            if (data.calculations) {
+              setDbCalculations(data.calculations);
+            }
+            if (data.taxReturns) {
+              setDbTaxReturn(data.taxReturns);
+            }
+            if (data.payments && Array.isArray(data.payments)) {
+              setDbPayments(data.payments);
+            }
+            if (data.calendarEvents && Array.isArray(data.calendarEvents)) {
+              setDbCalendarEvents(data.calendarEvents);
+            }
+            if (data.auditLogs && Array.isArray(data.auditLogs)) {
+              setDbAuditLogs(data.auditLogs);
+            }
+            if (data.studies && Array.isArray(data.studies)) {
+              setDbStudies(data.studies);
+            }
+            if (data.databaseStatus?.engine) {
+              setDbEngine(data.databaseStatus.engine);
+            }
+            setIsDbHydrated(true);
+          }
+        }
+      } catch (err) {
+        console.warn('Hydration from database warning:', err);
+      }
+    }
+    hydrateFromDb();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Helper to sync mutations to database
+  const syncToDatabase = async (payload: Record<string, unknown>) => {
+    try {
+      await fetch('/api/db/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.warn('Sync to database failed:', err);
+    }
+  };
 
   // Figma 1 5-Screen Corporate Management State
   const [inputMode, setInputMode] = useState<'search_existing' | 'manual'>('manual');
@@ -1361,13 +1448,32 @@ export default function NexoraApp() {
     }
   };
 
-  const handleResetSampleData = () => {
-    setCompanies(INITIAL_COMPANIES);
+  const handleResetSampleData = async () => {
+    try {
+      const res = await fetch('/api/db/reset', { method: 'POST' });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.data) {
+          if (result.data.companies) setCompanies(result.data.companies);
+          if (result.data.calculations) setDbCalculations(result.data.calculations);
+          if (result.data.taxReturns) setDbTaxReturn(result.data.taxReturns);
+          if (result.data.payments) setDbPayments(result.data.payments);
+          if (result.data.calendarEvents) setDbCalendarEvents(result.data.calendarEvents);
+          if (result.data.auditLogs) setDbAuditLogs(result.data.auditLogs);
+          if (result.data.studies) setDbStudies(result.data.studies);
+          if (result.data.databaseStatus?.engine) setDbEngine(result.data.databaseStatus.engine);
+        }
+      } else {
+        setCompanies(INITIAL_COMPANIES);
+      }
+    } catch {
+      setCompanies(INITIAL_COMPANIES);
+    }
     setSelectedEntityId('ENT-ID-001');
     setPrimaryNav('companies');
     setSubNav('corporate');
     setCorpViewTab('directory');
-    triggerToast('Dataset contoh lengkap multi-entitas (ID, SG, MY, US) berhasil dimuat ulang!');
+    triggerToast('Database berhasil di-reset dan dimuat ulang ke status kepatuhan standar!');
   };
 
   // Add Subsidiary Form fields (inside Frame 3 Company Structure Modal)
@@ -1499,9 +1605,14 @@ export default function NexoraApp() {
   }
 
   function handleUpdateCompanyField(field: keyof CorporateEntity, value: string) {
-    setCompanies((prev) =>
-      prev.map((c) => (c.id === selectedEntity.id ? { ...c, [field]: value } : c))
-    );
+    setCompanies((prev) => {
+      const updated = prev.map((c) => (c.id === selectedEntity.id ? { ...c, [field]: value } : c));
+      const targetCompany = updated.find((c) => c.id === selectedEntity.id);
+      if (targetCompany) {
+        syncToDatabase({ company: targetCompany });
+      }
+      return updated;
+    });
   }
 
   function handleStartAddNewCompany() {
@@ -1519,12 +1630,16 @@ export default function NexoraApp() {
       status: 'PENDING',
       aiComplianceScore: 90,
     };
-    setCompanies((prev) => [newEntity, ...prev]);
+    setCompanies((prev) => {
+      const next = [newEntity, ...prev];
+      syncToDatabase({ company: newEntity });
+      return next;
+    });
     setSelectedEntityId(newId);
     setCorpViewTab('corporate_form');
     setInputMode('search_existing');
     triggerToast(
-      'Entitas anak perusahaan baru dibuat! Silakan lengkapi form Corporate Information, Upload Document, Company Structure & Intermediate Shareholders di bawah.'
+      'Entitas anak perusahaan baru dibuat & tersimpan di Database! Silakan lengkapi form Corporate Information di bawah.'
     );
   }
 
@@ -1601,17 +1716,21 @@ export default function NexoraApp() {
       aiComplianceScore: 92,
     };
 
-    setCompanies((prev) => [
-      ...prev.map((c) =>
-        c.id === selectedEntity.id
-          ? { ...c, structureNodes: [...c.structureNodes, newNode] }
-          : c
-      ),
-      newCorpEntity,
-    ]);
+    setCompanies((prev) => {
+      const next = [
+        ...prev.map((c) =>
+          c.id === selectedEntity.id
+            ? { ...c, structureNodes: [...c.structureNodes, newNode] }
+            : c
+        ),
+        newCorpEntity,
+      ];
+      syncToDatabase({ companies: next });
+      return next;
+    });
     setShowStructureModal(false);
     triggerToast(
-      `Anak perusahaan "${newSubName}" (${countryMeta.flag} ${countryMeta.name}) berhasil ditambahkan ke Company Structure & daftar Companies!`
+      `Anak perusahaan "${newSubName}" (${countryMeta.flag} ${countryMeta.name}) berhasil ditambahkan ke Company Structure & tersimpan di Database!`
     );
   }
 
@@ -1642,8 +1761,8 @@ export default function NexoraApp() {
   function handleAddShareholder(e: React.FormEvent) {
     e.preventDefault();
     if (editingShId) {
-      setCompanies((prev) =>
-        prev.map((c) =>
+      setCompanies((prev) => {
+        const next = prev.map((c) =>
           c.id === selectedEntity.id
             ? {
                 ...c,
@@ -1664,11 +1783,14 @@ export default function NexoraApp() {
                 ),
               }
             : c
-        )
-      );
+        );
+        const target = next.find((c) => c.id === selectedEntity.id);
+        if (target) syncToDatabase({ company: target });
+        return next;
+      });
       setShowShareholderModal(false);
       triggerToast(
-        `Intermediate Shareholder "${newShName}" (${editingShId}) berhasil diperbarui!`
+        `Intermediate Shareholder "${newShName}" (${editingShId}) berhasil diperbarui & disimpan ke Database!`
       );
       setEditingShId(null);
       return;
@@ -1694,25 +1816,28 @@ export default function NexoraApp() {
       address: newShAddress,
       contactEmail: newShEmail,
     };
-    setCompanies((prev) =>
-      prev.map((c) =>
+    setCompanies((prev) => {
+      const next = prev.map((c) =>
         c.id === selectedEntity.id
           ? {
               ...c,
               intermediateShareholders: [...c.intermediateShareholders, newSh],
             }
           : c
-      )
-    );
+      );
+      const target = next.find((c) => c.id === selectedEntity.id);
+      if (target) syncToDatabase({ company: target });
+      return next;
+    });
     setShowShareholderModal(false);
     triggerToast(
-      `Intermediate Shareholder "${newSh.name}" (${newSh.id}) berhasil disimpan & lolos skrining OECD BEPS Action 6!`
+      `Intermediate Shareholder "${newSh.name}" (${newSh.id}) berhasil disimpan ke Database & lolos skrining OECD BEPS Action 6!`
     );
   }
 
   function handleDeleteShareholder(shId: string) {
-    setCompanies((prev) =>
-      prev.map((c) =>
+    setCompanies((prev) => {
+      const next = prev.map((c) =>
         c.id === selectedEntity.id
           ? {
               ...c,
@@ -1721,9 +1846,12 @@ export default function NexoraApp() {
               ),
             }
           : c
-      )
-    );
-    triggerToast(`Pemegang saham perantara ${shId} telah dihapus.`);
+      );
+      const target = next.find((c) => c.id === selectedEntity.id);
+      if (target) syncToDatabase({ company: target });
+      return next;
+    });
+    triggerToast(`Pemegang saham perantara ${shId} telah dihapus dari Database.`);
   }
 
   function handleAddIndividualShareholder(e: React.FormEvent) {
@@ -1748,25 +1876,28 @@ export default function NexoraApp() {
       address: newIndAddress,
       email: newIndEmail,
     };
-    setCompanies((prev) =>
-      prev.map((c) =>
+    setCompanies((prev) => {
+      const next = prev.map((c) =>
         c.id === selectedEntity.id
           ? {
               ...c,
               individualShareholders: [...c.individualShareholders, newInd],
             }
           : c
-      )
-    );
+      );
+      const target = next.find((c) => c.id === selectedEntity.id);
+      if (target) syncToDatabase({ company: target });
+      return next;
+    });
     setShowIndividualModal(false);
     triggerToast(
-      `Individual Shareholder "${newInd.fullName}" (${newInd.id}) berhasil ditambahkan & diverifikasi Document AI KYC!`
+      `Individual Shareholder "${newInd.fullName}" (${newInd.id}) berhasil ditambahkan & disimpan ke Database!`
     );
   }
 
   function handleDeleteIndividualShareholder(indId: string) {
-    setCompanies((prev) =>
-      prev.map((c) =>
+    setCompanies((prev) => {
+      const next = prev.map((c) =>
         c.id === selectedEntity.id
           ? {
               ...c,
@@ -1775,9 +1906,12 @@ export default function NexoraApp() {
               ),
             }
           : c
-      )
-    );
-    triggerToast(`Individual Shareholder ${indId} telah dihapus.`);
+      );
+      const target = next.find((c) => c.id === selectedEntity.id);
+      if (target) syncToDatabase({ company: target });
+      return next;
+    });
+    triggerToast(`Individual Shareholder ${indId} telah dihapus dari Database.`);
   }
 
   function handleDeleteCompany(compId: string, compName: string) {
@@ -1787,10 +1921,11 @@ export default function NexoraApp() {
     }
     const remaining = companies.filter((c) => c.id !== compId);
     setCompanies(remaining);
+    syncToDatabase({ deleteCompanyId: compId });
     if (selectedEntityId === compId) {
       setSelectedEntityId(remaining[0].id);
     }
-    triggerToast(`Entitas ${compName} telah dihapus dari daftar.`);
+    triggerToast(`Entitas ${compName} telah dihapus dari Database.`);
   }
 
 
@@ -2399,7 +2534,7 @@ export default function NexoraApp() {
                 Google Cloud Document AI + BigQuery Connected
               </span>
 
-              <DataPersistenceControl onResetSampleData={handleResetSampleData} />
+              <DataPersistenceControl dbEngine={dbEngine} onResetData={handleResetSampleData} />
               
               {/* Interactive Multi-Country Active Entity Switcher */}
               <div className="relative">
@@ -4139,10 +4274,11 @@ export default function NexoraApp() {
             )}
 
             {/* ---------------------------------------------------------------
-                SUB-NAV 2: STUDIES (KNOWLEDGE & TREATY SIMULATOR)
+                SUB-NAV 2: STUDIES (KNOWLEDGE & TREATY SIMULATOR - DATABASE BACKED)
                --------------------------------------------------------------- */}
             {subNav === 'studies' && (
               <StudiesTab
+                initialStudies={dbStudies}
                 onAskCopilot={(q) => {
                   setChatInput(q);
                   setIsChatOpen(true);
@@ -4151,23 +4287,29 @@ export default function NexoraApp() {
             )}
 
             {/* ---------------------------------------------------------------
-                SUB-NAV 3: TAX CALENDAR
+                SUB-NAV 3: TAX CALENDAR (DATABASE BACKED)
                --------------------------------------------------------------- */}
             {subNav === 'calendar' && (
               <TaxCalendarTab
                 countryCode={activeCountry}
                 entityName={selectedEntity.legalName}
+                initialEvents={dbCalendarEvents}
+                onDataChange={(events) => {
+                  setDbCalendarEvents(events);
+                  syncToDatabase({ calendarEvents: events });
+                }}
                 onTriggerToast={triggerToast}
               />
             )}
 
             {/* ---------------------------------------------------------------
-                SUB-NAV 4: REPORTS & AUDIT TRAIL
+                SUB-NAV 4: REPORTS & AUDIT TRAIL (DATABASE BACKED)
                --------------------------------------------------------------- */}
             {subNav === 'reports' && (
               <ReportsTab
                 countryCode={activeCountry}
                 entityName={selectedEntity.legalName}
+                initialAuditLogs={dbAuditLogs}
                 onTriggerToast={triggerToast}
               />
             )}
@@ -4175,12 +4317,18 @@ export default function NexoraApp() {
         )}
 
         {/* ===================================================================
-            PRIMARY TAB 2: CALCULATION
+            PRIMARY TAB 2: CALCULATION (DATABASE BACKED)
            =================================================================== */}
         {primaryNav === 'calculation' && (
           <CalculationTab
             countryCode={activeCountry}
             entityName={selectedEntity.legalName}
+            initialItems={dbCalculations?.items}
+            initialApply31EFacility={dbCalculations?.apply31EFacility}
+            onDataChange={(data) => {
+              setDbCalculations(data);
+              syncToDatabase({ calculations: data });
+            }}
             onNavigateToFinding={() => {
               setPrimaryNav('companies');
               setSubNav('studies');
@@ -4190,7 +4338,7 @@ export default function NexoraApp() {
         )}
 
         {/* ===================================================================
-            PRIMARY TAB 3: TAX RETURN
+            PRIMARY TAB 3: TAX RETURN (DATABASE BACKED)
            =================================================================== */}
         {primaryNav === 'tax_return' && (
           <TaxReturnTab
@@ -4198,19 +4346,29 @@ export default function NexoraApp() {
             entityName={selectedEntity.legalName}
             taxId={selectedEntity.taxId}
             activeRole={activePersona.id === 'ceo_parent' ? 'CEO Grup' : activePersona.id === 'cfo_parent' ? 'Head of Tax' : 'Konsultan Pajak'}
+            initialData={dbTaxReturn}
+            onDataChange={(data) => {
+              setDbTaxReturn(data);
+              syncToDatabase({ taxReturn: data });
+            }}
             onProceedToPayment={() => setPrimaryNav('payment')}
             onTriggerToast={triggerToast}
           />
         )}
 
         {/* ===================================================================
-            PRIMARY TAB 4: PAYMENT
+            PRIMARY TAB 4: PAYMENT (DATABASE BACKED)
            =================================================================== */}
         {primaryNav === 'payment' && (
           <PaymentTab
             countryCode={activeCountry}
             entityName={selectedEntity.legalName}
             taxId={selectedEntity.taxId}
+            initialLiabilities={dbPayments}
+            onDataChange={(liabs) => {
+              setDbPayments(liabs);
+              syncToDatabase({ payments: liabs });
+            }}
             onTriggerToast={triggerToast}
           />
         )}

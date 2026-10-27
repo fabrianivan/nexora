@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { CountryCode } from '@/data/multiCountryTaxData';
 
-interface CalendarEvent {
+export interface CalendarEvent {
   id: string;
   title: string;
   jurisdiction: string;
@@ -23,26 +23,29 @@ interface CalendarEvent {
 interface TaxCalendarTabProps {
   countryCode: CountryCode;
   entityName: string;
+  initialEvents?: CalendarEvent[];
+  onDataChange?: (events: CalendarEvent[]) => void;
   onTriggerToast?: (msg: string) => void;
 }
 
-export function TaxCalendarTab({ countryCode, entityName, onTriggerToast }: TaxCalendarTabProps) {
+export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataChange, onTriggerToast }: TaxCalendarTabProps) {
   const [viewMode, setViewMode] = useState<'list' | 'month'>('list');
   const [filterTaxType, setFilterTaxType] = useState<string>('ALL');
 
-  const [events, setEvents] = useState<CalendarEvent[]>([
-    {
-      id: 'EVT-01',
-      title: 'Penyetoran PPh Masa Unifikasi & PPh 21 TER',
-      jurisdiction: '🇮🇩 Indonesia (DJP)',
-      entityName: 'PT Nusantara Kreasi Digital Tbk',
-      taxType: 'PPh Unifikasi',
-      dueDate: '2026-11-10',
-      status: 'Upcoming',
-      assignee: 'Bambang Soeprapto, BKP',
-      regulationBasis: 'PMK-242/PMK.03/2014 & PER-24/PJ/2021',
-      description: 'Setoran PPh 21 TER atas gaji karyawan masa Oktober 2026 melalui e-Billing DJP.',
-    },
+  const [events, setEvents] = useState<CalendarEvent[]>(
+    initialEvents && initialEvents.length > 0 ? initialEvents : [
+      {
+        id: 'EVT-01',
+        title: 'Penyetoran PPh Masa Unifikasi & PPh 21 TER',
+        jurisdiction: '🇮🇩 Indonesia (DJP)',
+        entityName: 'PT Nusantara Kreasi Digital Tbk',
+        taxType: 'PPh Unifikasi',
+        dueDate: '2026-11-10',
+        status: 'Upcoming',
+        assignee: 'Bambang Soeprapto, BKP',
+        regulationBasis: 'PMK-242/PMK.03/2014 & PER-24/PJ/2021',
+        description: 'Setoran PPh 21 TER atas gaji karyawan masa Oktober 2026 melalui e-Billing DJP.',
+      },
     {
       id: 'EVT-02',
       title: 'Pelaporan SPT Masa PPh Unifikasi & e-SKD PPh 26',
@@ -105,6 +108,12 @@ export function TaxCalendarTab({ countryCode, entityName, onTriggerToast }: TaxC
     },
   ]);
 
+  React.useEffect(() => {
+    if (initialEvents && initialEvents.length > 0) {
+      setEvents(initialEvents);
+    }
+  }, [initialEvents]);
+
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDate, setNewDate] = useState('2026-11-15');
@@ -128,9 +137,11 @@ export function TaxCalendarTab({ countryCode, entityName, onTriggerToast }: TaxC
       description: 'Tugas pengawasan tenggat kepatuhan perpajakan.',
     };
 
-    setEvents([...events, newEntry]);
+    const nextEvents = [...events, newEntry];
+    setEvents(nextEvents);
     setShowTaskModal(false);
     setNewTitle('');
+    onDataChange?.(nextEvents);
     onTriggerToast?.('Tugas tenggat kepatuhan baru berhasil ditambahkan ke kalender.');
   };
 
