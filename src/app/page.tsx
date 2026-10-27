@@ -32,6 +32,10 @@ import {
   ArrowLeft,
   Bell,
   LogOut,
+  Menu,
+  Calculator,
+  FileCheck2,
+  CreditCard,
 } from 'lucide-react';
 import {
   MULTI_COUNTRY_DATA,
@@ -1409,6 +1413,7 @@ export default function NexoraApp() {
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [showRbacModal, setShowRbacModal] = useState<boolean>(false);
   const [showEntityQuickSelect, setShowEntityQuickSelect] = useState<boolean>(false);
+  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const [rbacModalTab, setRbacModalTab] = useState<'personas' | 'matrix' | 'standards'>('personas');
   const [showConsolidationModal, setShowConsolidationModal] = useState<boolean>(false);
   const [restrictedNoticeEntity, setRestrictedNoticeEntity] = useState<CorporateEntity | null>(null);
@@ -1869,25 +1874,27 @@ export default function NexoraApp() {
           </div>
 
           {/* Center: Primary Navigation Tabs (`Companies | Calculation | Tax Return | Payment`) */}
-          <nav className="hidden md:flex items-center h-full gap-1">
+          <nav className="flex items-center h-full gap-1 overflow-x-auto scrollbar-none py-1">
             {[
-              { id: 'companies', label: 'Companies' },
-              { id: 'calculation', label: 'Calculation' },
-              { id: 'tax_return', label: 'Tax Return' },
-              { id: 'payment', label: 'Payment' },
+              { id: 'companies', label: 'Companies', icon: Building2 },
+              { id: 'calculation', label: 'Calculation', icon: Calculator },
+              { id: 'tax_return', label: 'Tax Return', icon: FileCheck2 },
+              { id: 'payment', label: 'Payment', icon: CreditCard },
             ].map((item) => {
+              const Icon = item.icon;
               const active = primaryNav === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => setPrimaryNav(item.id as PrimaryNav)}
-                  className={`h-full px-5 text-sm font-semibold border-b-2 flex items-center transition-all cursor-pointer ${
+                  className={`h-full px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                     active
-                      ? 'border-rose-600 text-rose-600 font-bold shadow-[0_2px_0_0_#E11D48]'
+                      ? 'border-[#2563EB] text-[#2563EB] font-bold shadow-[0_2px_0_0_#2563EB]'
                       : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
                   }`}
                 >
-                  {item.label}
+                  <Icon className={`w-3.5 sm:w-4 h-3.5 sm:h-4 ${active ? 'text-[#2563EB]' : 'text-slate-400'}`} />
+                  <span>{item.label}</span>
                 </button>
               );
             })}
@@ -1895,6 +1902,16 @@ export default function NexoraApp() {
 
           {/* Right: Search, Notifications & RBAC Switcher */}
           <div className="relative flex items-center gap-2 sm:gap-3">
+            {/* Mobile Menu Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setShowMobileMenu(true)}
+              className="md:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
+              title="Buka Seluruh Menu Sistem"
+            >
+              <Menu className="w-4 h-4 text-slate-700" />
+            </button>
+
             <button
               onClick={() => setShowCommandPalette(true)}
               className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
@@ -2012,6 +2029,152 @@ export default function NexoraApp() {
                           {isGroupCeoOrParentExecutive ? '👑 Level 5 Holding Scope (4 Entitas)' : `🔒 Level 2 (${activePersona.jurisdiction.split(' ')[0]})`}
                         </span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Quick System Navigation Menu Section */}
+                  <div className="pt-3 border-b border-slate-100 pb-3 space-y-2">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Menu &amp; Modul Sistem (Akses Cepat)
+                      </span>
+                      <span className="text-[10px] text-blue-600 font-bold">1-Klik Buka</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1.5 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav('companies');
+                          setSubNav('corporate');
+                          setCorpViewTab('directory');
+                          setShowAccountDropdown(false);
+                        }}
+                        className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
+                          primaryNav === 'companies' && subNav === 'corporate'
+                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                        }`}
+                      >
+                        <Building2 className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
+                        <span className="truncate">Companies</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav('calculation');
+                          setShowAccountDropdown(false);
+                        }}
+                        className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
+                          primaryNav === 'calculation'
+                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                        }`}
+                      >
+                        <Calculator className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span className="truncate">Calculation</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav('tax_return');
+                          setShowAccountDropdown(false);
+                        }}
+                        className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
+                          primaryNav === 'tax_return'
+                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                        }`}
+                      >
+                        <FileCheck2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                        <span className="truncate">Tax Return</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav('payment');
+                          setShowAccountDropdown(false);
+                        }}
+                        className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
+                          primaryNav === 'payment'
+                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                        }`}
+                      >
+                        <CreditCard className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span className="truncate">Payment</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav('companies');
+                          setSubNav('individual');
+                          setShowAccountDropdown(false);
+                        }}
+                        className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
+                          primaryNav === 'companies' && subNav === 'individual'
+                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                        }`}
+                      >
+                        <Users className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                        <span className="truncate">Shareholders</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav('companies');
+                          setSubNav('studies');
+                          setShowAccountDropdown(false);
+                        }}
+                        className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
+                          primaryNav === 'companies' && subNav === 'studies'
+                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                        }`}
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                        <span className="truncate">Studies</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav('companies');
+                          setSubNav('calendar');
+                          setShowAccountDropdown(false);
+                        }}
+                        className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
+                          primaryNav === 'companies' && subNav === 'calendar'
+                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                        }`}
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span className="truncate">Tax Calendar</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav('companies');
+                          setSubNav('reports');
+                          setShowAccountDropdown(false);
+                        }}
+                        className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
+                          primaryNav === 'companies' && subNav === 'reports'
+                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
+                        }`}
+                      >
+                        <BarChart3 className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                        <span className="truncate">Reports</span>
+                      </button>
                     </div>
                   </div>
 
@@ -2173,35 +2336,60 @@ export default function NexoraApp() {
            =================================================================== */}
         <div className="bg-[#0F172A] border-b border-slate-800 text-white">
           <div className="max-w-[1440px] mx-auto px-4 sm:px-8 h-11 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 h-full overflow-x-auto">
-              {[
-                { id: 'corporate', label: 'Corporate', icon: Building2 },
-                { id: 'individual', label: 'Individual Shareholder', icon: Users },
-                { id: 'studies', label: 'Studies', icon: BookOpen },
-                { id: 'calendar', label: 'Tax Calendar', icon: Calendar },
-                { id: 'reports', label: 'Reports', icon: BarChart3 },
-              ].map((sub) => {
-                const Icon = sub.icon;
-                const isActive =
-                  primaryNav === 'companies' && subNav === sub.id;
-                return (
+            <div className="flex items-center gap-1.5 h-full overflow-x-auto scrollbar-none">
+              {primaryNav === 'companies' ? (
+                [
+                  { id: 'corporate', label: 'Corporate', icon: Building2 },
+                  { id: 'individual', label: 'Individual Shareholder', icon: Users },
+                  { id: 'studies', label: 'Studies', icon: BookOpen },
+                  { id: 'calendar', label: 'Tax Calendar', icon: Calendar },
+                  { id: 'reports', label: 'Reports', icon: BarChart3 },
+                ].map((sub) => {
+                  const Icon = sub.icon;
+                  const isActive =
+                    primaryNav === 'companies' && subNav === sub.id;
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => {
+                        setPrimaryNav('companies');
+                        setSubNav(sub.id as SubNav);
+                      }}
+                      className={`h-full px-3.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer whitespace-nowrap ${
+                        isActive
+                          ? 'border-[#3B82F6] text-white bg-blue-500/10 font-bold'
+                          : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#3B82F6]' : 'text-slate-400'}`} />
+                      <span>{sub.label}</span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="flex items-center gap-2.5 h-full">
                   <button
-                    key={sub.id}
+                    type="button"
                     onClick={() => {
                       setPrimaryNav('companies');
-                      setSubNav(sub.id as SubNav);
+                      setSubNav('corporate');
                     }}
-                    className={`h-full px-3.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer whitespace-nowrap ${
-                      isActive
-                        ? 'border-[#3B82F6] text-white bg-blue-500/10 font-bold'
-                        : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                    }`}
+                    className="h-full px-3 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 border-b-2 border-transparent hover:border-blue-400 transition cursor-pointer"
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#3B82F6]' : 'text-slate-400'}`} />
-                    <span>{sub.label}</span>
+                    <ArrowLeft className="w-3.5 h-3.5 text-blue-400" />
+                    <span>← Kembali ke Companies</span>
                   </button>
-                );
-              })}
+                  <span className="text-slate-600 font-bold">|</span>
+                  <span className="text-xs font-bold text-blue-400 uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center gap-1.5 whitespace-nowrap">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                    {primaryNav === 'calculation'
+                      ? 'Modul: Rekonsiliasi Fiskal & PPh Badan'
+                      : primaryNav === 'tax_return'
+                      ? 'Modul: Draf SPT Tahunan 1771 & Lampiran'
+                      : 'Modul: e-Billing, NTPN & Jadwal Pajak'}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="hidden md:flex items-center gap-3">
@@ -6002,6 +6190,131 @@ export default function NexoraApp() {
                   <span className="font-bold text-slate-900 block">🇺🇸 US ↔ 🇮🇩 ID (Kontrak Cloud/AI)</span>
                   <p className="text-slate-600">Metode: <strong>TNMM</strong>. Form W-8BEN-E &amp; IRC §482 verified, bebas backup withholding 24%.</p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Navigation Drawer */}
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setShowMobileMenu(false)}
+          />
+          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col z-10 p-5 overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#2563EB] text-white flex items-center justify-center font-black text-sm">
+                  NX
+                </div>
+                <span className="font-extrabold text-base text-slate-900">Nexora Navigasi</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMobileMenu(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Menu Items */}
+            <div className="py-4 space-y-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block px-2 mb-2">
+                  Modul Utama
+                </span>
+                <div className="space-y-1">
+                  {[
+                    { id: 'companies', label: 'Companies (Direktori)', icon: Building2 },
+                    { id: 'calculation', label: 'Calculation (Rekonsiliasi)', icon: Calculator },
+                    { id: 'tax_return', label: 'Tax Return (SPT 1771)', icon: FileCheck2 },
+                    { id: 'payment', label: 'Payment (Billing & NTPN)', icon: CreditCard },
+                  ].map((m) => {
+                    const Icon = m.icon;
+                    const isAct = primaryNav === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav(m.id as PrimaryNav);
+                          setShowMobileMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer text-left ${
+                          isAct
+                            ? 'bg-blue-50 text-[#2563EB] border border-blue-200'
+                            : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${isAct ? 'text-[#2563EB]' : 'text-slate-400'}`} />
+                        <span>{m.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block px-2 mb-2">
+                  Fitur &amp; Analisis Kepatuhan
+                </span>
+                <div className="space-y-1">
+                  {[
+                    { id: 'corporate', label: 'Corporate Management', icon: Building2 },
+                    { id: 'individual', label: 'Individual Shareholder & UBO', icon: Users },
+                    { id: 'studies', label: 'Studies & Treaty Simulator', icon: BookOpen },
+                    { id: 'calendar', label: 'Tax Calendar (Tenggat Statutory)', icon: Calendar },
+                    { id: 'reports', label: 'Reports & Audit Trail', icon: BarChart3 },
+                  ].map((s) => {
+                    const Icon = s.icon;
+                    const isAct = primaryNav === 'companies' && subNav === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          setPrimaryNav('companies');
+                          setSubNav(s.id as SubNav);
+                          setShowMobileMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer text-left ${
+                          isAct
+                            ? 'bg-blue-50 text-[#2563EB] border border-blue-200'
+                            : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${isAct ? 'text-[#2563EB]' : 'text-slate-400'}`} />
+                        <span>{s.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block px-2 mb-2">
+                  Akun &amp; Hak Akses
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    setShowAccountDropdown(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 p-2 rounded-xl border border-slate-200 bg-slate-50 text-left cursor-pointer"
+                >
+                  <div className={`w-8 h-8 rounded-lg ${activePersona.avatarBg} text-white flex items-center justify-center font-bold text-xs`}>
+                    {activePersona.avatarInitials}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="block text-xs font-bold text-slate-800 truncate">{activePersona.name}</span>
+                    <span className="block text-[10px] text-slate-500 truncate">{activePersona.badge} • Ganti Akun ▾</span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
