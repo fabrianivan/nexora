@@ -64,54 +64,51 @@ export function DataPersistenceControl({
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className || ''}`}>
-      {/* Live Database Engine Badge */}
-      <div 
-        className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700/60 text-[10px] font-medium shadow-2xs"
-        title={`Database aktif: ${dbStatus.engine.toUpperCase()} • 8 tabel relasional aktif`}
-      >
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        <Database className="w-3 h-3 text-emerald-400" />
-        <span className="font-semibold text-slate-200 uppercase">{dbStatus.engine} DB</span>
+    <div className={`rounded-xl bg-white/[0.04] border border-white/[0.07] p-2.5 ${className || ''}`}>
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        <span
+          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-200"
+          title={`Database aktif: ${dbStatus.engine.toUpperCase()} • 8 tabel relasional aktif`}
+        >
+          <Database className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="uppercase tracking-wide">{dbStatus.engine}</span>
+          <span className="font-normal text-slate-500">· {lastSynced}</span>
+        </span>
       </div>
-
-      {/* Manual Sync Button */}
-      <button
-        type="button"
-        onClick={handleSync}
-        disabled={isSyncing}
-        className={`group relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer disabled:cursor-not-allowed border ${
-          isSyncing
-            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 ring-1 ring-emerald-500/20'
-            : 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white border-slate-700/70 hover:border-slate-600 shadow-2xs hover:shadow-xs'
-        }`}
-        title={`Database tersinkronisasi (${lastSynced}) — klik untuk sinkronkan ulang`}
-      >
-        {isSyncing ? (
-          <>
-            <Check className="w-3.5 h-3.5 text-emerald-400 animate-in zoom-in-75 duration-150 shrink-0" />
-            <span className="font-semibold text-emerald-300 tracking-tight">Tersinkron DB</span>
-          </>
-        ) : (
-          <>
-            <RefreshCw className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400 group-hover:rotate-180 transition-transform duration-500 shrink-0" />
-            <span className="tracking-tight text-slate-300 group-hover:text-white">Sinkron DB</span>
-          </>
-        )}
-      </button>
-
-      {/* Optional Reset Button */}
-      {onResetData && (
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
         <button
           type="button"
-          onClick={handleReset}
-          disabled={isResetting}
-          className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium text-slate-400 hover:text-slate-200 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition cursor-pointer"
-          title="Reset seluruh tabel database ke status kepatuhan standar"
+          onClick={handleSync}
+          disabled={isSyncing}
+          className={`group inline-flex items-center justify-center gap-1.5 h-8 rounded-lg text-[11px] font-semibold transition cursor-pointer disabled:cursor-not-allowed ${
+            isSyncing ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/[0.06] hover:bg-white/[0.1] text-slate-200'
+          }`}
+          title={`Database tersinkronisasi (${lastSynced}) — klik untuk sinkronkan ulang`}
         >
-          {isResetting ? 'Mereset...' : 'Reset DB'}
+          {isSyncing ? (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              Tersinkron
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-3.5 h-3.5 text-slate-400 group-hover:rotate-180 transition-transform duration-500" />
+              Sinkron
+            </>
+          )}
         </button>
-      )}
+        {onResetData && (
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={isResetting}
+            className="inline-flex items-center justify-center h-8 rounded-lg text-[11px] font-semibold text-slate-400 hover:text-white hover:bg-white/[0.06] transition cursor-pointer"
+            title="Reset seluruh tabel database ke status kepatuhan standar"
+          >
+            {isResetting ? 'Mereset…' : 'Reset data'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

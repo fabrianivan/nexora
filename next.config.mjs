@@ -8,6 +8,7 @@ const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.join(__dirname),
   reactStrictMode: true,
+  devIndicators: false,
   async headers() {
     return [
       {

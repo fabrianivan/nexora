@@ -98,7 +98,7 @@ export function CommandPalette({ isOpen, onClose, onNavigate, onSelectEntity }: 
         <div className="max-h-96 overflow-y-auto p-3 space-y-4">
           {/* Quick Nav Actions */}
           <div>
-            <span className="text-[10px] font-bold uppercase text-slate-400 px-2 block mb-1">
+            <span className="text-[10px] font-semibold uppercase text-slate-400 px-2 block mb-1">
               Menu & Modul Navigasi
             </span>
             <div className="space-y-1">
@@ -118,7 +118,7 @@ export function CommandPalette({ isOpen, onClose, onNavigate, onSelectEntity }: 
                         <Icon className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="font-bold text-slate-800">{item.label}</div>
+                        <div className="font-semibold text-slate-800">{item.label}</div>
                         <div className="text-[10px] text-slate-400">{item.category}</div>
                       </div>
                     </div>
@@ -131,7 +131,7 @@ export function CommandPalette({ isOpen, onClose, onNavigate, onSelectEntity }: 
 
           {/* Corporate Entities */}
           <div>
-            <span className="text-[10px] font-bold uppercase text-slate-400 px-2 block mb-1">
+            <span className="text-[10px] font-semibold uppercase text-slate-400 px-2 block mb-1">
               Entitas Korporasi Multinasional
             </span>
             <div className="space-y-1">
@@ -146,17 +146,17 @@ export function CommandPalette({ isOpen, onClose, onNavigate, onSelectEntity }: 
                   className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-blue-50 text-slate-700 hover:text-blue-900 text-left cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-md bg-blue-100/70 flex items-center justify-center text-blue-700 font-bold">
+                    <div className="w-7 h-7 rounded-md bg-blue-100/70 flex items-center justify-center text-blue-700 font-semibold">
                       <Building2 className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="font-bold text-slate-800">{ent.name}</div>
+                      <div className="font-semibold text-slate-800">{ent.name}</div>
                       <div className="text-[10px] text-slate-500 font-mono">
                         {ent.country} • Tax ID: {ent.taxId}
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
                     Buka Entitas
                   </span>
                 </button>

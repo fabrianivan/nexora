@@ -125,14 +125,14 @@ export function IndividualShareholdersTab() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                 PEMEGANG SAHAM PERORANGAN & BENEFICIAL OWNERSHIP (UBO)
               </span>
               <span className="text-xs text-slate-500 font-medium">
                 Perpres 13/2018 & PMK 18/2021
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 mt-1">
+            <h1 className="text-2xl font-bold text-slate-900 mt-1">
               Direktori Pemegang Saham Perorangan & Pajak Dividen
             </h1>
           </div>
@@ -140,7 +140,7 @@ export function IndividualShareholdersTab() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Pemegang Saham</span>
@@ -167,13 +167,13 @@ export function IndividualShareholdersTab() {
           <div key={sh.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 text-xs space-y-4 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <span className="text-[10px] font-bold uppercase text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-semibold uppercase text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
                   {sh.type}
                 </span>
-                <h3 className="font-extrabold text-slate-900 text-sm mt-1">{sh.fullName}</h3>
+                <h3 className="font-semibold text-slate-900 text-sm mt-1">{sh.fullName}</h3>
                 <p className="text-[11px] text-slate-500">{sh.roleTitle}</p>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
                 {sh.status}
               </span>
             </div>
@@ -181,40 +181,40 @@ export function IndividualShareholdersTab() {
             <div className="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200 font-mono text-[11px]">
               <div className="flex justify-between">
                 <span className="text-slate-500">Kewarganegaraan:</span>
-                <span className="font-bold text-slate-800">{sh.nationality}</span>
+                <span className="font-semibold text-slate-800">{sh.nationality}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">ID Identitas:</span>
-                <span className="font-bold text-slate-700">{sh.maskedId}</span>
+                <span className="font-semibold text-slate-700">{sh.maskedId}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">NPWP / Tax ID:</span>
-                <span className="font-bold text-slate-700">{sh.maskedTaxId}</span>
+                <span className="font-semibold text-slate-700">{sh.maskedTaxId}</span>
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-1.5">
                 <span className="text-slate-600 font-sans font-semibold">Saham Langsung:</span>
-                <span className="font-black text-blue-700">{sh.directSharePercent}%</span>
+                <span className="font-semibold text-blue-700">{sh.directSharePercent}%</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600 font-sans font-semibold">Hak Suara Efektif:</span>
-                <span className="font-black text-blue-900">{sh.effectiveSharePercent}%</span>
+                <span className="font-semibold text-blue-900">{sh.effectiveSharePercent}%</span>
               </div>
             </div>
 
             {/* Dividend & Tax Section */}
             <div className="border border-slate-200 rounded-lg p-3 bg-white space-y-2">
-              <span className="text-[10px] font-bold uppercase text-slate-500 block">
+              <span className="text-[10px] font-semibold uppercase text-slate-500 block">
                 Pajak Dividen Tahun Berjalan
               </span>
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Dividen Diterima:</span>
-                <span className="font-mono font-bold text-slate-900">
+                <span className="font-mono font-semibold text-slate-900">
                   {formatCurrency(sh.dividendReceived, 'ID')}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">PPh Dipotong:</span>
-                <span className="font-mono font-black text-rose-600">
+                <span className="font-mono font-semibold text-rose-600">
                   {formatCurrency(sh.withholdingTaxDue, 'ID')}
                 </span>
               </div>
@@ -231,12 +231,12 @@ export function IndividualShareholdersTab() {
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 text-xs">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <h3 className="text-base font-extrabold text-slate-900 mb-4">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">
               Tambah Pemegang Saham Perorangan
             </h3>
             <form onSubmit={handleAdd} className="space-y-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Nama Lengkap</label>
+                <label className="font-semibold text-slate-700 block mb-1">Nama Lengkap</label>
                 <input
                   type="text"
                   value={newName}
@@ -247,7 +247,7 @@ export function IndividualShareholdersTab() {
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Peran / Jabatan</label>
+                <label className="font-semibold text-slate-700 block mb-1">Peran / Jabatan</label>
                 <input
                   type="text"
                   value={newRole}
@@ -258,7 +258,7 @@ export function IndividualShareholdersTab() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Kewarganegaraan</label>
+                  <label className="font-semibold text-slate-700 block mb-1">Kewarganegaraan</label>
                   <select
                     value={newNationality}
                     onChange={(e) => setNewNationality(e.target.value)}
@@ -271,7 +271,7 @@ export function IndividualShareholdersTab() {
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Porsi Saham (%)</label>
+                  <label className="font-semibold text-slate-700 block mb-1">Porsi Saham (%)</label>
                   <input
                     type="number"
                     value={newShare}
@@ -282,7 +282,7 @@ export function IndividualShareholdersTab() {
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Estimasi Dividen Tahunan (IDR)</label>
+                <label className="font-semibold text-slate-700 block mb-1">Estimasi Dividen Tahunan (IDR)</label>
                 <input
                   type="number"
                   value={newDividend}
@@ -301,7 +301,7 @@ export function IndividualShareholdersTab() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold cursor-pointer"
                 >
                   Simpan Pemegang Saham
                 </button>

@@ -108,11 +108,11 @@ export function NotificationCenter({ isOpen, onClose, onNavigate }: Notification
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-slate-900 text-xs tracking-tight">
+                <h3 className="font-semibold text-slate-900 text-xs tracking-tight">
                   Pusat Notifikasi Kepatuhan
                 </h3>
                 {unreadCount > 0 && (
-                  <span className="px-1.5 py-0.5 bg-rose-600 text-white rounded-full text-[10px] font-black leading-none">
+                  <span className="px-1.5 py-0.5 bg-rose-600 text-white rounded-full text-[10px] font-semibold leading-none">
                     {unreadCount} baru
                   </span>
                 )}
@@ -127,7 +127,7 @@ export function NotificationCenter({ isOpen, onClose, onNavigate }: Notification
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
-                className="text-[11px] text-rose-600 hover:text-rose-700 font-bold hover:underline cursor-pointer flex items-center gap-1 px-1.5 py-1 rounded-md transition"
+                className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold hover:underline cursor-pointer flex items-center gap-1 px-1.5 py-1 rounded-md transition"
                 title="Tandai semua notifikasi telah dibaca"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
@@ -183,7 +183,7 @@ export function NotificationCenter({ isOpen, onClose, onNavigate }: Notification
           {filteredNotifications.length === 0 ? (
             <div className="py-10 text-center px-4 space-y-2">
               <ShieldCheck className="w-8 h-8 text-emerald-500 mx-auto" />
-              <p className="text-xs font-bold text-slate-800">Tidak ada notifikasi dalam kategori ini</p>
+              <p className="text-xs font-semibold text-slate-800">Tidak ada notifikasi dalam kategori ini</p>
               <p className="text-[11px] text-slate-500">Semua kewajiban dan risiko kepatuhan dalam status terkendali.</p>
             </div>
           ) : (
@@ -223,7 +223,7 @@ export function NotificationCenter({ isOpen, onClose, onNavigate }: Notification
                 <div className="space-y-1.5 flex-1 min-w-0">
                   {/* Category Pill & Relative Time */}
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm ${
+                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-sm ${
                       item.type === 'fraud'
                         ? 'bg-rose-100 text-rose-700 border border-rose-200'
                         : item.type === 'approval'
@@ -238,8 +238,8 @@ export function NotificationCenter({ isOpen, onClose, onNavigate }: Notification
                   </div>
 
                   {/* Title */}
-                  <h4 className={`text-xs font-bold leading-snug ${
-                    !item.read ? 'text-slate-950 font-black' : 'text-slate-800'
+                  <h4 className={`text-xs font-semibold leading-snug ${
+                    !item.read ? 'text-slate-950 font-semibold' : 'text-slate-800'
                   }`}>
                     {item.title}
                   </h4>
@@ -251,10 +251,10 @@ export function NotificationCenter({ isOpen, onClose, onNavigate }: Notification
 
                   {/* Footer Action Hint */}
                   <div className="flex items-center justify-between pt-1 text-[10px]">
-                    <span className="text-rose-600 font-bold group-hover:text-rose-700 flex items-center gap-1">
+                    <span className="text-rose-600 font-semibold group-hover:text-rose-700 flex items-center gap-1">
                       Buka rincian modul <ChevronRight className="w-3 h-3" />
                     </span>
-                    <span className="text-slate-400 font-mono text-[9px] font-semibold">{item.id}</span>
+                    <span className="text-slate-400 font-mono text-[10px] font-semibold">{item.id}</span>
                   </div>
                 </div>
               </div>
@@ -273,7 +273,7 @@ export function NotificationCenter({ isOpen, onClose, onNavigate }: Notification
               onNavigate('companies', 'reports');
               onClose();
             }}
-            className="font-bold text-slate-700 hover:text-rose-600 transition cursor-pointer flex items-center gap-1"
+            className="font-semibold text-slate-700 hover:text-rose-600 transition cursor-pointer flex items-center gap-1"
           >
             Lihat Log Lengkap &rarr;
           </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Building2, 
   FileText, 
@@ -10,8 +10,6 @@ import {
   FileCheck2, 
   CreditCard,
   Check,
-  ChevronRight,
-  ChevronDown
 } from 'lucide-react';
 
 export interface HeroStepperProps {
@@ -30,78 +28,68 @@ export const HERO_STEPS = [
   { step: 7, title: 'Billing & Jadwal', icon: CreditCard, desc: 'e-Billing & NTPN' },
 ];
 
-export function HeroStepper({ currentStep, onSelectStep, entityName }: HeroStepperProps) {
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
+export function HeroStepper({ currentStep, onSelectStep }: HeroStepperProps) {
+  const progress = ((currentStep - 1) / (HERO_STEPS.length - 1)) * 100;
 
   return (
-    <div className="bg-white border-b border-slate-200/80 shadow-2xs py-1.5 px-4 sm:px-8 transition-all">
-      <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
-        {/* Left Badge & Context */}
-        <div className="flex items-center justify-between w-full md:w-auto gap-2 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-[#2563EB] border border-blue-200">
-              Siklus Kepatuhan Fiskal
+    <div className="border-b border-slate-200/70 bg-white/60 backdrop-blur-sm">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-4">
+        <div className="hidden 2xl:flex flex-col shrink-0 w-36">
+          <span className="text-[11px] font-semibold text-slate-500">Siklus kepatuhan</span>
+          <div className="mt-1 flex items-center gap-2">
+            <div className="h-1.5 flex-1 rounded-full bg-slate-200/80 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-700 transition-[width] duration-500"
+                style={{ width: `${Math.max(progress, 4)}%` }}
+              />
+            </div>
+            <span className="text-[11px] font-semibold text-slate-700 tabular">
+              {currentStep}/{HERO_STEPS.length}
             </span>
-            {entityName && (
-              <span className="text-xs text-slate-700 font-semibold truncate max-w-[200px] sm:max-w-[260px]">
-                {entityName}
-              </span>
-            )}
           </div>
-
-          {/* Mobile / Compact Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsExpanded((prev) => !prev)}
-            className="md:hidden text-slate-400 hover:text-slate-600 p-1"
-            title="Toggle Stepper"
-          >
-            <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-          </button>
         </div>
 
-        {/* Horizontal Modern Stepper */}
-        {isExpanded && (
-          <div className="flex items-center overflow-x-auto w-full md:w-auto scrollbar-none py-0.5 gap-1.5">
-            {HERO_STEPS.map((s, idx) => {
-              const Icon = s.icon;
-              const isCompleted = s.step < currentStep;
-              const isCurrent = s.step === currentStep;
-
-              return (
-                <React.Fragment key={s.step}>
-                  <button
-                    type="button"
-                    onClick={() => onSelectStep(s.step)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+        <ol className="flex-1 min-w-0 flex items-center 2xl:justify-end gap-0.5 overflow-x-auto scrollbar-none mask-fade-x py-0.5" aria-label="Langkah siklus kepatuhan">
+          {HERO_STEPS.map((s, idx) => {
+            const Icon = s.icon;
+            const isCompleted = s.step < currentStep;
+            const isCurrent = s.step === currentStep;
+            return (
+              <li key={s.step} className="flex items-center shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onSelectStep(s.step)}
+                  aria-current={isCurrent ? 'step' : undefined}
+                  title={`${s.title} — ${s.desc}`}
+                  className={`group flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-[12px] font-medium transition cursor-pointer whitespace-nowrap ${
+                    isCurrent
+                      ? 'bg-ink-900 text-white shadow-md shadow-ink-900/15'
+                      : isCompleted
+                      ? 'text-slate-700 hover:bg-slate-100'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                  }`}
+                >
+                  <span
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${
                       isCurrent
-                        ? 'bg-[#2563EB] text-white shadow-xs font-bold ring-2 ring-blue-500/20'
+                        ? 'bg-brand-500 text-white'
                         : isCompleted
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-slate-50 text-slate-600 border border-slate-200/80 hover:bg-slate-100 hover:text-slate-900'
+                        ? 'bg-emerald-500/15 text-emerald-700'
+                        : 'bg-slate-200/80 text-slate-600'
                     }`}
                   >
-                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                      isCurrent
-                        ? 'bg-white text-[#2563EB]'
-                        : isCompleted
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}>
-                      {isCompleted ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : s.step}
-                    </span>
-                    <Icon className={`w-3.5 h-3.5 ${isCurrent ? 'text-white' : isCompleted ? 'text-emerald-700' : 'text-slate-400'}`} />
-                    <span className="text-[11px]">{s.title}</span>
-                  </button>
-
-                  {idx < HERO_STEPS.length - 1 && (
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0 hidden 2xl:block" />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        )}
+                    {isCompleted ? <Check className="w-3 h-3 stroke-[3]" /> : s.step}
+                  </span>
+                  {isCurrent && <Icon className="w-3.5 h-3.5 text-brand-300 hidden sm:block" />}
+                  <span>{s.title}</span>
+                </button>
+                {idx < HERO_STEPS.length - 1 && (
+                  <span className={`w-3 h-px mx-0.5 ${isCompleted ? 'bg-emerald-400/60' : 'bg-slate-300/70'}`} aria-hidden />
+                )}
+              </li>
+            );
+          })}
+        </ol>
       </div>
     </div>
   );

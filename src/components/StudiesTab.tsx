@@ -62,6 +62,21 @@ const DEFAULT_STUDIES_LIST: StudyItem[] = [
   },
 ];
 
+/** Records hydrated from the DB may predate newer fields — fill safe defaults. */
+function normalizeStudies(items: Partial<StudyItem>[]): StudyItem[] {
+  return items
+    .filter((s): s is Partial<StudyItem> & { id: string; title: string } => Boolean(s && s.id && s.title))
+    .map((s) => ({
+      category: 'P3B / Tax Treaty',
+      summary: '',
+      source: '',
+      simulationType: 'none',
+      ...s,
+      tags: Array.isArray(s.tags) ? s.tags : [],
+      applicableJurisdictions: Array.isArray(s.applicableJurisdictions) ? s.applicableJurisdictions : [],
+    })) as StudyItem[];
+}
+
 interface StudiesTabProps {
   initialStudies?: StudyItem[];
   onAskCopilot?: (question: string) => void;
@@ -86,12 +101,12 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
   const [coveredEarnings, setCoveredEarnings] = useState<number>(50000000); // €50M
 
   const [studiesList, setStudiesList] = useState<StudyItem[]>(
-    initialStudies && initialStudies.length > 0 ? initialStudies : DEFAULT_STUDIES_LIST
+    initialStudies && initialStudies.length > 0 ? normalizeStudies(initialStudies) : DEFAULT_STUDIES_LIST
   );
 
   React.useEffect(() => {
     if (initialStudies && initialStudies.length > 0) {
-      setStudiesList(initialStudies);
+      setStudiesList(normalizeStudies(initialStudies));
     }
   }, [initialStudies]);
 
@@ -152,14 +167,14 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                 KNOWLEDGE BASE & CASE STUDIES LIBRARY
               </span>
               <span className="text-xs text-slate-500 font-medium">
                 P3B, OECD BEPS 2.0 & Yurisprudensi Pajak
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 mt-1">
+            <h1 className="text-2xl font-bold text-slate-900 mt-1">
               Perpustakaan Studi Kasus & Simulator Pajak Internasional
             </h1>
           </div>
@@ -167,7 +182,7 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
           <div className="flex items-center gap-2 text-xs">
             <button
               onClick={() => setActiveSimulator(activeSimulator === 'treaty' ? null : 'treaty')}
-              className={`px-3 py-2 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer border transition-all ${
+              className={`px-3 py-2 rounded-lg font-semibold flex items-center gap-1.5 cursor-pointer border transition-all ${
                 activeSimulator === 'treaty'
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
@@ -178,7 +193,7 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
             </button>
             <button
               onClick={() => setActiveSimulator(activeSimulator === 'pillar_two' ? null : 'pillar_two')}
-              className={`px-3 py-2 rounded-lg font-bold flex items-center gap-1.5 cursor-pointer border transition-all ${
+              className={`px-3 py-2 rounded-lg font-semibold flex items-center gap-1.5 cursor-pointer border transition-all ${
                 activeSimulator === 'pillar_two'
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
@@ -227,18 +242,18 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-5 h-5 text-blue-600" />
-              <h2 className="text-base font-extrabold text-slate-900">
+              <h2 className="text-base font-semibold text-slate-900">
                 Simulator Manfaat Pajak P3B (Tax Treaty Relief Calculator)
               </h2>
             </div>
-            <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+            <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
               Grounded Model
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Negara Sumber Penghasilan</label>
+              <label className="font-semibold text-slate-700 block mb-1">Negara Sumber Penghasilan</label>
               <select
                 value={sourceJurisdiction}
                 onChange={(e) => setSourceJurisdiction(e.target.value as 'ID' | 'SG' | 'MY' | 'US')}
@@ -250,7 +265,7 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Negara Domisili Penerima (SPLN)</label>
+              <label className="font-semibold text-slate-700 block mb-1">Negara Domisili Penerima (SPLN)</label>
               <select
                 value={residenceJurisdiction}
                 onChange={(e) => setResidenceJurisdiction(e.target.value as 'ID' | 'SG' | 'MY' | 'US')}
@@ -263,7 +278,7 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Jenis Penghasilan</label>
+              <label className="font-semibold text-slate-700 block mb-1">Jenis Penghasilan</label>
               <select
                 value={incomeType}
                 onChange={(e) => setIncomeType(e.target.value as 'dividend' | 'interest' | 'royalty')}
@@ -276,12 +291,12 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Nilai Bruto Pembayaran (IDR)</label>
+              <label className="font-semibold text-slate-700 block mb-1">Nilai Bruto Pembayaran (IDR)</label>
               <input
                 type="number"
                 value={grossIncomeAmount}
                 onChange={(e) => setGrossIncomeAmount(Number(e.target.value))}
-                className="w-full p-2 rounded border border-slate-300 font-mono font-bold"
+                className="w-full p-2 rounded border border-slate-300 font-mono font-semibold"
               />
             </div>
           </div>
@@ -289,21 +304,21 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-4 font-mono">
             <div>
               <span className="text-[11px] text-slate-500 font-sans block">Tarif Normal Tanpa P3B (PPh 26):</span>
-              <span className="text-base font-bold text-rose-600">
+              <span className="text-base font-semibold text-rose-600">
                 {(treatyRes.statutoryRate * 100).toFixed(0)}% = Rp {treatyRes.statutoryTax.toLocaleString('id-ID')}
               </span>
             </div>
 
             <div>
               <span className="text-[11px] text-slate-500 font-sans block">Tarif Preferensi P3B (dengan e-SKD):</span>
-              <span className="text-base font-bold text-blue-700">
+              <span className="text-base font-semibold text-blue-700">
                 {(treatyRes.treatyRate * 100).toFixed(0)}% = Rp {treatyRes.treatyTax.toLocaleString('id-ID')}
               </span>
             </div>
 
             <div className="border-l border-slate-300 pl-4">
-              <span className="text-[11px] text-emerald-700 font-sans font-bold block">Penghematan Pajak Legal:</span>
-              <span className="text-xl font-black text-emerald-700">
+              <span className="text-[11px] text-emerald-700 font-sans font-semibold block">Penghematan Pajak Legal:</span>
+              <span className="text-xl font-bold text-emerald-700">
                 Rp {treatyRes.taxSaving.toLocaleString('id-ID')}
               </span>
             </div>
@@ -321,31 +336,31 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <div className="flex items-center gap-2">
               <Globe2 className="w-5 h-5 text-blue-600" />
-              <h2 className="text-base font-extrabold text-slate-900">
+              <h2 className="text-base font-semibold text-slate-900">
                 Penyaringan Awal OECD Pillar Two / GloBE ETR & Top-up Tax
               </h2>
             </div>
-            <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+            <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
               Preview Model (P2)
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-semibold text-slate-700 block mb-1">
                 Omzet Konsolidasian Grup (EUR):
               </label>
               <input
                 type="number"
                 value={groupConsolidatedRevenue}
                 onChange={(e) => setGroupConsolidatedRevenue(Number(e.target.value))}
-                className="w-full p-2 rounded border border-slate-300 font-mono font-bold"
+                className="w-full p-2 rounded border border-slate-300 font-mono font-semibold"
               />
               <span className="text-[10px] text-slate-500 block mt-1">Ambang batas GloBE: €750.000.000</span>
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-semibold text-slate-700 block mb-1">
                 Effective Tax Rate (ETR) Yurisdiksi Anak (%):
               </label>
               <input
@@ -353,20 +368,20 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
                 step="0.1"
                 value={jurisdictionEtr}
                 onChange={(e) => setJurisdictionEtr(Number(e.target.value))}
-                className="w-full p-2 rounded border border-slate-300 font-mono font-bold"
+                className="w-full p-2 rounded border border-slate-300 font-mono font-semibold"
               />
               <span className="text-[10px] text-slate-500 block mt-1">Standar Tarif Minimum GloBE: 15.0%</span>
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">
+              <label className="font-semibold text-slate-700 block mb-1">
                 Laba Bersih Yurisdiksi Terkait (EUR):
               </label>
               <input
                 type="number"
                 value={coveredEarnings}
                 onChange={(e) => setCoveredEarnings(Number(e.target.value))}
-                className="w-full p-2 rounded border border-slate-300 font-mono font-bold"
+                className="w-full p-2 rounded border border-slate-300 font-mono font-semibold"
               />
             </div>
           </div>
@@ -374,21 +389,21 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-4 font-mono">
             <div>
               <span className="text-[11px] text-slate-500 font-sans block">Status Ambang Batas:</span>
-              <span className={`text-sm font-bold ${pillarRes.isAboveThreshold ? 'text-rose-700' : 'text-emerald-700'}`}>
+              <span className={`text-sm font-semibold ${pillarRes.isAboveThreshold ? 'text-rose-700' : 'text-emerald-700'}`}>
                 {pillarRes.isAboveThreshold ? 'Wajib Kepatuhan Pillar Two (€ >= 750M)' : 'Di Bawah Ambang (€ < 750M)'}
               </span>
             </div>
 
             <div>
               <span className="text-[11px] text-slate-500 font-sans block">Selisih Tarif Top-Up (15% - ETR):</span>
-              <span className="text-base font-bold text-blue-700">
+              <span className="text-base font-semibold text-blue-700">
                 {pillarRes.topUpRate.toFixed(1)}%
               </span>
             </div>
 
             <div className="border-l border-slate-300 pl-4">
-              <span className="text-[11px] text-rose-700 font-sans font-bold block">Estimasi Top-Up Tax (IIR):</span>
-              <span className="text-xl font-black text-rose-700">
+              <span className="text-[11px] text-rose-700 font-sans font-semibold block">Estimasi Top-Up Tax (IIR):</span>
+              <span className="text-xl font-bold text-rose-700">
                 € {pillarRes.topUpTax.toLocaleString()}
               </span>
             </div>
@@ -401,7 +416,7 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
         {filtered.map((item) => (
           <div key={item.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between gap-2">
-              <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="px-2.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                 {item.category}
               </span>
               <div className="flex items-center gap-1">
@@ -411,7 +426,7 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
               </div>
             </div>
 
-            <h3 className="font-extrabold text-slate-900 text-sm">{item.title}</h3>
+            <h3 className="font-semibold text-slate-900 text-sm">{item.title}</h3>
             <p className="text-slate-600 leading-relaxed">{item.summary}</p>
 
             <div className="flex flex-wrap items-center gap-1.5 pt-2">
@@ -430,7 +445,7 @@ export function StudiesTab({ initialStudies, onAskCopilot }: StudiesTabProps) {
               <button
                 type="button"
                 onClick={() => onAskCopilot?.(`Jelaskan lebih lanjut mengenai studi: ${item.title}`)}
-                className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                 <span>Tanya Copilot</span>

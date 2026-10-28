@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import {
+  Sparkles,
   Building2,
   Plus,
   Search,
@@ -1241,7 +1242,7 @@ function renderChatMessage(text: string, isUserMessage = false): React.ReactNode
           return (
             <h3
               key={bIdx}
-              className={`font-extrabold text-sm mt-2 mb-1 ${
+              className={`font-semibold text-sm mt-2 mb-1 ${
                 isUserMessage ? 'text-white' : 'text-slate-900'
               }`}
             >
@@ -1253,7 +1254,7 @@ function renderChatMessage(text: string, isUserMessage = false): React.ReactNode
           return (
             <h4
               key={bIdx}
-              className={`font-bold text-xs mt-1.5 mb-0.5 ${
+              className={`font-semibold text-xs mt-1.5 mb-0.5 ${
                 isUserMessage ? 'text-white' : 'text-slate-900'
               }`}
             >
@@ -1289,8 +1290,8 @@ function renderChatMessage(text: string, isUserMessage = false): React.ReactNode
           return (
             <div key={bIdx} className="flex items-start gap-1.5 ml-1">
               <span
-                className={`font-bold ${
-                  isUserMessage ? 'text-white' : 'text-[#2563EB]'
+                className={`font-semibold ${
+                  isUserMessage ? 'text-white' : 'text-blue-600'
                 }`}
               >
                 •
@@ -1303,8 +1304,8 @@ function renderChatMessage(text: string, isUserMessage = false): React.ReactNode
           return (
             <div key={bIdx} className="flex items-start gap-1.5 ml-1 font-mono">
               <span
-                className={`font-bold text-[11px] ${
-                  isUserMessage ? 'text-white' : 'text-[#2563EB]'
+                className={`font-semibold text-[11px] ${
+                  isUserMessage ? 'text-white' : 'text-blue-600'
                 }`}
               >
                 {b.order}.
@@ -1447,6 +1448,18 @@ export default function NexoraApp() {
       setPrimaryNav('payment');
     }
   };
+
+  // Keep the compliance-cycle stepper in sync with wherever the user navigates.
+  useEffect(() => {
+    let step = 1;
+    if (primaryNav === 'calculation') step = 5;
+    else if (primaryNav === 'tax_return') step = 6;
+    else if (primaryNav === 'payment') step = 7;
+    else if (subNav === 'studies') step = 3;
+    else if (subNav === 'corporate' && corpViewTab === 'corporate_form') step = 2;
+    else if (subNav === 'corporate' && corpViewTab === 'all_in_one') step = 4;
+    setCurrentHeroStep(step);
+  }, [primaryNav, subNav, corpViewTab]);
 
   const handleResetSampleData = async () => {
     try {
@@ -1974,86 +1987,224 @@ export default function NexoraApp() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col pb-24">
-      {/* =====================================================================
-          1. TOP WHITE HEADER BAR (EXACT FIGMA 2 LAYOUT — CLEAN, NO EXTRA BUTTONS)
-         ===================================================================== */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Left: Brand Logo (Nexora) */}
-          <div
-            onClick={() => {
-              setPrimaryNav('companies');
-              setSubNav('corporate');
-              setCorpViewTab('directory');
-            }}
-            className="flex items-center gap-3 cursor-pointer group shrink-0"
+  const NAV_GROUPS: {
+    label: string;
+    items: { key: string; label: string; hint: string; icon: React.ComponentType<{ className?: string }>; primary: PrimaryNav; sub?: SubNav }[];
+  }[] = [
+    {
+      label: 'Entitas & Grup',
+      items: [
+        { key: 'corporate', label: 'Companies', hint: 'Direktori & struktur grup', icon: Building2, primary: 'companies', sub: 'corporate' },
+        { key: 'individual', label: 'Shareholders & UBO', hint: 'Pemegang saham individu', icon: Users, primary: 'companies', sub: 'individual' },
+      ],
+    },
+    {
+      label: 'Kepatuhan Pajak',
+      items: [
+        { key: 'calculation', label: 'Calculation', hint: 'Rekonsiliasi fiskal', icon: Calculator, primary: 'calculation' },
+        { key: 'tax_return', label: 'Tax Return', hint: 'Draf SPT 1771', icon: FileCheck2, primary: 'tax_return' },
+        { key: 'payment', label: 'Payment', hint: 'e-Billing & NTPN', icon: CreditCard, primary: 'payment' },
+        { key: 'calendar', label: 'Tax Calendar', hint: 'Tenggat statutory', icon: Calendar, primary: 'companies', sub: 'calendar' },
+      ],
+    },
+    {
+      label: 'Insight',
+      items: [
+        { key: 'reports', label: 'Reports & Audit', hint: 'Laporan & jejak audit', icon: BarChart3, primary: 'companies', sub: 'reports' },
+        { key: 'studies', label: 'Studies & Simulator', hint: 'P3B, Pillar Two, TP', icon: BookOpen, primary: 'companies', sub: 'studies' },
+      ],
+    },
+  ];
+  const activeNavKey = primaryNav === 'companies' ? subNav : primaryNav;
+  const activeNavItem = NAV_GROUPS.flatMap((g) => g.items).find((i) => i.key === activeNavKey);
+  const activeNavGroup = NAV_GROUPS.find((g) => g.items.some((i) => i.key === activeNavKey));
+
+  function goToNav(item: { primary: PrimaryNav; sub?: SubNav }) {
+    setPrimaryNav(item.primary);
+    if (item.sub) setSubNav(item.sub);
+    if (item.sub === 'corporate') setCorpViewTab('directory');
+    setShowMobileMenu(false);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  const renderSidebarBody = () => (
+    <>
+      {/* Brand */}
+      <button
+        type="button"
+        onClick={() => goToNav({ primary: 'companies', sub: 'corporate' })}
+        className="flex items-center gap-3 px-5 h-16 shrink-0 text-left cursor-pointer group"
+      >
+        <span className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-brand-400 via-brand-600 to-brand-800 flex items-center justify-center shadow-lg shadow-brand-900/40 ring-1 ring-white/15">
+          <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M5 19V5l14 14V5" />
+          </svg>
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[15px] font-semibold tracking-tight text-white leading-tight">Nexora</span>
+          <span className="block text-[11px] text-slate-400 leading-tight">Tax Intelligence Cloud</span>
+        </span>
+      </button>
+
+      {/* Active entity switcher */}
+      <div className="px-3 pb-3">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowEntityQuickSelect((prev) => !prev)}
+            className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.07] transition cursor-pointer text-left"
+            title="Pilih Entitas Aktif (Holding & Anak Perusahaan)"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-700 via-rose-600 to-red-500 flex items-center justify-center text-white font-black text-base shadow-md shadow-rose-500/20 group-hover:shadow-lg group-hover:scale-105 transition-all duration-200">
-              NX
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-xl tracking-tight text-[#0F172A]">
-                  Nexora
-                </span>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200/80">
-                  Tax Platform
-                </span>
+            <span className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center text-lg shrink-0">
+              {selectedEntity.flag}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[10px] uppercase tracking-[0.08em] font-semibold text-slate-500">Entitas aktif</span>
+              <span className="block text-[13px] font-semibold text-white truncate">{selectedEntity.legalName}</span>
+            </span>
+            <ChevronDown className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${showEntityQuickSelect ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showEntityQuickSelect && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowEntityQuickSelect(false)} />
+              <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 z-50 text-slate-900 animate-fade-up">
+                <div className="px-2.5 pt-1.5 pb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-slate-500">Pilih entitas</span>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${isGroupCeoOrParentExecutive ? 'bg-brand-50 text-brand-700' : 'bg-amber-50 text-amber-800'}`}>
+                    {isGroupCeoOrParentExecutive ? 'Holding scope' : 'Segregated scope'}
+                  </span>
+                </div>
+                {companies.map((comp) => {
+                  const isSelected = comp.id === selectedEntity.id;
+                  const isAllowed = isGroupCeoOrParentExecutive || activePersona.accessibleEntityIds.includes(comp.id);
+                  return (
+                    <button
+                      key={comp.id}
+                      type="button"
+                      onClick={() => {
+                        setShowEntityQuickSelect(false);
+                        if (!isAllowed) {
+                          setRestrictedNoticeEntity(comp);
+                          return;
+                        }
+                        setSelectedEntityId(comp.id);
+                        triggerToast(`Beralih ke entitas: ${comp.flag} ${comp.legalName}`);
+                      }}
+                      className={`w-full text-left px-2.5 py-2 rounded-xl transition flex items-center gap-2.5 cursor-pointer ${
+                        isSelected ? 'bg-brand-50' : isAllowed ? 'hover:bg-slate-50' : 'opacity-60 hover:opacity-90'
+                      }`}
+                    >
+                      <span className="text-lg shrink-0">{comp.flag}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className={`block text-xs font-semibold truncate ${isSelected ? 'text-brand-700' : 'text-slate-800'}`}>{comp.legalName}</span>
+                        <span className="block text-[11px] text-slate-500 truncate">
+                          {comp.jurisdictionName} · {comp.taxAuthority.split('(')[0].trim()}
+                        </span>
+                      </span>
+                      {isSelected ? (
+                        <Check className="w-4 h-4 text-brand-600 shrink-0" />
+                      ) : !isAllowed ? (
+                        <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
-              <span className="block text-[11px] text-slate-400 -mt-0.5 font-medium">
-                Multi-Country Corporate Tax &amp; Fraud Prevention
-              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-5 scrollbar-none" aria-label="Navigasi utama">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label}>
+            <div className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">{group.label}</div>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeNavKey === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    data-active={isActive}
+                    aria-current={isActive ? 'page' : undefined}
+                    onClick={() => goToNav(item)}
+                    className="nx-sidebar-link"
+                  >
+                    <Icon />
+                    <span className="flex-1 truncate">{item.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
+        ))}
+      </nav>
 
-          {/* Center: Primary Navigation Tabs (`Companies | Calculation | Tax Return | Payment`) */}
-          <nav className="flex items-center h-full gap-1 overflow-x-auto scrollbar-none py-1">
-            {[
-              { id: 'companies', label: 'Companies', icon: Building2 },
-              { id: 'calculation', label: 'Calculation', icon: Calculator },
-              { id: 'tax_return', label: 'Tax Return', icon: FileCheck2 },
-              { id: 'payment', label: 'Payment', icon: CreditCard },
-            ].map((item) => {
-              const Icon = item.icon;
-              const active = primaryNav === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setPrimaryNav(item.id as PrimaryNav)}
-                  className={`h-full px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                    active
-                      ? 'border-[#2563EB] text-[#2563EB] font-bold shadow-[0_2px_0_0_#2563EB]'
-                      : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-                  }`}
-                >
-                  <Icon className={`w-3.5 sm:w-4 h-3.5 sm:h-4 ${active ? 'text-[#2563EB]' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+      {/* System status */}
+      <div className="px-3 pb-4 pt-3 border-t border-white/[0.06] space-y-2.5">
+        <div className="flex items-center gap-2 px-2 text-[11px] text-slate-400">
+          <span className="relative flex w-2 h-2">
+            <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-60" />
+            <span className="relative w-2 h-2 rounded-full bg-emerald-400" />
+          </span>
+          <span className="truncate">Document AI · BigQuery terhubung</span>
+        </div>
+        <DataPersistenceControl dbEngine={dbEngine} onResetData={handleResetSampleData} />
+      </div>
+    </>
+  );
 
-          {/* Right: Search, Notifications & RBAC Switcher */}
-          <div className="relative flex items-center gap-2 sm:gap-3">
-            {/* Mobile Menu Toggle Button */}
+  return (
+    <div className="min-h-screen text-slate-900 lg:pl-[var(--sidebar-w)]">
+      {/* =====================================================================
+          1. SIDEBAR (desktop)
+         ===================================================================== */}
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-[var(--sidebar-w)] flex-col bg-ink-900 text-white border-r border-white/[0.04]">
+        <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(260px_160px_at_30%_0%,rgb(108_99_236/0.28),transparent_70%)] pointer-events-none" />
+        <div className="relative flex flex-col h-full min-h-0">{renderSidebarBody()}</div>
+      </aside>
+
+      {/* =====================================================================
+          2. TOP BAR
+         ===================================================================== */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/70">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setShowMobileMenu(true)}
-              className="md:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
-              title="Buka Seluruh Menu Sistem"
+              className="lg:hidden nx-icon-btn"
+              aria-label="Buka navigasi"
             >
-              <Menu className="w-4 h-4 text-slate-700" />
+              <Menu className="w-4.5 h-4.5" />
             </button>
+            <nav className="min-w-0 flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+              <span className="hidden sm:inline text-slate-400 truncate">{activeNavGroup?.label ?? 'Workspace'}</span>
+              <span className="hidden sm:inline text-slate-300">/</span>
+              <span className="font-semibold text-slate-900 truncate">{activeNavItem?.label ?? 'Nexora'}</span>
+              <span className="hidden md:inline-flex items-center gap-1.5 ml-1 px-2 py-0.5 rounded-full bg-slate-100 text-[11px] font-medium text-slate-600 max-w-[260px]">
+                <span>{selectedEntity.flag}</span>
+                <span className="truncate">{selectedEntity.legalName}</span>
+              </span>
+            </nav>
+          </div>
 
+          {/* Right: Search, Notifications & Account */}
+          <div className="relative flex items-center gap-2">
             <button
               onClick={() => setShowCommandPalette(true)}
-              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+              className="nx-icon-btn md:w-64 md:justify-between md:px-3 text-left"
               title="Pencarian Global & Command Palette (Cmd+K)"
             >
-              <Search className="w-4 h-4 text-slate-600" />
-              <span className="hidden xl:inline text-[11px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 font-mono">⌘K</span>
+              <span className="flex items-center gap-2">
+                <Search className="w-4 h-4" />
+                <span className="hidden md:inline text-[13px] text-slate-400 whitespace-nowrap">Cari entitas, modul…</span>
+              </span>
+              <kbd className="hidden md:inline text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200 font-mono">⌘K</kbd>
             </button>
 
             <div className="relative">
@@ -2062,15 +2213,12 @@ export default function NexoraApp() {
                   setShowNotificationCenter((prev) => !prev);
                   setShowAccountDropdown(false);
                 }}
-                className={`p-2 rounded-xl border text-slate-600 hover:text-slate-900 cursor-pointer relative transition-colors ${
-                  showNotificationCenter
-                    ? 'bg-rose-50 border-rose-300 text-rose-700 ring-2 ring-rose-500/20'
-                    : 'border-slate-200 hover:bg-slate-50'
-                }`}
+                className={`nx-icon-btn relative ${showNotificationCenter ? 'border-brand-300 ring-4 ring-brand-500/10 text-brand-700' : ''}`}
                 title="Pusat Notifikasi Kepatuhan"
+                aria-label="Notifikasi"
               >
-                <Bell className="w-4 h-4 text-slate-600" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
               </button>
 
               <NotificationCenter
@@ -2089,41 +2237,23 @@ export default function NexoraApp() {
                 setShowAccountDropdown((prev) => !prev);
                 setShowNotificationCenter(false);
               }}
-              className={`flex items-center gap-2.5 p-1.5 px-3 hover:bg-slate-50 border rounded-xl transition cursor-pointer text-left shadow-2xs hover:shadow-xs ${
-                showAccountDropdown
-                  ? 'border-[#2563EB] ring-2 ring-blue-500/10 bg-blue-50/40'
-                  : 'border-slate-200/90 hover:border-slate-300'
+              className={`flex items-center gap-2.5 h-10 pl-1 pr-2 sm:pr-3 rounded-xl border bg-white transition cursor-pointer text-left ${
+                showAccountDropdown ? 'border-brand-300 ring-4 ring-brand-500/10' : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
               }`}
               title="Menu Akun & Hak Akses (RBAC Governance)"
             >
-              <div className="relative">
-                <div
-                  className={`w-8 h-8 rounded-lg ${activePersona.avatarBg} text-white flex items-center justify-center font-extrabold text-xs shadow-xs`}
-                >
+              <span className="relative">
+                <span className={`w-8 h-8 rounded-lg ${activePersona.avatarBg} text-white flex items-center justify-center font-semibold text-[11px]`}>
                   {activePersona.avatarInitials}
-                </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
-              </div>
-              <div className="hidden sm:block text-left">
-                <div className="flex items-center gap-1.5">
-                  <span className="block text-xs font-bold text-slate-800 leading-tight">
-                    {activePersona.name}
-                  </span>
-                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold ${
-                    isGroupCeoOrParentExecutive
-                      ? 'bg-blue-100 text-[#2563EB]'
-                      : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {activePersona.badge}
-                  </span>
-                </div>
-                <span className="block text-[10px] text-slate-500 truncate max-w-[240px]">
-                  {activePersona.title}
                 </span>
-              </div>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${showAccountDropdown ? 'rotate-180 text-[#2563EB]' : ''}`} />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+              </span>
+              <span className="hidden xl:block min-w-0">
+                <span className="block text-xs font-semibold text-slate-800 leading-tight truncate max-w-[180px]">{activePersona.name}</span>
+                <span className="block text-[11px] text-slate-500 leading-tight truncate max-w-[180px]">{activePersona.badge}</span>
+              </span>
+              <ChevronDown className={`hidden sm:block w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${showAccountDropdown ? 'rotate-180' : ''}`} />
             </button>
-
             {/* Premium Enterprise Account Dropdown Popover (Sub Menu) */}
             {showAccountDropdown && (
               <>
@@ -2135,16 +2265,16 @@ export default function NexoraApp() {
                   {/* Current Active Account Card */}
                   <div className="flex items-start gap-3.5 pb-3.5 border-b border-slate-100">
                     <div
-                      className={`w-11 h-11 rounded-xl ${activePersona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs`}
+                      className={`w-11 h-11 rounded-xl ${activePersona.avatarBg} text-white flex items-center justify-center font-semibold text-sm shrink-0 shadow-xs`}
                     >
                       {activePersona.avatarInitials}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <h4 className="text-xs font-black text-slate-900 truncate">
+                        <h4 className="text-xs font-semibold text-slate-900 truncate">
                           {activePersona.name}
                         </h4>
-                        <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           ● Sedang Masuk
                         </span>
                       </div>
@@ -2156,9 +2286,9 @@ export default function NexoraApp() {
                       </p>
                       <div className="mt-1.5 flex items-center gap-1 text-[10px]">
                         <span className="font-semibold text-slate-400">Izin Akses:</span>
-                        <span className={`font-bold px-1.5 py-0.2 rounded ${
+                        <span className={`font-semibold px-1.5 py-0.2 rounded ${
                           isGroupCeoOrParentExecutive
-                            ? 'bg-blue-50 text-[#2563EB]'
+                            ? 'bg-blue-50 text-blue-600'
                             : 'bg-amber-50 text-amber-800'
                         }`}>
                           {isGroupCeoOrParentExecutive ? '👑 Level 5 Holding Scope (4 Entitas)' : `🔒 Level 2 (${activePersona.jurisdiction.split(' ')[0]})`}
@@ -2170,10 +2300,10 @@ export default function NexoraApp() {
                   {/* Quick System Navigation Menu Section */}
                   <div className="pt-3 border-b border-slate-100 pb-3 space-y-2">
                     <div className="flex items-center justify-between px-1">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                         Menu &amp; Modul Sistem (Akses Cepat)
                       </span>
-                      <span className="text-[10px] text-blue-600 font-bold">1-Klik Buka</span>
+                      <span className="text-[10px] text-blue-600 font-semibold">1-Klik Buka</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-1.5 text-xs">
@@ -2187,11 +2317,11 @@ export default function NexoraApp() {
                         }}
                         className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
                           primaryNav === 'companies' && subNav === 'corporate'
-                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-semibold shadow-2xs'
                             : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
                         }`}
                       >
-                        <Building2 className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
+                        <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                         <span className="truncate">Companies</span>
                       </button>
 
@@ -2203,7 +2333,7 @@ export default function NexoraApp() {
                         }}
                         className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
                           primaryNav === 'calculation'
-                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-semibold shadow-2xs'
                             : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
                         }`}
                       >
@@ -2219,7 +2349,7 @@ export default function NexoraApp() {
                         }}
                         className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
                           primaryNav === 'tax_return'
-                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-semibold shadow-2xs'
                             : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
                         }`}
                       >
@@ -2235,7 +2365,7 @@ export default function NexoraApp() {
                         }}
                         className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
                           primaryNav === 'payment'
-                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-semibold shadow-2xs'
                             : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
                         }`}
                       >
@@ -2252,7 +2382,7 @@ export default function NexoraApp() {
                         }}
                         className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
                           primaryNav === 'companies' && subNav === 'individual'
-                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-semibold shadow-2xs'
                             : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
                         }`}
                       >
@@ -2269,7 +2399,7 @@ export default function NexoraApp() {
                         }}
                         className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
                           primaryNav === 'companies' && subNav === 'studies'
-                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-semibold shadow-2xs'
                             : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
                         }`}
                       >
@@ -2286,7 +2416,7 @@ export default function NexoraApp() {
                         }}
                         className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
                           primaryNav === 'companies' && subNav === 'calendar'
-                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-semibold shadow-2xs'
                             : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
                         }`}
                       >
@@ -2303,7 +2433,7 @@ export default function NexoraApp() {
                         }}
                         className={`p-2 rounded-xl border text-left flex items-center gap-2 transition cursor-pointer ${
                           primaryNav === 'companies' && subNav === 'reports'
-                            ? 'bg-blue-50 border-blue-200 text-[#2563EB] font-bold shadow-2xs'
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 font-semibold shadow-2xs'
                             : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-700'
                         }`}
                       >
@@ -2316,7 +2446,7 @@ export default function NexoraApp() {
                   {/* Role Switcher - Grouped by Holding vs Subsidiary */}
                   <div className="space-y-2.5 pt-3">
                     <div className="flex items-center justify-between px-1">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                         Beralih Akun Karyawan / Hak Akses
                       </span>
                       <span className="text-[10px] text-slate-400 font-medium">1-Klik Beralih</span>
@@ -2324,7 +2454,7 @@ export default function NexoraApp() {
 
                     {/* Tier 1: Holding */}
                     <div className="space-y-1">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-blue-600 block px-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 block px-1">
                         👑 Perusahaan Induk (Holding Scope)
                       </span>
                       {USER_PERSONAS.filter((p) => p.entityRole === 'PARENT').map((p) => {
@@ -2346,16 +2476,16 @@ export default function NexoraApp() {
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <div
-                                className={`w-7 h-7 rounded-lg ${p.avatarBg} text-white flex items-center justify-center font-bold text-xs shrink-0`}
+                                className={`w-7 h-7 rounded-lg ${p.avatarBg} text-white flex items-center justify-center font-semibold text-xs shrink-0`}
                               >
                                 {p.avatarInitials}
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-bold text-slate-900 truncate">
+                                  <span className="text-xs font-semibold text-slate-900 truncate">
                                     {p.name}
                                   </span>
-                                  <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-blue-100 text-[#2563EB]">
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-blue-100 text-blue-600">
                                     {p.badge.split(' ')[0]} {p.badge.split(' ')[1]}
                                   </span>
                                 </div>
@@ -2365,7 +2495,7 @@ export default function NexoraApp() {
                               </div>
                             </div>
                             {isCurrent ? (
-                              <Check className="w-4 h-4 text-[#2563EB] shrink-0" />
+                              <Check className="w-4 h-4 text-blue-600 shrink-0" />
                             ) : (
                               <span className="text-[10px] font-semibold text-slate-400">
                                 Pilih
@@ -2378,7 +2508,7 @@ export default function NexoraApp() {
 
                     {/* Tier 2: Subsidiaries */}
                     <div className="space-y-1 pt-1">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600 block px-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 block px-1">
                         🏢 Anak Perusahaan (Subsidiaries Scope — ISO 27001 Segregated)
                       </span>
                       {USER_PERSONAS.filter((p) => p.entityRole === 'SUBSIDIARY').map((p) => {
@@ -2403,16 +2533,16 @@ export default function NexoraApp() {
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <div
-                                className={`w-7 h-7 rounded-lg ${p.avatarBg} text-white flex items-center justify-center font-bold text-xs shrink-0`}
+                                className={`w-7 h-7 rounded-lg ${p.avatarBg} text-white flex items-center justify-center font-semibold text-xs shrink-0`}
                               >
                                 {p.avatarInitials}
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-bold text-slate-900 truncate">
+                                  <span className="text-xs font-semibold text-slate-900 truncate">
                                     {p.name}
                                   </span>
-                                  <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">
                                     {p.badge.split(' ')[0]} {p.badge.split(' ')[1]}
                                   </span>
                                 </div>
@@ -2422,7 +2552,7 @@ export default function NexoraApp() {
                               </div>
                             </div>
                             {isCurrent ? (
-                              <Check className="w-4 h-4 text-[#2563EB] shrink-0" />
+                              <Check className="w-4 h-4 text-blue-600 shrink-0" />
                             ) : (
                               <span className="text-[10px] font-semibold text-slate-400">
                                 Pilih
@@ -2442,7 +2572,7 @@ export default function NexoraApp() {
                         setShowAccountDropdown(false);
                         setShowRbacModal(true);
                       }}
-                      className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/80 shadow-2xs"
+                      className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/80 shadow-2xs"
                     >
                       <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                       <span>Buka Matriks Detail Hak Akses &amp; ISO 27001</span>
@@ -2454,7 +2584,7 @@ export default function NexoraApp() {
                         setShowAccountDropdown(false);
                         setShowLoginModal(true);
                       }}
-                      className="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200/80 shadow-2xs"
+                      className="w-full py-2 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200/80 shadow-2xs"
                     >
                       <LogOut className="w-3.5 h-3.5 text-rose-600" />
                       <span>Keluar / Ganti Akun Login</span>
@@ -2465,161 +2595,9 @@ export default function NexoraApp() {
             )}
           </div>
         </div>
-
-        {/* ===================================================================
-            2. SECOND-LEVEL SUB-NAV BAR (NAVY #0F172A - FIGMA SOURCE OF TRUTH)
-           =================================================================== */}
-        <div className="bg-[#0F172A] border-b border-slate-800 text-white">
-          <div className="max-w-[1440px] mx-auto px-4 sm:px-8 h-11 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 h-full overflow-x-auto scrollbar-none">
-              {primaryNav === 'companies' ? (
-                [
-                  { id: 'corporate', label: 'Corporate', icon: Building2 },
-                  { id: 'individual', label: 'Individual Shareholder', icon: Users },
-                  { id: 'studies', label: 'Studies', icon: BookOpen },
-                  { id: 'calendar', label: 'Tax Calendar', icon: Calendar },
-                  { id: 'reports', label: 'Reports', icon: BarChart3 },
-                ].map((sub) => {
-                  const Icon = sub.icon;
-                  const isActive =
-                    primaryNav === 'companies' && subNav === sub.id;
-                  return (
-                    <button
-                      key={sub.id}
-                      onClick={() => {
-                        setPrimaryNav('companies');
-                        setSubNav(sub.id as SubNav);
-                      }}
-                      className={`h-full px-3.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer whitespace-nowrap ${
-                        isActive
-                          ? 'border-[#3B82F6] text-white bg-blue-500/10 font-bold'
-                          : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                      }`}
-                    >
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#3B82F6]' : 'text-slate-400'}`} />
-                      <span>{sub.label}</span>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="flex items-center gap-2.5 h-full">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPrimaryNav('companies');
-                      setSubNav('corporate');
-                    }}
-                    className="h-full px-3 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5 border-b-2 border-transparent hover:border-blue-400 transition cursor-pointer"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5 text-blue-400" />
-                    <span>← Kembali ke Companies</span>
-                  </button>
-                  <span className="text-slate-600 font-bold">|</span>
-                  <span className="text-xs font-bold text-blue-400 uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center gap-1.5 whitespace-nowrap">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                    {primaryNav === 'calculation'
-                      ? 'Modul: Rekonsiliasi Fiskal & PPh Badan'
-                      : primaryNav === 'tax_return'
-                      ? 'Modul: Draf SPT Tahunan 1771 & Lampiran'
-                      : 'Modul: e-Billing, NTPN & Jadwal Pajak'}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="hidden md:flex items-center gap-3">
-              {/* Google Cloud Document AI & BigQuery Live Status */}
-              <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700/60 text-[10px] font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Google Cloud Document AI + BigQuery Connected
-              </span>
-
-              <DataPersistenceControl dbEngine={dbEngine} onResetData={handleResetSampleData} />
-              
-              {/* Interactive Multi-Country Active Entity Switcher */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowEntityQuickSelect((prev) => !prev)}
-                  className="flex items-center gap-2 text-xs text-slate-200 bg-slate-800/90 hover:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700/80 shadow-xs transition cursor-pointer"
-                  title="Pilih Entitas Aktif (Holding & Anak Perusahaan)"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span>
-                    Entitas: <strong className="text-white">{selectedEntity.flag} {selectedEntity.legalName}</strong>
-                  </span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${showEntityQuickSelect ? 'rotate-180 text-white' : ''}`} />
-                </button>
-
-                {showEntityQuickSelect && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowEntityQuickSelect(false)}
-                    />
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2.5 z-50 text-slate-900 space-y-1">
-                      <div className="px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 flex items-center justify-between">
-                        <span>Pilih Entitas Aktif</span>
-                        <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded ${
-                          isGroupCeoOrParentExecutive ? 'bg-blue-50 text-[#2563EB]' : 'bg-amber-50 text-amber-800'
-                        }`}>
-                          {isGroupCeoOrParentExecutive ? '👑 Holding Scope' : '🔒 Segregated Scope'}
-                        </span>
-                      </div>
-                      {companies.map((comp) => {
-                        const isSelected = comp.id === selectedEntity.id;
-                        const isAllowed = isGroupCeoOrParentExecutive || activePersona.accessibleEntityIds.includes(comp.id);
-                        return (
-                          <button
-                            key={comp.id}
-                            type="button"
-                            onClick={() => {
-                              if (!isAllowed) {
-                                setShowEntityQuickSelect(false);
-                                setRestrictedNoticeEntity(comp);
-                                return;
-                              }
-                              setSelectedEntityId(comp.id);
-                              setShowEntityQuickSelect(false);
-                              triggerToast(`Beralih ke entitas: ${comp.flag} ${comp.legalName}`);
-                            }}
-                            className={`w-full text-left p-2 rounded-xl transition flex items-center justify-between gap-2.5 cursor-pointer ${
-                              isSelected
-                                ? 'bg-blue-50 text-[#2563EB] font-bold border border-blue-200 shadow-2xs'
-                                : isAllowed
-                                ? 'hover:bg-slate-50 text-slate-700'
-                                : 'opacity-55 hover:opacity-85 text-slate-400 bg-slate-50/50'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="text-lg shrink-0">{comp.flag}</span>
-                              <div className="min-w-0">
-                                <span className="block text-xs truncate font-bold text-slate-800">
-                                  {comp.legalName}
-                                </span>
-                                <span className="block text-[10px] text-slate-400 truncate">
-                                  {comp.jurisdictionName} • {comp.taxAuthority.split('(')[0].trim()}
-                                </span>
-                              </div>
-                            </div>
-                            {isSelected ? (
-                              <Check className="w-4 h-4 text-[#2563EB] shrink-0" />
-                            ) : !isAllowed ? (
-                              <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
       </header>
 
-      {/* Hero Flow Stepper */}
+      {/* Compliance cycle stepper */}
       <HeroStepper
         currentStep={currentHeroStep}
         onSelectStep={handleHeroStepSelect}
@@ -2628,8 +2606,10 @@ export default function NexoraApp() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 left-5 z-50 max-w-md bg-[#0F172A] text-white px-4 py-3 rounded-xl shadow-xl border border-blue-500/40 flex items-center gap-3 text-xs font-medium">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div role="status" className="fixed bottom-5 left-1/2 -translate-x-1/2 lg:left-[calc(var(--sidebar-w)+1.25rem)] lg:translate-x-0 z-50 max-w-md bg-ink-900 text-white pl-3 pr-4 py-2.5 rounded-xl shadow-xl ring-1 ring-white/10 flex items-center gap-2.5 text-xs font-medium animate-fade-up">
+          <span className="w-6 h-6 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+          </span>
           <span>{toastMessage}</span>
         </div>
       )}
@@ -2639,7 +2619,7 @@ export default function NexoraApp() {
       {/* =====================================================================
           4. MAIN WORKSPACE CONTENT
          ===================================================================== */}
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-8 py-6">
+      <main className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 animate-fade-up" key={`${primaryNav}-${subNav}`}>
         {/* ===================================================================
             PRIMARY TAB 1: COMPANIES
            =================================================================== */}
@@ -2653,15 +2633,15 @@ export default function NexoraApp() {
                 {/* Clean Page Header + Mode Switcher */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#2563EB]">
-                      CORPORATE MANAGEMENT
+                    <span className="text-xs font-semibold text-brand-600">
+                      Corporate management
                     </span>
-                    <h1 className="text-2xl font-extrabold text-slate-900 mt-0.5">
+                    <h1 className="text-[26px] leading-tight font-bold text-slate-900 mt-1">
                       {corpViewTab === 'directory'
                         ? 'Companies & Group Subsidiaries'
                         : `${selectedEntity.flag} ${selectedEntity.legalName}`}
                     </h1>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm text-slate-500 mt-1 max-w-2xl">
                       {corpViewTab === 'directory'
                         ? 'Direktori korporasi grup: PT Nusantara Kreasi Digital Tbk (Induk) dan 3 Anak Usaha (Singapura, Malaysia, Amerika Serikat).'
                         : 'Corporate profile, legal documents, and the full shareholder & subsidiary ownership tree.'}
@@ -2670,28 +2650,28 @@ export default function NexoraApp() {
 
                   {/* Clean Segmented View Switcher + Action Buttons */}
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="inline-flex rounded-2xl bg-slate-100/90 p-1.5 border border-slate-200/80 shadow-inner text-xs font-bold">
+                    <div className="inline-flex rounded-xl bg-slate-200/50 p-1 text-xs font-semibold">
                       <button
                         type="button"
                         onClick={() => setCorpViewTab('directory')}
-                        className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                        className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                           corpViewTab === 'directory'
-                            ? 'bg-white text-slate-900 shadow-sm font-bold'
+                            ? 'bg-white text-slate-900 shadow-sm font-semibold'
                             : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                         }`}
                       >
                         <span>Company List</span>
-                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200/80 text-slate-700 font-bold font-mono tabular-nums">
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200/80 text-slate-700 font-semibold font-mono tabular-nums">
                           {companies.length}
                         </span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setCorpViewTab('all_in_one')}
-                        className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                        className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
                           corpViewTab === 'all_in_one' ||
                           corpViewTab === 'corporate_form'
-                            ? 'bg-white text-slate-900 shadow-sm font-bold'
+                            ? 'bg-white text-slate-900 shadow-sm font-semibold'
                             : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                         }`}
                       >
@@ -2700,9 +2680,9 @@ export default function NexoraApp() {
                       <button
                         type="button"
                         onClick={() => setCorpViewTab('subsidiaries_tree')}
-                        className={`px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                        className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
                           corpViewTab === 'subsidiaries_tree'
-                            ? 'bg-white text-slate-900 shadow-sm font-bold'
+                            ? 'bg-white text-slate-900 shadow-sm font-semibold'
                             : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                         }`}
                       >
@@ -2714,17 +2694,17 @@ export default function NexoraApp() {
                     <button
                       type="button"
                       onClick={() => setShowConsolidationModal(true)}
-                      className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold shadow-2xs transition cursor-pointer"
+                      className="inline-flex items-center gap-2 h-10 px-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold shadow-xs transition cursor-pointer"
                       title="Lihat Laporan Fiskal & Konsolidasi Grup (OECD Pillar Two)"
                     >
-                      <Globe2 className="w-4 h-4 text-[#2563EB]" />
+                      <Globe2 className="w-4 h-4 text-blue-600" />
                       <span className="hidden sm:inline">Konsolidasi Grup</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={handleStartAddNewCompany}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition cursor-pointer hover:-translate-y-0.5"
+                      className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-md shadow-brand-600/25 transition cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Add Company</span>
@@ -2737,56 +2717,34 @@ export default function NexoraApp() {
                    =========================================================== */}
                 {corpViewTab === 'directory' && (
                   <div className="space-y-6">
-                    {/* 3 Summary KPI Cards matching Figma */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                      <div className="bg-gradient-to-br from-white to-blue-50/20 rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#2563EB] border border-blue-100 flex items-center justify-center shrink-0 shadow-2xs">
-                          <Building2 className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <div className="text-3xl font-black text-slate-900 font-mono tabular-nums tracking-tight">
-                            {companies.length}
+                    {/* Summary KPI cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {[
+                        { label: 'Registered companies', value: companies.length, hint: `${companies.filter((c) => c.parentCompanyId !== null).length} anak usaha · ${new Set(companies.map((c) => c.countryCode)).size} yurisdiksi`, icon: Building2, tone: 'bg-brand-50 text-brand-600 ring-brand-100' },
+                        { label: 'Active entities', value: companies.filter((c) => c.status === 'ACTIVE').length, hint: 'Terdaftar & patuh aktif', icon: CheckCircle2, tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100' },
+                        { label: 'Action required', value: companies.filter((c) => c.status === 'PENDING').length, hint: 'Menunggu verifikasi dokumen', icon: AlertTriangle, tone: 'bg-amber-50 text-amber-600 ring-amber-100' },
+                      ].map((kpi) => {
+                        const Icon = kpi.icon;
+                        return (
+                          <div key={kpi.label} className="fintech-card p-5 flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="text-xs font-medium text-slate-500">{kpi.label}</div>
+                              <div className="mt-2 text-[32px] leading-none font-bold text-slate-900 tabular tracking-tight">{kpi.value}</div>
+                              <div className="mt-2 text-xs text-slate-400 truncate">{kpi.hint}</div>
+                            </div>
+                            <span className={`w-10 h-10 rounded-xl ring-1 flex items-center justify-center shrink-0 ${kpi.tone}`}>
+                              <Icon className="w-5 h-5" />
+                            </span>
                           </div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                            REGISTERED COMPANIES
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="bg-gradient-to-br from-white to-emerald-50/20 rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 shadow-2xs">
-                          <CheckCircle2 className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <div className="text-3xl font-black text-slate-900 font-mono tabular-nums tracking-tight">
-                            {companies.filter((c) => c.status === 'ACTIVE').length}
-                          </div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                            ACTIVE ENTITIES
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="bg-gradient-to-br from-white to-amber-50/20 rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:shadow-md transition-all flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0 shadow-2xs">
-                          <AlertTriangle className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <div className="text-3xl font-black text-slate-900 font-mono tabular-nums tracking-tight">
-                            {companies.filter((c) => c.status === 'PENDING').length}
-                          </div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                            ACTION REQUIRED
-                          </span>
-                        </div>
-                      </div>
+                        );
+                      })}
                     </div>
 
                     {/* Company List Table Card matching Figma 2 */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
-                      <div className="p-4 sm:px-6 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div className="fintech-card overflow-hidden">
+                      <div className="p-4 sm:px-6 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <h2 className="text-base font-bold text-slate-900">
+                          <h2 className="text-base font-semibold text-slate-900">
                             Company List
                           </h2>
                           <p className="text-xs text-slate-500">
@@ -2808,7 +2766,7 @@ export default function NexoraApp() {
                                 onClick={() => setEntityRoleFilter(f.id)}
                                 className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer ${
                                   entityRoleFilter === f.id
-                                    ? 'bg-[#2563EB] text-white'
+                                    ? 'bg-blue-600 text-white'
                                     : 'text-slate-600 hover:text-slate-900'
                                 }`}
                               >
@@ -2824,7 +2782,7 @@ export default function NexoraApp() {
                               placeholder="Search companies..."
                               value={companySearch}
                               onChange={(e) => setCompanySearch(e.target.value)}
-                              className="pl-9 pr-4 py-1.5 rounded-lg border border-slate-200 text-xs w-52 sm:w-64 focus:outline-none focus:border-[#2563EB]"
+                              className="pl-9 pr-4 py-1.5 rounded-lg border border-slate-200 text-xs w-52 sm:w-64 focus:outline-none focus:border-blue-600"
                             />
                           </div>
                         </div>
@@ -2833,16 +2791,16 @@ export default function NexoraApp() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                              <th className="py-3.5 px-5">COMPANY</th>
-                              <th className="py-3.5 px-5">REGISTRATION / TAX ID</th>
-                              <th className="py-3.5 px-5">ENTITY TYPE & PARENT</th>
-                              <th className="py-3.5 px-5">JURISDICTION</th>
-                              <th className="py-3.5 px-5">STATUS</th>
-                              <th className="py-3.5 px-5 text-right">ACTIONS</th>
+                            <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-medium text-slate-500 whitespace-nowrap">
+                              <th className="py-3 px-5 font-medium">Company</th>
+                              <th className="py-3 px-5 font-medium">Registration / Tax ID</th>
+                              <th className="py-3 px-5 font-medium">Entity type & parent</th>
+                              <th className="py-3 px-5 font-medium">Jurisdiction</th>
+                              <th className="py-3 px-5 font-medium">Status</th>
+                              <th className="py-3 px-5 font-medium text-right">Actions</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-200 text-xs sm:text-sm">
+                          <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
                             {filteredCompanies.map((comp) => {
                               const isCurrent = comp.id === selectedEntity.id;
                               const isAccessible =
@@ -2866,15 +2824,15 @@ export default function NexoraApp() {
                                       : 'hover:bg-slate-50'
                                   }`}
                                 >
-                                  <td className="py-4 px-5">
+                                  <td className="py-4 px-5 min-w-[260px]">
                                     <div className="flex items-center gap-3">
                                       <div
-                                        className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border ${
+                                        className={`w-9 h-9 rounded-lg flex items-center justify-center font-semibold text-xs shrink-0 border ${
                                           isCurrent
-                                            ? 'bg-[#2563EB] text-white border-[#2563EB]'
+                                            ? 'bg-blue-600 text-white border-blue-600'
                                             : !isAccessible
                                             ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : 'bg-blue-50 text-[#2563EB] border-blue-100'
+                                            : 'bg-blue-50 text-blue-600 border-blue-100'
                                         }`}
                                       >
                                         {!isAccessible ? (
@@ -2885,11 +2843,11 @@ export default function NexoraApp() {
                                       </div>
                                       <div>
                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                          <span className="font-bold text-slate-900 block">
+                                          <span className="font-semibold text-slate-900 block">
                                             {comp.legalName}
                                           </span>
                                           {!isAccessible && (
-                                            <span className="text-[9px] px-1.5 py-0.2 rounded font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                            <span className="text-[10px] px-1.5 py-0.2 rounded font-semibold bg-amber-100 text-amber-800 border border-amber-300">
                                               🔒 Locked (ISO 27001)
                                             </span>
                                           )}
@@ -2900,16 +2858,16 @@ export default function NexoraApp() {
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="py-4 px-5 font-mono text-xs text-slate-700">
-                                    <span className="font-semibold block">
+                                  <td className="py-4 px-5 font-mono text-xs text-slate-700 max-w-[220px]">
+                                    <span className="font-medium block">
                                       {comp.taxId}
                                     </span>
                                     <span className="text-[11px] text-slate-400">
                                       {comp.registrationNumber}
                                     </span>
                                   </td>
-                                  <td className="py-4 px-5 text-xs">
-                                    <span className="font-bold text-slate-800 block">
+                                  <td className="py-4 px-5 text-xs min-w-[200px]">
+                                    <span className="font-semibold text-slate-800 block">
                                       {comp.entityType}
                                     </span>
                                     <span className="text-[11px] text-slate-500">
@@ -2918,7 +2876,7 @@ export default function NexoraApp() {
                                         : `Parent: ${comp.parentCompanyName} (${comp.ownershipByParent}%)`}
                                     </span>
                                   </td>
-                                  <td className="py-4 px-5 text-xs font-semibold text-slate-800">
+                                  <td className="py-4 px-5 text-xs font-medium text-slate-800 whitespace-nowrap">
                                     <span className="inline-flex items-center gap-1.5">
                                       <span className="text-base">{comp.flag}</span>
                                       <span>{comp.jurisdictionName}</span>
@@ -2926,13 +2884,13 @@ export default function NexoraApp() {
                                   </td>
                                   <td className="py-4 px-5">
                                     {!isAccessible ? (
-                                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                                         <Lock className="w-3 h-3 text-amber-600" />
                                         Akses Dibatasi
                                       </span>
                                     ) : (
                                       <span
-                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                                           comp.status === 'ACTIVE'
                                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                             : 'bg-amber-50 text-amber-700 border border-amber-200'
@@ -2957,21 +2915,21 @@ export default function NexoraApp() {
                                       <button
                                         type="button"
                                         onClick={() => setRestrictedNoticeEntity(comp)}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold transition cursor-pointer shadow-2xs"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-semibold transition cursor-pointer shadow-2xs"
                                         title="Memerlukan Otorisasi CEO Perusahaan Induk (ISO 27001)"
                                       >
                                         <Lock className="w-3.5 h-3.5 text-amber-600" />
                                         <span>Otorisasi CEO Induk</span>
                                       </button>
                                     ) : (
-                                      <div className="inline-flex items-center gap-2 text-xs font-bold">
+                                      <div className="inline-flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap">
                                         <button
                                           type="button"
                                           onClick={() => {
                                             setSelectedEntityId(comp.id);
                                             setCorpViewTab('all_in_one');
                                           }}
-                                          className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#2563EB] border border-blue-200 transition cursor-pointer"
+                                          className="px-3 py-1.5 rounded-lg bg-ink-900 hover:bg-ink-700 text-white transition cursor-pointer"
                                           title="View & Edit Corporate Information Form"
                                         >
                                           View Form
@@ -3026,7 +2984,7 @@ export default function NexoraApp() {
                     {/* Top Underline Tabs (`Search Existing Company | Manual Input`) + Quick Section Pills */}
                     {corpViewTab !== 'subsidiaries_tree' && (
                     <div className="space-y-4">
-                      <div className="grid grid-cols-2 border-b border-slate-200 text-xs sm:text-sm font-bold text-center">
+                      <div className="grid grid-cols-2 border-b border-slate-200 text-xs sm:text-sm font-semibold text-center">
                         <button
                           type="button"
                           onClick={() => setInputMode('search_existing')}
@@ -3054,7 +3012,7 @@ export default function NexoraApp() {
                       {/* Exact Figma 201-8 Top White/Gray Search Box (`Search Company` + `Search` button) */}
                       <div className="bg-gradient-to-r from-slate-50 to-blue-50/20 border border-slate-200/90 rounded-2xl p-4.5 flex flex-wrap items-center justify-between gap-4">
                         <div className="space-y-1.5 flex-1 min-w-[280px]">
-                          <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                          <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block">
                             Search Company / Tax ID (NPWP / UEN / TIN / EIN)
                           </label>
                           <div className="relative flex-1 sm:max-w-md">
@@ -3066,7 +3024,7 @@ export default function NexoraApp() {
                                 setRegistryLookupQuery(e.target.value)
                               }
                               placeholder={`${selectedEntity.taxId} — ${selectedEntity.legalName}`}
-                              className="w-full pl-10 pr-24 py-2.5 rounded-xl bg-white border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 text-xs text-slate-900 font-medium shadow-2xs transition outline-none"
+                              className="w-full pl-10 pr-24 py-2.5 rounded-xl bg-white border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 text-xs text-slate-900 font-medium shadow-2xs transition outline-none"
                             />
                             <button
                               type="button"
@@ -3075,7 +3033,7 @@ export default function NexoraApp() {
                                   `Data registrasi pajak untuk "${registryLookupQuery || selectedEntity.legalName}" berhasil disinkronkan!`
                                 )
                               }
-                              className="absolute right-1.5 top-1.5 bottom-1.5 px-4 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center"
+                              className="absolute right-1.5 top-1.5 bottom-1.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition shadow-xs cursor-pointer flex items-center justify-center"
                             >
                               Search
                             </button>
@@ -3087,7 +3045,7 @@ export default function NexoraApp() {
                           <button
                             type="button"
                             onClick={() => setCorpViewTab('directory')}
-                            className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                           >
                             <ArrowLeft className="w-3.5 h-3.5" />
                             <span>← Back to Directory</span>
@@ -3104,10 +3062,10 @@ export default function NexoraApp() {
                       corpViewTab === 'corporate_form') && (
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-base font-extrabold text-slate-900">
+                          <h3 className="text-base font-semibold text-slate-900">
                             Corporate Information
                           </h3>
-                          <span className="px-2.5 py-1 rounded-md bg-blue-50 text-[#2563EB] border border-blue-200 text-[11px] font-bold">
+                          <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-600 border border-blue-200 text-[11px] font-semibold">
                             {selectedEntity.flag} {selectedEntity.jurisdictionName} • {selectedEntity.entityType}
                           </span>
                         </div>
@@ -3119,7 +3077,7 @@ export default function NexoraApp() {
                           {/* Left Column (7 stacked fields matching Figma 201-8) */}
                           <div className="lg:col-span-6 space-y-3">
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 Legal Name
                               </label>
                               <input
@@ -3131,12 +3089,12 @@ export default function NexoraApp() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 font-semibold focus:outline-none"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 font-semibold focus:outline-none"
                               />
                             </div>
 
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 Trade Name
                               </label>
                               <input
@@ -3148,12 +3106,12 @@ export default function NexoraApp() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
                               />
                             </div>
 
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 Tax Identification Number (NPWP / UEN / TIN / EIN)
                               </label>
                               <input
@@ -3162,12 +3120,12 @@ export default function NexoraApp() {
                                 onChange={(e) =>
                                   handleUpdateCompanyField('taxId', e.target.value)
                                 }
-                                className="w-full sm:w-3/5 px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition font-mono tabular-nums text-slate-900 font-semibold focus:outline-none"
+                                className="w-full sm:w-3/5 px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition font-mono tabular-nums text-slate-900 font-semibold focus:outline-none"
                               />
                             </div>
 
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 Business Registration Number (NIB / AHU / ACRA / SSM)
                               </label>
                               <input
@@ -3179,12 +3137,12 @@ export default function NexoraApp() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition font-mono tabular-nums text-slate-900 focus:outline-none"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition font-mono tabular-nums text-slate-900 focus:outline-none"
                               />
                             </div>
 
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 Country & Tax Jurisdiction
                               </label>
                               <select
@@ -3207,7 +3165,7 @@ export default function NexoraApp() {
                                     )
                                   );
                                 }}
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 font-semibold focus:outline-none cursor-pointer"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 font-semibold focus:outline-none cursor-pointer"
                               >
                                 <option value="ID">🇮🇩 Indonesia (DJP Coretax)</option>
                                 <option value="SG">🇸🇬 Singapore (IRAS InvoiceNow)</option>
@@ -3217,7 +3175,7 @@ export default function NexoraApp() {
                             </div>
 
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 Business Classification (KBLI / KLU / SSIC / MSIC)
                               </label>
                               <input
@@ -3229,12 +3187,12 @@ export default function NexoraApp() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
                               />
                             </div>
 
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 Fiscal Year & Paid-Up Capital
                               </label>
                               <input
@@ -3246,7 +3204,7 @@ export default function NexoraApp() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
                               />
                             </div>
                           </div>
@@ -3254,7 +3212,7 @@ export default function NexoraApp() {
                           {/* Right Column (Tall Company Address Box + 2 inputs below matching Figma 201-8) */}
                           <div className="lg:col-span-6 space-y-3">
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 Company Address
                               </label>
                               <textarea
@@ -3266,12 +3224,12 @@ export default function NexoraApp() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
                               />
                             </div>
 
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 Tax Office / Authority
                               </label>
                               <input
@@ -3283,12 +3241,12 @@ export default function NexoraApp() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition text-slate-900 focus:outline-none"
                               />
                             </div>
 
                             <div>
-                              <label className="block font-bold text-slate-700 mb-1.5">
+                              <label className="block font-semibold text-slate-700 mb-1.5">
                                 NITKU / Branch ID & Authorized Tax Officer
                               </label>
                               <input
@@ -3300,7 +3258,7 @@ export default function NexoraApp() {
                                     e.target.value
                                   )
                                 }
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition font-mono tabular-nums text-slate-900 focus:outline-none"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 bg-white text-xs shadow-2xs transition font-mono tabular-nums text-slate-900 focus:outline-none"
                               />
                             </div>
                           </div>
@@ -3316,7 +3274,7 @@ export default function NexoraApp() {
                       <div className="pt-6 border-t border-slate-200 space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
-                            <h3 className="text-base font-extrabold text-slate-900">
+                            <h3 className="text-base font-semibold text-slate-900">
                               Upload Document
                             </h3>
                             <p className="text-xs text-slate-500">
@@ -3327,7 +3285,7 @@ export default function NexoraApp() {
                             type="button"
                             onClick={handleRunDocAiVerification}
                             disabled={isDocAiRunning}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#2563EB] border border-blue-200 text-xs font-bold transition cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 text-xs font-semibold transition cursor-pointer"
                           >
                             <RefreshCw
                               className={`w-3.5 h-3.5 ${
@@ -3347,10 +3305,10 @@ export default function NexoraApp() {
                           <div className="mb-4 p-3.5 rounded-xl bg-blue-50/60 border border-blue-200/80 space-y-2">
                             <div className="flex items-center justify-between text-xs">
                               <span className="font-semibold text-blue-900 flex items-center gap-2">
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#2563EB]" />
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
                                 Memindai Dokumen Statutory dengan Google Cloud Document AI OCR...
                               </span>
-                              <span className="font-mono tabular-nums text-blue-800 font-bold">99.2%</span>
+                              <span className="font-mono tabular-nums text-blue-800 font-semibold">99.2%</span>
                             </div>
                             <div
                               role="progressbar"
@@ -3361,7 +3319,7 @@ export default function NexoraApp() {
                               className="w-full h-2 bg-slate-100 rounded-full overflow-hidden"
                             >
                               <div
-                                className="h-full bg-[#2563EB] rounded-full transition-all duration-500 ease-out animate-pulse"
+                                className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out animate-pulse"
                                 style={{ width: '99.2%' }}
                               />
                             </div>
@@ -3373,11 +3331,11 @@ export default function NexoraApp() {
                           {selectedEntity.documents.map((doc, index) => (
                             <div key={doc.id} className="p-4 rounded-2xl border border-slate-200/90 bg-slate-50/40 hover:bg-white hover:border-blue-300 hover:shadow-xs transition-all space-y-2.5">
                               <div className="flex items-center justify-between gap-2">
-                                <label className="text-xs font-bold text-slate-800">
+                                <label className="text-xs font-semibold text-slate-800">
                                   {index + 1}. {doc.label}
                                 </label>
                                 <span
-                                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border font-mono tabular-nums ${
+                                  className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border font-mono tabular-nums ${
                                     doc.status === 'Verified by Document AI'
                                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                       : 'bg-rose-50 text-rose-700 border-rose-200'
@@ -3392,7 +3350,7 @@ export default function NexoraApp() {
                                 <button
                                   type="button"
                                   onClick={() => setPreviewDoc(doc)}
-                                  className="py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#2563EB] transition cursor-pointer"
+                                  className="py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition cursor-pointer"
                                 >
                                   <Eye className="w-3.5 h-3.5 text-slate-400" />
                                   <span>View</span>
@@ -3400,7 +3358,7 @@ export default function NexoraApp() {
                                 <button
                                   type="button"
                                   onClick={handleRunDocAiVerification}
-                                  className="py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-bold text-[#2563EB] hover:bg-[#2563EB] hover:text-white transition cursor-pointer"
+                                  className="py-2.5 px-4 flex items-center justify-center gap-2 text-xs font-semibold text-blue-600 hover:bg-blue-600 hover:text-white transition cursor-pointer"
                                 >
                                   <span>Upload</span>
                                   <Upload className="w-3.5 h-3.5" />
@@ -3432,10 +3390,10 @@ export default function NexoraApp() {
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="text-base font-extrabold text-slate-900">
+                              <h3 className="text-base font-semibold text-slate-900">
                                 Company Structure — Shareholder & Corporate Ownership Tree
                               </h3>
-                              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-[#2563EB] border border-blue-200 text-[10px] font-bold">
+                              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 text-[10px] font-semibold">
                                 Multi-Tier Ownership Tree
                               </span>
                             </div>
@@ -3447,18 +3405,18 @@ export default function NexoraApp() {
                             <button
                               type="button"
                               onClick={() => setShowIndividualModal(true)}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-2xs transition cursor-pointer"
                             >
                               <UserCheck className="w-3.5 h-3.5" />
-                              <span>+ Add Individual Node</span>
+                              <span>Add Individual Node</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => setShowShareholderModal(true)}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-2xs transition cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-2xs transition cursor-pointer"
                             >
                               <Building2 className="w-3.5 h-3.5" />
-                              <span>+ Add Corporate Shareholder</span>
+                              <span>Add Corporate Shareholder</span>
                             </button>
                             <button
                               type="button"
@@ -3466,10 +3424,10 @@ export default function NexoraApp() {
                                 setStructureModalTab('general');
                                 setShowStructureModal(true);
                               }}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold shadow-2xs transition cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-2xs transition cursor-pointer"
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              <span>+ Add Subsidiary Company</span>
+                              <span>Add Subsidiary Company</span>
                             </button>
                           </div>
                         </div>
@@ -3481,8 +3439,8 @@ export default function NexoraApp() {
                         <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/90 p-5 sm:p-6 shadow-2xs overflow-x-auto">
                           <div className="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-slate-200">
                             <div className="flex items-center gap-2">
-                              <GitBranch className="w-4 h-4 text-[#2563EB]" />
-                              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                              <GitBranch className="w-4 h-4 text-blue-600" />
+                              <span className="text-xs font-semibold uppercase tracking-wider text-slate-800">
                                 Visual Ownership & Shareholder Tree Diagram ({selectedEntity.flag} {selectedEntity.legalName})
                               </span>
                             </div>
@@ -3496,7 +3454,7 @@ export default function NexoraApp() {
                                 <span className="text-slate-600">Intermediate Corporate Shareholder (Company)</span>
                               </span>
                               <span className="inline-flex items-center gap-1.5">
-                                <span className="w-2.5 h-2.5 rounded-xs bg-[#2563EB] inline-block" />
+                                <span className="w-2.5 h-2.5 rounded-xs bg-blue-600 inline-block" />
                                 <span className="text-slate-600">Parent & Subsidiary Entities (Company)</span>
                               </span>
                             </div>
@@ -3508,7 +3466,7 @@ export default function NexoraApp() {
                                ------------------------------------------------- */}
                             <div className="w-full">
                               <div className="text-center mb-3">
-                                <span className="px-3 py-1 rounded-full bg-slate-200/80 text-slate-700 text-[10px] font-extrabold uppercase tracking-wider">
+                                <span className="px-3 py-1 rounded-full bg-slate-200/80 text-slate-700 text-[10px] font-semibold uppercase tracking-wider">
                                   TIER 1 — UPSTREAM SHAREHOLDERS (INDIVIDUAL UBO & INTERMEDIATE CORPORATE SHAREHOLDERS)
                                 </span>
                               </div>
@@ -3522,14 +3480,14 @@ export default function NexoraApp() {
                                   >
                                     <div className="w-full flex-1 rounded-xl bg-white border-2 border-emerald-500/80 p-3 shadow-xs hover:shadow-md transition relative">
                                       <div className="flex items-center justify-between gap-1 mb-1.5">
-                                        <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-extrabold uppercase">
+                                        <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-semibold uppercase">
                                           Individual
                                         </span>
-                                        <span className="font-mono text-[10px] font-bold text-slate-500">
+                                        <span className="font-mono text-[10px] font-semibold text-slate-500">
                                           {ind.id}
                                         </span>
                                       </div>
-                                      <div className="text-xs font-extrabold text-slate-900 leading-snug">
+                                      <div className="text-xs font-semibold text-slate-900 leading-snug">
                                         👤 {ind.fullName}
                                       </div>
                                       <div className="text-[10px] text-slate-500 mt-0.5">
@@ -3539,17 +3497,17 @@ export default function NexoraApp() {
                                         <span className="text-slate-600 font-medium">
                                           {ind.nationality}
                                         </span>
-                                        <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-mono font-extrabold border border-emerald-200">
+                                        <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-mono font-semibold border border-emerald-200">
                                           Direct: {ind.directSharePercent}% | UBO: {ind.effectiveSharePercent}%
                                         </span>
                                       </div>
-                                      <div className="mt-1 text-[9px] font-mono text-slate-400 truncate">
+                                      <div className="mt-1 text-[10px] font-mono text-slate-400 truncate">
                                         {ind.personalTaxId}
                                       </div>
                                     </div>
                                     {/* Vertical Stem Down from Individual Node */}
                                     <div className="w-0.5 h-5 bg-emerald-500" />
-                                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-mono text-[9px] font-bold shadow-2xs">
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-mono text-[10px] font-semibold shadow-2xs">
                                       {ind.directSharePercent > 0
                                         ? `${ind.directSharePercent}% Direct`
                                         : `${ind.effectiveSharePercent}% Indirect UBO`}
@@ -3568,14 +3526,14 @@ export default function NexoraApp() {
                                     >
                                       <div className="w-full flex-1 rounded-xl bg-white border-2 border-indigo-500/80 p-3 shadow-xs hover:shadow-md transition relative">
                                         <div className="flex items-center justify-between gap-1 mb-1.5">
-                                          <span className="px-2 py-0.5 rounded bg-[#2563EB] text-white text-[9px] font-extrabold uppercase">
+                                          <span className="px-2 py-0.5 rounded bg-blue-600 text-white text-[10px] font-semibold uppercase">
                                             Company
                                           </span>
-                                          <span className="font-mono text-[10px] font-bold text-slate-500">
+                                          <span className="font-mono text-[10px] font-semibold text-slate-500">
                                             {sh.id}
                                           </span>
                                         </div>
-                                        <div className="text-xs font-extrabold text-slate-900 leading-snug">
+                                        <div className="text-xs font-semibold text-slate-900 leading-snug">
                                           🏢 {sh.name}
                                         </div>
                                         <div className="text-[10px] text-slate-500 mt-0.5">
@@ -3585,17 +3543,17 @@ export default function NexoraApp() {
                                           <span className="text-slate-600 font-medium">
                                             {sh.jurisdiction}
                                           </span>
-                                          <span className="px-1.5 py-0.5 rounded bg-blue-50 text-[#2563EB] font-mono font-extrabold border border-blue-200">
+                                          <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-mono font-semibold border border-blue-200">
                                             Share: {sh.sharePercent}%
                                           </span>
                                         </div>
-                                        <div className="mt-1 text-[9px] font-mono text-slate-400 truncate">
+                                        <div className="mt-1 text-[10px] font-mono text-slate-400 truncate">
                                           {sh.taxId}
                                         </div>
                                       </div>
                                       {/* Vertical Stem Down from Corporate Shareholder Node */}
                                       <div className="w-0.5 h-5 bg-indigo-500" />
-                                      <span className="px-2 py-0.5 rounded-full bg-indigo-600 text-white font-mono text-[9px] font-bold shadow-2xs">
+                                      <span className="px-2 py-0.5 rounded-full bg-indigo-600 text-white font-mono text-[10px] font-semibold shadow-2xs">
                                         {sh.sharePercent}% Share
                                       </span>
                                       <div className="w-0.5 h-4 bg-indigo-500" />
@@ -3604,37 +3562,37 @@ export default function NexoraApp() {
                               </div>
 
                               {/* Horizontal Collector Bus Line connecting all Tier 1 Shareholders into Tier 2 Parent */}
-                              <div className="w-3/4 mx-auto h-0.5 bg-gradient-to-r from-emerald-500 via-[#2563EB] to-indigo-500" />
+                              <div className="w-3/4 mx-auto h-0.5 bg-gradient-to-r from-emerald-500 via-blue-600 to-indigo-500" />
                               <div className="flex flex-col items-center">
-                                <div className="w-0.5 h-5 bg-[#2563EB]" />
-                                <span className="px-3 py-0.5 rounded-full bg-blue-50 text-[#2563EB] border border-blue-300 text-[10px] font-extrabold shadow-2xs">
+                                <div className="w-0.5 h-5 bg-blue-600" />
+                                <span className="px-3 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-300 text-[10px] font-semibold shadow-2xs">
                                   ▼ 100% Consolidated Shareholding & Voting Control
                                 </span>
-                                <div className="w-0.5 h-5 bg-[#2563EB]" />
+                                <div className="w-0.5 h-5 bg-blue-600" />
                               </div>
                             </div>
 
                             {/* -------------------------------------------------
                                 TIER 2: FOCAL / PARENT COMPANY NODE (CENTER OF TREE)
                                ------------------------------------------------- */}
-                            <div className="w-full max-w-xl rounded-2xl bg-[#0F172A] text-white p-4 border-2 border-[#3B82F6] shadow-lg relative">
+                            <div className="w-full max-w-xl rounded-2xl bg-ink-900 text-white p-4 border-2 border-blue-500 shadow-lg relative">
                               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                                 <div className="flex items-center gap-2">
-                                  <span className="px-2.5 py-0.5 rounded bg-[#2563EB] text-white text-[10px] font-extrabold uppercase">
+                                  <span className="px-2.5 py-0.5 rounded bg-blue-600 text-white text-[10px] font-semibold uppercase">
                                     Company • {selectedEntity.entityType}
                                   </span>
                                   <span className="font-mono text-[11px] text-blue-300">
                                     {selectedEntity.id}
                                   </span>
                                 </div>
-                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold">
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-semibold">
                                   Compliance {selectedEntity.aiComplianceScore}/100
                                 </span>
                               </div>
 
                               <div className="flex items-center justify-between gap-3">
                                 <div>
-                                  <h4 className="text-base font-extrabold tracking-tight">
+                                  <h4 className="text-base font-semibold tracking-tight">
                                     {selectedEntity.flag} {selectedEntity.legalName}
                                   </h4>
                                   <p className="text-xs text-slate-300 mt-0.5">
@@ -3642,7 +3600,7 @@ export default function NexoraApp() {
                                   </p>
                                 </div>
                                 <div className="text-right font-mono text-xs">
-                                  <span className="text-blue-300 font-bold block">
+                                  <span className="text-blue-300 font-semibold block">
                                     {selectedEntity.taxId}
                                   </span>
                                   <span className="text-[11px] text-slate-400">
@@ -3654,15 +3612,15 @@ export default function NexoraApp() {
 
                             {/* Vertical Stem Down from Tier 2 Parent to Tier 3 Subsidiaries */}
                             <div className="flex flex-col items-center">
-                              <div className="w-0.5 h-5 bg-[#2563EB]" />
-                              <span className="px-3 py-0.5 rounded-full bg-[#2563EB] text-white text-[10px] font-extrabold shadow-2xs">
+                              <div className="w-0.5 h-5 bg-blue-600" />
+                              <span className="px-3 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-semibold shadow-2xs">
                                 ▼ Multi-Country Subsidiaries & Intercompany Tax Treaty Network ({companies.length - 1} Subsidiaries)
                               </span>
-                              <div className="w-0.5 h-5 bg-[#2563EB]" />
+                              <div className="w-0.5 h-5 bg-blue-600" />
                             </div>
 
                             {/* Horizontal Distributor Bus Line for Tier 3 Subsidiaries */}
-                            <div className="w-2/3 mx-auto h-0.5 bg-[#2563EB]" />
+                            <div className="w-2/3 mx-auto h-0.5 bg-blue-600" />
 
                             {/* -------------------------------------------------
                                 TIER 3: DOWNSTREAM MULTI-COUNTRY SUBSIDIARIES & LOCAL INDIVIDUAL SHAREHOLDERS
@@ -3678,8 +3636,8 @@ export default function NexoraApp() {
                                       className="flex flex-col items-center"
                                     >
                                       {/* Vertical Branch Line from Bus to Subsidiary Card */}
-                                      <div className="w-0.5 h-5 bg-[#2563EB]" />
-                                      <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-[#2563EB] border border-blue-300 font-mono text-[10px] font-extrabold mb-2">
+                                      <div className="w-0.5 h-5 bg-blue-600" />
+                                      <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-600 border border-blue-300 font-mono text-[10px] font-semibold mb-2">
                                         {sub.ownershipByParent}% Owned by Parent
                                       </span>
 
@@ -3687,19 +3645,19 @@ export default function NexoraApp() {
                                         onClick={() => setSelectedEntityId(sub.id)}
                                         className={`w-full rounded-xl p-3.5 border-2 transition cursor-pointer ${
                                           isFocused
-                                            ? 'bg-blue-50/70 border-[#2563EB] shadow-md'
+                                            ? 'bg-blue-50/70 border-blue-600 shadow-md'
                                             : 'bg-white border-slate-200 hover:border-blue-400 shadow-xs'
                                         }`}
                                       >
                                         <div className="flex items-center justify-between gap-1 mb-1.5">
-                                          <span className="px-2 py-0.5 rounded bg-[#2563EB] text-white text-[9px] font-extrabold uppercase">
+                                          <span className="px-2 py-0.5 rounded bg-blue-600 text-white text-[10px] font-semibold uppercase">
                                             Company • Subsidiary
                                           </span>
-                                          <span className="text-[10px] font-bold text-slate-500">
+                                          <span className="text-[10px] font-semibold text-slate-500">
                                             {sub.flag} {sub.jurisdictionName}
                                           </span>
                                         </div>
-                                        <div className="text-xs font-extrabold text-slate-900">
+                                        <div className="text-xs font-semibold text-slate-900">
                                           {sub.legalName}
                                         </div>
                                         <div className="text-[10px] font-mono text-slate-500 mt-0.5">
@@ -3709,7 +3667,7 @@ export default function NexoraApp() {
                                           <span className="text-slate-600">
                                             {sub.taxAuthority.split('(')[0]}
                                           </span>
-                                          <span className="text-emerald-700 font-bold">
+                                          <span className="text-emerald-700 font-semibold">
                                             WHT Treaty: 10%
                                           </span>
                                         </div>
@@ -3721,16 +3679,16 @@ export default function NexoraApp() {
                                             className="mt-2.5 pt-2 border-t border-dashed border-slate-200 pl-3 border-l-2 border-l-emerald-500 bg-emerald-50/40 rounded-r-lg p-2"
                                           >
                                             <div className="flex items-center justify-between gap-1">
-                                              <span className="text-[10px] font-bold text-slate-800 truncate">
+                                              <span className="text-[10px] font-semibold text-slate-800 truncate">
                                                 └─ 👤 {localInd.fullName}
                                               </span>
-                                              <span className="px-1.5 py-0.2 rounded bg-emerald-600 text-white text-[8px] font-bold">
+                                              <span className="px-1.5 py-0.2 rounded bg-emerald-600 text-white text-[10px] font-semibold">
                                                 Individual
                                               </span>
                                             </div>
-                                            <div className="flex items-center justify-between text-[9px] text-emerald-800 font-mono mt-0.5">
+                                            <div className="flex items-center justify-between text-[10px] text-emerald-800 font-mono mt-0.5">
                                               <span>{localInd.roleTitle}</span>
-                                              <span className="font-bold">
+                                              <span className="font-semibold">
                                                 {localInd.directSharePercent > 0
                                                   ? `${localInd.directSharePercent}% Direct`
                                                   : `${localInd.effectiveSharePercent}% UBO`}
@@ -3752,7 +3710,7 @@ export default function NexoraApp() {
                            =================================================== */}
                         <div className="bg-slate-100/90 rounded-2xl border border-slate-200/90 p-5 space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-extrabold text-slate-800">
+                            <span className="text-xs font-semibold text-slate-800">
                               Hierarchical Tree View
                             </span>
                             <span className="text-[11px] text-slate-500">
@@ -3768,12 +3726,12 @@ export default function NexoraApp() {
                                   type="checkbox"
                                   checked
                                   readOnly
-                                  className="w-4 h-4 accent-[#2563EB] rounded"
+                                  className="w-4 h-4 accent-blue-600 rounded"
                                 />
-                                <span className="text-xs font-extrabold text-slate-900">
+                                <span className="text-xs font-semibold text-slate-900">
                                   {selectedEntity.flag} {selectedEntity.legalName}
                                 </span>
-                                <span className="px-2 py-0.5 rounded bg-[#2563EB] text-white font-bold text-[10px]">
+                                <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-semibold text-[10px]">
                                   Company
                                 </span>
                                 <span className="px-2 py-0.5 rounded bg-white text-slate-700 border border-slate-200 font-semibold text-[10px]">
@@ -3784,7 +3742,7 @@ export default function NexoraApp() {
                                 <span className="font-mono text-slate-600">
                                   {selectedEntity.taxId}
                                 </span>
-                                <span className="font-mono font-extrabold text-[#2563EB]">
+                                <span className="font-mono font-semibold text-blue-600">
                                   100% Root Entity
                                 </span>
                               </div>
@@ -3792,7 +3750,7 @@ export default function NexoraApp() {
 
                             {/* LEVEL 1 BRANCH A: UPSTREAM INTERMEDIATE CORPORATE SHAREHOLDERS (`Company` Badge) */}
                             <div className="ml-6 pl-4 border-l-2 border-blue-300 space-y-2 pt-1">
-                              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                                 ├─ Upstream Corporate Shareholders (Company) & Nested Individual UBOs (Individual)
                               </div>
                               {selectedEntity.intermediateShareholders.map(
@@ -3807,12 +3765,12 @@ export default function NexoraApp() {
                                           type="checkbox"
                                           checked
                                           readOnly
-                                          className="w-4 h-4 accent-[#2563EB]"
+                                          className="w-4 h-4 accent-blue-600"
                                         />
-                                        <span className="text-xs font-bold text-slate-900">
+                                        <span className="text-xs font-semibold text-slate-900">
                                           🏢 {sh.name}
                                         </span>
-                                        <span className="px-2 py-0.5 rounded bg-[#2563EB] text-white font-bold text-[10px]">
+                                        <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-semibold text-[10px]">
                                           Company
                                         </span>
                                         <span className="text-[11px] text-slate-500">
@@ -3820,7 +3778,7 @@ export default function NexoraApp() {
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-3 text-xs">
-                                        <span className="font-mono font-bold text-slate-800">
+                                        <span className="font-mono font-semibold text-slate-800">
                                           Share: {sh.sharePercent}%
                                         </span>
                                         <button
@@ -3828,7 +3786,7 @@ export default function NexoraApp() {
                                           onClick={() =>
                                             setShowShareholderModal(true)
                                           }
-                                          className="text-[#2563EB] font-bold hover:underline cursor-pointer"
+                                          className="text-blue-600 font-semibold hover:underline cursor-pointer"
                                         >
                                           Edit
                                         </button>
@@ -3849,10 +3807,10 @@ export default function NexoraApp() {
                                               readOnly
                                               className="w-3.5 h-3.5 accent-emerald-600"
                                             />
-                                            <span className="text-xs font-bold text-slate-900">
+                                            <span className="text-xs font-semibold text-slate-900">
                                               👤 {selectedEntity.individualShareholders[idx].fullName}
                                             </span>
-                                            <span className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px]">
+                                            <span className="px-2 py-0.5 rounded bg-emerald-600 text-white font-semibold text-[10px]">
                                               Individual
                                             </span>
                                             <span className="text-[10px] text-emerald-800 font-semibold">
@@ -3868,7 +3826,7 @@ export default function NexoraApp() {
                                               onClick={() =>
                                                 setShowIndividualModal(true)
                                               }
-                                              className="text-emerald-700 font-bold hover:underline cursor-pointer"
+                                              className="text-emerald-700 font-semibold hover:underline cursor-pointer"
                                             >
                                               Edit
                                             </button>
@@ -3883,7 +3841,7 @@ export default function NexoraApp() {
 
                             {/* LEVEL 1 BRANCH B: DOWNSTREAM SUBSIDIARIES (`Company` Badge) */}
                             <div className="ml-6 pl-4 border-l-2 border-indigo-300 space-y-2 pt-2">
-                              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                                 └─ Downstream Multi-Country Subsidiaries (Company)
                               </div>
                               {selectedEntity.structureNodes
@@ -3901,15 +3859,15 @@ export default function NexoraApp() {
                                         type="checkbox"
                                         checked
                                         readOnly
-                                        className="w-4 h-4 accent-[#2563EB]"
+                                        className="w-4 h-4 accent-blue-600"
                                       />
-                                      <span className="text-xs font-bold text-slate-900">
+                                      <span className="text-xs font-semibold text-slate-900">
                                         {node.flag} {node.entityName}
                                       </span>
-                                      <span className="px-2 py-0.5 rounded bg-[#2563EB] text-white font-bold text-[10px]">
+                                      <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-semibold text-[10px]">
                                         Company
                                       </span>
-                                      <span className="px-2 py-0.5 rounded bg-blue-50 text-[#2563EB] text-[10px] font-semibold border border-blue-200">
+                                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-semibold border border-blue-200">
                                         {node.role}
                                       </span>
                                       <span className="text-[11px] text-slate-500">
@@ -3917,7 +3875,7 @@ export default function NexoraApp() {
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-3 text-xs">
-                                      <span className="font-mono font-bold text-slate-900">
+                                      <span className="font-mono font-semibold text-slate-900">
                                         Direct: {node.directOwnership}% (Eff: {node.effectiveOwnership}%)
                                       </span>
                                       <button
@@ -3926,7 +3884,7 @@ export default function NexoraApp() {
                                           setStructureModalTab('tp_tax');
                                           setShowStructureModal(true);
                                         }}
-                                        className="text-[#2563EB] font-bold hover:underline cursor-pointer"
+                                        className="text-blue-600 font-semibold hover:underline cursor-pointer"
                                       >
                                         Detail
                                       </button>
@@ -3944,10 +3902,10 @@ export default function NexoraApp() {
                                 setStructureModalTab('tp_tax');
                                 setShowStructureModal(true);
                               }}
-                              className="px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 hover:shadow-lg transition cursor-pointer flex items-center gap-2"
+                              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-md shadow-blue-500/20 hover:shadow-lg transition cursor-pointer flex items-center gap-2"
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              <span>+ Add Node / Company</span>
+                              <span>Add Node / Company</span>
                             </button>
                             <span className="text-[11px] text-slate-500">
                               Click any node to see its ownership path &amp; tax treaty rate
@@ -3965,7 +3923,7 @@ export default function NexoraApp() {
                       <div className="pt-6 border-t border-slate-200 space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
-                            <h3 className="text-base font-extrabold text-slate-900">
+                            <h3 className="text-base font-semibold text-slate-900">
                               Intermediate Shareholder (Corporate / Badan Hukum)
                             </h3>
                             <p className="text-xs text-slate-500">
@@ -3975,22 +3933,22 @@ export default function NexoraApp() {
                           <button
                             type="button"
                             onClick={handleOpenAddShareholder}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 text-xs font-bold transition cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 border border-slate-300 text-xs font-semibold transition cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            <span>+ Add Intermediate Shareholder</span>
+                            <span>Add Intermediate Shareholder</span>
                           </button>
                         </div>
 
                         <div>
-                          <h4 className="text-xs font-bold text-slate-700 mb-2">
+                          <h4 className="text-xs font-semibold text-slate-700 mb-2">
                             List of Intermediate Shareholders (Corporate Entities)
                           </h4>
                           <div className="overflow-x-auto rounded-xl border border-slate-200">
                             <table className="w-full text-left border-collapse text-xs">
                               <thead>
                                 {/* Exact Blue Table Header matching Figma 1 bottom table */}
-                                <tr className="bg-blue-100/90 text-slate-800 font-bold border-b border-blue-200">
+                                <tr className="bg-blue-100/90 text-slate-800 font-semibold border-b border-blue-200">
                                   <th className="py-3 px-4">Type</th>
                                   <th className="py-3 px-4">ID</th>
                                   <th className="py-3 px-4">
@@ -4017,7 +3975,7 @@ export default function NexoraApp() {
                                         {sh.id}
                                       </td>
                                       <td className="py-3 px-4">
-                                        <span className="font-bold text-slate-900 block">
+                                        <span className="font-semibold text-slate-900 block">
                                           {sh.name}
                                         </span>
                                         <span className="text-[11px] font-mono text-slate-500">
@@ -4029,7 +3987,7 @@ export default function NexoraApp() {
                                       </td>
                                       <td className="py-3 px-4">
                                         <span
-                                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                          className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                                             sh.bepsRisk.startsWith('Low')
                                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                               : 'bg-rose-50 text-rose-700 border border-rose-200'
@@ -4038,13 +3996,13 @@ export default function NexoraApp() {
                                           {sh.status} • {sh.bepsRisk}
                                         </span>
                                       </td>
-                                      <td className="py-3 px-4 text-right font-bold space-x-2.5">
+                                      <td className="py-3 px-4 text-right font-semibold space-x-2.5">
                                         <button
                                           type="button"
                                           onClick={() =>
                                             handleOpenEditShareholder(sh)
                                           }
-                                          className="text-[#2563EB] hover:underline cursor-pointer"
+                                          className="text-blue-600 hover:underline cursor-pointer"
                                         >
                                           View
                                         </button>
@@ -4053,7 +4011,7 @@ export default function NexoraApp() {
                                           onClick={() =>
                                             handleOpenEditShareholder(sh)
                                           }
-                                          className="text-[#2563EB] hover:underline cursor-pointer"
+                                          className="text-blue-600 hover:underline cursor-pointer"
                                         >
                                           Edit
                                         </button>
@@ -4087,10 +4045,10 @@ export default function NexoraApp() {
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="text-base font-extrabold text-slate-900">
+                              <h3 className="text-base font-semibold text-slate-900">
                                 Individual Shareholder (Pemegang Saham Perorangan & Ultimate Beneficial Owner / UBO)
                               </h3>
-                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
                                 {selectedEntity.individualShareholders.length} Individual Shareholders
                               </span>
                             </div>
@@ -4101,7 +4059,7 @@ export default function NexoraApp() {
                           <button
                             type="button"
                             onClick={() => setShowIndividualModal(true)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold shadow-2xs transition cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-2xs transition cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Add Individual Shareholder</span>
@@ -4109,13 +4067,13 @@ export default function NexoraApp() {
                         </div>
 
                         <div>
-                          <h4 className="text-xs font-bold text-slate-700 mb-2">
+                          <h4 className="text-xs font-semibold text-slate-700 mb-2">
                             List of Individual Shareholders & Beneficial Owners (Perorangan / UBO)
                           </h4>
                           <div className="overflow-x-auto rounded-xl border border-slate-200">
                             <table className="w-full text-left border-collapse text-xs">
                               <thead>
-                                <tr className="bg-blue-100/90 text-slate-800 font-bold border-b border-blue-200">
+                                <tr className="bg-blue-100/90 text-slate-800 font-semibold border-b border-blue-200">
                                   <th className="py-3 px-4">Type</th>
                                   <th className="py-3 px-4">ID</th>
                                   <th className="py-3 px-4">
@@ -4141,7 +4099,7 @@ export default function NexoraApp() {
                                       className="hover:bg-slate-50 transition"
                                     >
                                       <td className="py-3 px-4">
-                                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px]">
+                                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-[10px]">
                                           {ind.type}
                                         </span>
                                       </td>
@@ -4149,7 +4107,7 @@ export default function NexoraApp() {
                                         {ind.id}
                                       </td>
                                       <td className="py-3 px-4">
-                                        <span className="font-bold text-slate-900 block">
+                                        <span className="font-semibold text-slate-900 block">
                                           {ind.fullName}
                                         </span>
                                         <span className="text-[11px] text-slate-500 block">
@@ -4171,10 +4129,10 @@ export default function NexoraApp() {
                                         </span>
                                       </td>
                                       <td className="py-3 px-4 font-mono">
-                                        <span className="font-extrabold text-slate-900 block">
+                                        <span className="font-semibold text-slate-900 block">
                                           Direct: {ind.directSharePercent}%
                                         </span>
-                                        <span className="text-[11px] text-emerald-700 font-bold">
+                                        <span className="text-[11px] text-emerald-700 font-semibold">
                                           Effective UBO: {ind.effectiveSharePercent}%
                                         </span>
                                       </td>
@@ -4182,17 +4140,17 @@ export default function NexoraApp() {
                                         <span className="text-[11px] text-slate-700 font-medium block leading-snug">
                                           {ind.dividendTaxRegime}
                                         </span>
-                                        <span className="inline-block mt-1 px-2 py-0.5 rounded bg-blue-50 text-[#2563EB] text-[10px] font-bold border border-blue-200">
+                                        <span className="inline-block mt-1 px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-semibold border border-blue-200">
                                           ✓ {ind.kycDocStatus} • {ind.pepAndSanctionStatus}
                                         </span>
                                       </td>
-                                      <td className="py-3 px-4 text-right font-bold space-x-2 whitespace-nowrap">
+                                      <td className="py-3 px-4 text-right font-semibold space-x-2 whitespace-nowrap">
                                         <button
                                           type="button"
                                           onClick={() =>
                                             setShowIndividualModal(true)
                                           }
-                                          className="text-[#2563EB] hover:underline cursor-pointer"
+                                          className="text-blue-600 hover:underline cursor-pointer"
                                         >
                                           View
                                         </button>
@@ -4201,7 +4159,7 @@ export default function NexoraApp() {
                                           onClick={() =>
                                             setShowIndividualModal(true)
                                           }
-                                          className="text-[#2563EB] hover:underline cursor-pointer"
+                                          className="text-blue-600 hover:underline cursor-pointer"
                                         >
                                           Edit
                                         </button>
@@ -4212,7 +4170,7 @@ export default function NexoraApp() {
                                               `Analisis kewajiban pajak dividen orang pribadi dan kepatuhan Beneficial Owner (UBO) untuk pemegang saham individu ${ind.fullName} (${ind.personalTaxId}, kepemilikan langsung ${ind.directSharePercent}% / efektif ${ind.effectiveSharePercent}%) pada ${selectedEntity.legalName}.`
                                             )
                                           }
-                                          className="px-2 py-1 rounded bg-blue-50 text-[#2563EB] border border-blue-200 text-[10px] cursor-pointer"
+                                          className="px-2 py-1 rounded bg-blue-50 text-blue-600 border border-blue-200 text-[10px] cursor-pointer"
                                         >
                                           Analyze AI
                                         </button>
@@ -4243,7 +4201,7 @@ export default function NexoraApp() {
                       <button
                         type="button"
                         onClick={() => setCorpViewTab('directory')}
-                        className="px-6 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer"
+                        className="px-6 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -4254,7 +4212,7 @@ export default function NexoraApp() {
                             `Seluruh perubahan Corporate Information, Dokumen, Struktur Anak Perusahaan, Intermediate Shareholder & Individual Shareholder untuk ${selectedEntity.legalName} berhasil disimpan!`
                           )
                         }
-                        className="px-6 py-2.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                        className="px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition cursor-pointer"
                       >
                         Save Corporate & Shareholder Profile
                       </button>
@@ -4379,31 +4337,19 @@ export default function NexoraApp() {
              ("analisis chat bot melayang saja di pinggir kanan")
          ===================================================================== */}
       {!isChatOpen ? (
-        <div className="fixed right-5 bottom-6 z-50 flex flex-col items-end gap-2">
-          <button
-            type="button"
-            onClick={() => setIsChatOpen(true)}
-            className="group flex items-center gap-3.5 px-4.5 py-3.5 rounded-2xl bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] hover:from-[#2563EB] hover:to-blue-600 text-white shadow-2xl shadow-slate-900/40 border border-slate-700/80 hover:border-blue-400/60 transition-all duration-200 cursor-pointer hover:scale-105"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#2563EB] group-hover:bg-white/20 flex items-center justify-center relative shadow-md shadow-blue-500/30">
-              <Bot className="w-5 h-5 text-white" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0F172A] absolute -top-0.5 -right-0.5 animate-pulse" />
-            </div>
-            <div className="text-left pr-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black tracking-tight">
-                  Nexora AI Tax Copilot
-                </span>
-                <span className="px-1.5 py-0.5 rounded-full bg-blue-500/30 text-blue-200 border border-blue-400/40 text-[9px] font-bold">
-                  {selectedEntity.flag}
-                </span>
-              </div>
-              <span className="block text-[10px] text-slate-300 font-medium">
-                Konsultasi Pajak Multi-Negara & Treaty
-              </span>
-            </div>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsChatOpen(true)}
+          className="group fixed right-4 sm:right-6 bottom-5 sm:bottom-6 z-[35] flex items-center gap-2.5 h-12 pl-1.5 pr-4 rounded-full bg-ink-900 text-white shadow-xl shadow-ink-900/30 ring-1 ring-white/10 hover:ring-brand-400/50 hover:-translate-y-0.5 transition-all cursor-pointer"
+          aria-label="Buka Nexora AI Tax Copilot"
+        >
+          <span className="relative w-9 h-9 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-white" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-ink-900" />
+          </span>
+          <span className="text-[13px] font-semibold tracking-tight">Ask Copilot</span>
+          <span className="hidden sm:inline text-xs text-slate-400 border-l border-white/10 pl-2.5">{selectedEntity.flag} {selectedEntity.countryCode}</span>
+        </button>
       ) : (
         <div
           className={`fixed right-4 sm:right-6 bottom-4 sm:bottom-6 z-50 bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden transition-all duration-200 ring-1 ring-slate-900/10 ${
@@ -4413,14 +4359,14 @@ export default function NexoraApp() {
           }`}
         >
           {/* Floating Chatbot Header */}
-          <div className="p-4 bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#0F172A] text-white flex items-center justify-between gap-2 border-b border-slate-800">
+          <div className="p-4 bg-gradient-to-r from-ink-900 via-ink-800 to-ink-900 text-white flex items-center justify-between gap-2 border-b border-slate-800">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 to-blue-500 flex items-center justify-center shrink-0 shadow-md shadow-blue-500/30">
                 <Bot className="w-4.5 h-4.5 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h3 className="text-xs font-black tracking-tight">
+                  <h3 className="text-xs font-semibold tracking-tight">
                     Nexora AI Tax & Subsidiary Copilot
                   </h3>
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -4452,7 +4398,7 @@ export default function NexoraApp() {
                 className="flex items-center gap-1.5 p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer transition"
                 title="Tutup Copilot (Esc)"
               >
-                <kbd className="hidden sm:inline-block text-[9px] px-1.5 py-0.5 rounded bg-white/15 text-slate-300 font-mono">
+                <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded bg-white/15 text-slate-300 font-mono">
                   Esc
                 </kbd>
                 <X className="w-4 h-4" />
@@ -4468,9 +4414,9 @@ export default function NexoraApp() {
                 <button
                   key={c.id}
                   onClick={() => setSelectedEntityId(c.id)}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition cursor-pointer ${
                     active
-                      ? 'bg-[#2563EB] text-white shadow-2xs'
+                      ? 'bg-blue-600 text-white shadow-2xs'
                       : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
                   }`}
                 >
@@ -4486,7 +4432,7 @@ export default function NexoraApp() {
               <button
                 key={p.id}
                 onClick={() => handleAskFloatingAi(p.prompt)}
-                className="px-2.5 py-1 rounded-full bg-white hover:bg-blue-50 text-[#2563EB] border border-blue-200/90 text-[10px] font-semibold whitespace-nowrap shrink-0 shadow-2xs hover:shadow-xs transition cursor-pointer"
+                className="px-2.5 py-1 rounded-full bg-white hover:bg-blue-50 text-blue-600 border border-blue-200/90 text-[10px] font-semibold whitespace-nowrap shrink-0 shadow-2xs hover:shadow-xs transition cursor-pointer"
               >
                 ✦ {p.title}
               </button>
@@ -4503,14 +4449,14 @@ export default function NexoraApp() {
                 }`}
               >
                 {m.entityLabel && (
-                  <span className="text-[9px] text-slate-400 font-semibold mb-1 px-1">
+                  <span className="text-[10px] text-slate-400 font-semibold mb-1 px-1">
                     {m.entityLabel}
                   </span>
                 )}
                 <div
                   className={`max-w-[92%] rounded-2xl p-3.5 text-xs leading-relaxed ${
                     m.role === 'user'
-                      ? 'bg-[#2563EB] text-white shadow-sm'
+                      ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-white border border-slate-200/90 text-slate-800 shadow-2xs'
                   }`}
                 >
@@ -4520,7 +4466,7 @@ export default function NexoraApp() {
                       {m.citations.map((c, i) => (
                         <span
                           key={i}
-                          className="px-1.5 py-0.5 rounded-md bg-blue-50 text-[#2563EB] text-[9px] font-semibold"
+                          className="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-semibold"
                         >
                           📜 {c}
                         </span>
@@ -4531,7 +4477,7 @@ export default function NexoraApp() {
               </div>
             ))}
             {isChatLoading && (
-              <div className="text-xs text-[#2563EB] flex items-center gap-2 p-2 font-medium">
+              <div className="text-xs text-blue-600 flex items-center gap-2 p-2 font-medium">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 <span>
                   Menganalisis pajak {selectedEntity.legalName} ({cfg.authorityShort})...
@@ -4553,11 +4499,11 @@ export default function NexoraApp() {
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               placeholder={`Tanya regulasi pajak ${selectedEntity.legalName} / anak usaha...`}
-              className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-[#2563EB] focus:ring-4 focus:ring-blue-100/80 text-xs text-slate-900 outline-none transition shadow-2xs"
+              className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100/80 text-xs text-slate-900 outline-none transition shadow-2xs"
             />
             <button
               type="submit"
-              className="px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 hover:shadow-lg transition cursor-pointer hover:-translate-y-0.5"
+              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-blue-500/20 hover:shadow-lg transition cursor-pointer hover:-translate-y-0.5"
             >
               <Send className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Kirim</span>
@@ -4574,10 +4520,10 @@ export default function NexoraApp() {
           <div className="bg-white rounded-2xl border border-slate-200 max-w-xl w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
-                <span className="text-[10px] font-bold uppercase text-[#2563EB]">
+                <span className="text-[10px] font-semibold uppercase text-blue-600">
                   GOOGLE CLOUD DOCUMENT AI • EXTRACTED METADATA
                 </span>
-                <h3 className="text-base font-extrabold text-slate-900">
+                <h3 className="text-base font-semibold text-slate-900">
                   {previewDoc.label}
                 </h3>
               </div>
@@ -4591,10 +4537,10 @@ export default function NexoraApp() {
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-mono font-bold text-slate-700">
+                <span className="font-mono font-semibold text-slate-700">
                   {previewDoc.fileName}
                 </span>
-                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold text-[10px]">
                   Confidence: {previewDoc.confidenceScore}%
                 </span>
               </div>
@@ -4602,7 +4548,7 @@ export default function NexoraApp() {
             </div>
 
             <div className="space-y-2 text-xs">
-              <span className="font-bold text-slate-700 block">
+              <span className="font-semibold text-slate-700 block">
                 Structured Key-Value Fields Extracted by Document AI:
               </span>
               {previewDoc.extractedFields.map((f, idx) => (
@@ -4611,7 +4557,7 @@ export default function NexoraApp() {
                   className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-50 border border-slate-200"
                 >
                   <span className="text-slate-500 font-medium">{f.key}</span>
-                  <span className="font-mono font-bold text-slate-900">
+                  <span className="font-mono font-semibold text-slate-900">
                     {f.val}
                   </span>
                 </div>
@@ -4621,7 +4567,7 @@ export default function NexoraApp() {
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setPreviewDoc(null)}
-                className="px-5 py-2 rounded-lg bg-[#2563EB] text-white text-xs font-bold cursor-pointer"
+                className="px-5 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold cursor-pointer"
               >
                 Close Preview
               </button>
@@ -4638,10 +4584,10 @@ export default function NexoraApp() {
           <div className="bg-white rounded-2xl border border-slate-200 max-w-4xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
-                <span className="text-[11px] font-bold uppercase text-[#2563EB]">
+                <span className="text-[11px] font-semibold uppercase text-blue-600">
                   COMPANY STRUCTURE & MULTI-COUNTRY SUBSIDIARIES
                 </span>
-                <h3 className="text-lg font-extrabold text-slate-900">
+                <h3 className="text-lg font-bold text-slate-900">
                   Company Structure & Subsidiary Details — {selectedEntity.legalName}
                 </h3>
               </div>
@@ -4654,13 +4600,13 @@ export default function NexoraApp() {
             </div>
 
             {/* Tabs matching Screen 3 of Figma 1 (`Company` Subsidiaries + `Individual` UBO + Add New) */}
-            <div className="flex flex-wrap border-b border-slate-200 text-xs font-bold">
+            <div className="flex flex-wrap border-b border-slate-200 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setStructureModalTab('tp_tax')}
                 className={`px-5 py-2.5 border-b-2 transition cursor-pointer ${
                   structureModalTab === 'tp_tax'
-                    ? 'border-[#2563EB] text-[#2563EB]'
+                    ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -4682,7 +4628,7 @@ export default function NexoraApp() {
                 onClick={() => setStructureModalTab('general')}
                 className={`px-5 py-2.5 border-b-2 transition cursor-pointer ${
                   structureModalTab === 'general'
-                    ? 'border-[#2563EB] text-[#2563EB]'
+                    ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -4695,7 +4641,7 @@ export default function NexoraApp() {
                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-blue-50 border-b border-blue-200 text-slate-800 font-bold">
+                      <tr className="bg-blue-50 border-b border-blue-200 text-slate-800 font-semibold">
                         <th className="py-3 px-4">Entity / Subsidiary</th>
                         <th className="py-3 px-4">Role</th>
                         <th className="py-3 px-4">Jurisdiction</th>
@@ -4707,17 +4653,17 @@ export default function NexoraApp() {
                     <tbody className="divide-y divide-slate-200">
                       {selectedEntity.structureNodes.map((n) => (
                         <tr key={n.id}>
-                          <td className="py-3 px-4 font-bold text-slate-900">
+                          <td className="py-3 px-4 font-semibold text-slate-900">
                             {n.flag} {n.entityName}
                             <span className="block text-[10px] font-mono text-slate-500">
                               {n.taxId}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-[#2563EB] font-semibold">
+                          <td className="py-3 px-4 text-blue-600 font-semibold">
                             {n.role}
                           </td>
                           <td className="py-3 px-4">{n.jurisdiction}</td>
-                          <td className="py-3 px-4 font-mono font-bold">
+                          <td className="py-3 px-4 font-mono font-semibold">
                             {n.directOwnership}% / {n.effectiveOwnership}%
                           </td>
                           <td className="py-3 px-4">
@@ -4728,7 +4674,7 @@ export default function NexoraApp() {
                               {n.annualIntercompanyVolume}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-emerald-700 font-bold">
+                          <td className="py-3 px-4 text-emerald-700 font-semibold">
                             {n.whtTreatyRate}
                           </td>
                         </tr>
@@ -4741,21 +4687,21 @@ export default function NexoraApp() {
                   <button
                     type="button"
                     onClick={() => setStructureModalTab('individual_ubo')}
-                    className="px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold cursor-pointer"
+                    className="px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold cursor-pointer"
                   >
                     Lihat Individual Shareholders / UBO →
                   </button>
                   <button
                     type="button"
                     onClick={() => setStructureModalTab('general')}
-                    className="px-4 py-2 rounded-lg bg-blue-50 text-[#2563EB] text-xs font-bold cursor-pointer"
+                    className="px-4 py-2 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold cursor-pointer"
                   >
                     + Add Another Subsidiary
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowStructureModal(false)}
-                    className="px-5 py-2 rounded-lg bg-[#2563EB] text-white text-xs font-bold cursor-pointer"
+                    className="px-5 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold cursor-pointer"
                   >
                     Save & Close
                   </button>
@@ -4766,7 +4712,7 @@ export default function NexoraApp() {
                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-emerald-50 border-b border-emerald-200 text-slate-800 font-bold">
+                      <tr className="bg-emerald-50 border-b border-emerald-200 text-slate-800 font-semibold">
                         <th className="py-3 px-4">Individual Shareholder / UBO</th>
                         <th className="py-3 px-4">Type & Role</th>
                         <th className="py-3 px-4">Nationality & Personal Tax ID</th>
@@ -4777,7 +4723,7 @@ export default function NexoraApp() {
                     <tbody className="divide-y divide-slate-200">
                       {selectedEntity.individualShareholders.map((ind) => (
                         <tr key={ind.id}>
-                          <td className="py-3 px-4 font-bold text-slate-900">
+                          <td className="py-3 px-4 font-semibold text-slate-900">
                             👤 {ind.fullName}
                             <span className="block text-[10px] font-mono text-slate-500">
                               {ind.id} • {ind.email}
@@ -4795,7 +4741,7 @@ export default function NexoraApp() {
                               {ind.personalTaxId}
                             </span>
                           </td>
-                          <td className="py-3 px-4 font-mono font-bold">
+                          <td className="py-3 px-4 font-mono font-semibold">
                             {ind.directSharePercent}% / {ind.effectiveSharePercent}%
                           </td>
                           <td className="py-3 px-4 text-[11px] text-slate-700">
@@ -4814,14 +4760,14 @@ export default function NexoraApp() {
                       setShowStructureModal(false);
                       setShowIndividualModal(true);
                     }}
-                    className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold cursor-pointer"
+                    className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold cursor-pointer"
                   >
                     + Add New Individual Shareholder
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowStructureModal(false)}
-                    className="px-5 py-2 rounded-lg bg-[#2563EB] text-white text-xs font-bold cursor-pointer"
+                    className="px-5 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold cursor-pointer"
                   >
                     Close
                   </button>
@@ -4833,7 +4779,7 @@ export default function NexoraApp() {
                 className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs"
               >
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Subsidiary Legal Name (Nama Anak Perusahaan) *
                   </label>
                   <input
@@ -4845,7 +4791,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Trade Name / Regional Function *
                   </label>
                   <input
@@ -4857,7 +4803,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Country / Tax Jurisdiction *
                   </label>
                   <select
@@ -4874,7 +4820,7 @@ export default function NexoraApp() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Direct Ownership % by Parent *
                   </label>
                   <input
@@ -4888,7 +4834,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Tax ID (NPWP 16 / UEN / TIN / EIN) *
                   </label>
                   <input
@@ -4900,7 +4846,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Registration Number (NIB / ACRA / SSM / File No) *
                   </label>
                   <input
@@ -4912,7 +4858,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     OECD Transfer Pricing Method *
                   </label>
                   <select
@@ -4939,7 +4885,7 @@ export default function NexoraApp() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Annual Intercompany Transaction Volume *
                   </label>
                   <input
@@ -4951,7 +4897,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Intercompany Nature (Royalti / Jasa Manajemen / Distribusi) *
                   </label>
                   <input
@@ -4966,13 +4912,13 @@ export default function NexoraApp() {
                   <button
                     type="button"
                     onClick={() => setShowStructureModal(false)}
-                    className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold transition cursor-pointer"
+                    className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold transition cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-lg bg-[#2563EB] text-white font-bold cursor-pointer"
+                    className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold cursor-pointer"
                   >
                     Save Subsidiary to Company Structure
                   </button>
@@ -4992,10 +4938,10 @@ export default function NexoraApp() {
           <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
-                <span className="text-[11px] font-bold uppercase text-[#2563EB]">
+                <span className="text-[11px] font-semibold uppercase text-blue-600">
                   {editingShId ? 'EDIT INTERMEDIATE SHAREHOLDER' : 'ADD INTERMEDIATE SHAREHOLDER'} (CORPORATE)
                 </span>
-                <h3 className="text-base font-extrabold text-slate-900">
+                <h3 className="text-base font-semibold text-slate-900">
                   {editingShId ? 'Edit Intermediate Shareholder' : 'Add Intermediate Shareholder'} — {selectedEntity.legalName}
                 </h3>
               </div>
@@ -5008,13 +4954,13 @@ export default function NexoraApp() {
             </div>
 
             {/* Screen 4 of Figma 1: `Search Existing Company | Manual Input` Tabs */}
-            <div className="grid grid-cols-2 border-b border-slate-200 text-xs font-bold text-center">
+            <div className="grid grid-cols-2 border-b border-slate-200 text-xs font-semibold text-center">
               <button
                 type="button"
                 onClick={() => setShareholderInputMode('search_existing')}
                 className={`py-2.5 border-b-2 transition cursor-pointer ${
                   shareholderInputMode === 'search_existing'
-                    ? 'border-[#2563EB] text-[#2563EB] bg-blue-50/40'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50/40'
                     : 'border-transparent text-slate-500'
                 }`}
               >
@@ -5025,7 +4971,7 @@ export default function NexoraApp() {
                 onClick={() => setShareholderInputMode('manual')}
                 className={`py-2.5 border-b-2 transition cursor-pointer ${
                   shareholderInputMode === 'manual'
-                    ? 'border-[#2563EB] text-[#2563EB] bg-blue-50/40'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50/40'
                     : 'border-transparent text-slate-500'
                 }`}
               >
@@ -5047,7 +4993,7 @@ export default function NexoraApp() {
                     setNewShRegNo('ACRA-202319482K');
                     setShareholderInputMode('manual');
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white font-bold cursor-pointer shrink-0"
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold cursor-pointer shrink-0"
                 >
                   Auto-Fill SG Hub
                 </button>
@@ -5057,7 +5003,7 @@ export default function NexoraApp() {
             <form onSubmit={handleAddShareholder} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Shareholder Legal Name *
                   </label>
                   <input
@@ -5069,7 +5015,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Registration Number (AHU / ACRA / SSM) *
                   </label>
                   <input
@@ -5081,7 +5027,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Tax Jurisdiction *
                   </label>
                   <input
@@ -5093,7 +5039,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Tax ID (NPWP / UEN / TIN / EIN) *
                   </label>
                   <input
@@ -5105,7 +5051,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Direct Shareholding (%) *
                   </label>
                   <input
@@ -5119,7 +5065,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Official Contact Email
                   </label>
                   <input
@@ -5130,7 +5076,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Registered Address
                   </label>
                   <input
@@ -5146,13 +5092,13 @@ export default function NexoraApp() {
                 <button
                   type="button"
                   onClick={() => setShowShareholderModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold transition cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-[#2563EB] text-white font-bold cursor-pointer"
+                  className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold cursor-pointer"
                 >
                   {editingShId ? 'Update Intermediate Shareholder' : 'Save Intermediate Shareholder'}
                 </button>
@@ -5171,10 +5117,10 @@ export default function NexoraApp() {
           <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
-                <span className="text-[11px] font-bold uppercase text-emerald-700">
+                <span className="text-[11px] font-semibold uppercase text-emerald-700">
                   INDIVIDUAL SHAREHOLDER & BENEFICIAL OWNER (UBO) MANAGEMENT
                 </span>
-                <h3 className="text-base font-extrabold text-slate-900">
+                <h3 className="text-base font-semibold text-slate-900">
                   Add / Edit Individual Shareholder — {selectedEntity.legalName}
                 </h3>
               </div>
@@ -5187,13 +5133,13 @@ export default function NexoraApp() {
             </div>
 
             {/* `Search Existing Individual | Manual Input` Tabs */}
-            <div className="grid grid-cols-2 border-b border-slate-200 text-xs font-bold text-center">
+            <div className="grid grid-cols-2 border-b border-slate-200 text-xs font-semibold text-center">
               <button
                 type="button"
                 onClick={() => setIndInputMode('search_existing')}
                 className={`py-2.5 border-b-2 transition cursor-pointer ${
                   indInputMode === 'search_existing'
-                    ? 'border-[#2563EB] text-[#2563EB] bg-blue-50/40'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50/40'
                     : 'border-transparent text-slate-500'
                 }`}
               >
@@ -5204,7 +5150,7 @@ export default function NexoraApp() {
                 onClick={() => setIndInputMode('manual')}
                 className={`py-2.5 border-b-2 transition cursor-pointer ${
                   indInputMode === 'manual'
-                    ? 'border-[#2563EB] text-[#2563EB] bg-blue-50/40'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50/40'
                     : 'border-transparent text-slate-500'
                 }`}
               >
@@ -5231,7 +5177,7 @@ export default function NexoraApp() {
                       setNewIndEffectiveShare('48.5');
                       setIndInputMode('manual');
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold cursor-pointer"
                   >
                     Auto-Fill Dr. Hendra (ID)
                   </button>
@@ -5251,7 +5197,7 @@ export default function NexoraApp() {
                       );
                       setIndInputMode('manual');
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-[#2563EB] text-white font-bold cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold cursor-pointer"
                   >
                     Auto-Fill Sarah Jenkins (US)
                   </button>
@@ -5265,7 +5211,7 @@ export default function NexoraApp() {
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Full Name (Nama Lengkap Sesuai KTP / Paspor) *
                   </label>
                   <input
@@ -5277,7 +5223,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Individual Shareholder Classification *
                   </label>
                   <select
@@ -5299,7 +5245,7 @@ export default function NexoraApp() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Role / Position in Company *
                   </label>
                   <input
@@ -5311,7 +5257,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Citizenship / Nationality *
                   </label>
                   <input
@@ -5323,7 +5269,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     National ID / Passport Number (NIK 16 Digit / Paspor / NRIC / MyKad) *
                   </label>
                   <input
@@ -5335,7 +5281,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Personal Tax ID (NPWP Orang Pribadi / FIN / LHDN IG / SSN) *
                   </label>
                   <input
@@ -5347,7 +5293,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Direct Shareholding (%) *
                   </label>
                   <input
@@ -5362,7 +5308,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Effective UBO Ownership (%) *
                   </label>
                   <input
@@ -5377,7 +5323,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Individual Dividend Tax Regime (Perlakuan Pajak Dividen Orang Pribadi) *
                   </label>
                   <select
@@ -5406,7 +5352,7 @@ export default function NexoraApp() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Tax Residency Office / Status
                   </label>
                   <input
@@ -5417,7 +5363,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Personal Email
                   </label>
                   <input
@@ -5428,7 +5374,7 @@ export default function NexoraApp() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-semibold text-slate-700 mb-1">
                     Residential Address (Alamat Domisili Sesuai KTP / Paspor)
                   </label>
                   <input
@@ -5444,13 +5390,13 @@ export default function NexoraApp() {
                 <button
                   type="button"
                   onClick={() => setShowIndividualModal(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold transition cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-[#2563EB] text-white font-bold cursor-pointer"
+                  className="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold cursor-pointer"
                 >
                   Save Individual Shareholder
                 </button>
@@ -5469,15 +5415,15 @@ export default function NexoraApp() {
             {/* Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-700 via-[#2563EB] to-blue-500 flex items-center justify-center text-white font-black text-base shadow-md shadow-blue-500/20">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-700 via-blue-600 to-blue-500 flex items-center justify-center text-white font-semibold text-base shadow-md shadow-blue-500/20">
                   NX
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-black text-slate-900 tracking-tight">
+                    <h3 className="text-base font-semibold text-slate-900 tracking-tight">
                       Masuk ke Nexora Corporate Portal
                     </h3>
-                    <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-[#2563EB] border border-blue-200">
+                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
                       Login Cepat
                     </span>
                   </div>
@@ -5518,18 +5464,18 @@ export default function NexoraApp() {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-10 h-10 rounded-xl ${p.avatarBg} text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs`}
+                        className={`w-10 h-10 rounded-xl ${p.avatarBg} text-white flex items-center justify-center font-semibold text-xs shrink-0 shadow-2xs`}
                       >
                         {p.avatarInitials}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-black text-slate-900 truncate">
+                          <span className="text-xs font-semibold text-slate-900 truncate">
                             {p.name}
                           </span>
-                          <span className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded ${
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded ${
                             p.entityRole === 'PARENT'
-                              ? 'bg-blue-100 text-[#2563EB]'
+                              ? 'bg-blue-100 text-blue-600'
                               : 'bg-amber-100 text-amber-800'
                           }`}>
                             {p.badge}
@@ -5545,14 +5491,14 @@ export default function NexoraApp() {
                     </div>
 
                     {isCurrent ? (
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shrink-0 shadow-2xs">
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shrink-0 shadow-2xs">
                         <Check className="w-3.5 h-3.5" />
                         Aktif
                       </span>
                     ) : (
                       <button
                         type="button"
-                        className="px-3.5 py-1.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs shrink-0 cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition shadow-xs shrink-0 cursor-pointer"
                       >
                         Masuk
                       </button>
@@ -5568,7 +5514,7 @@ export default function NexoraApp() {
               <button
                 type="button"
                 onClick={() => setShowLoginModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition cursor-pointer"
               >
                 Tutup
               </button>
@@ -5588,19 +5534,19 @@ export default function NexoraApp() {
             <div className="flex items-start justify-between border-b border-slate-200 pb-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-[#2563EB] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
                     ROLE-BASED ACCESS CONTROL (RBAC) • ISO 27001 &amp; OECD ACTION 13
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-emerald-600" />
                     ISO/IEC 27001:2022 Certified
                   </span>
-                  <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                  <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
                     OECD Action 13 CbCR Gate
                   </span>
                 </div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2 pt-1">
-                  <ShieldCheck className="w-6 h-6 text-[#2563EB]" />
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2 pt-1">
+                  <ShieldCheck className="w-6 h-6 text-blue-600" />
                   Hak Akses &amp; Peran Karyawan Korporasi
                 </h3>
                 <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
@@ -5616,17 +5562,17 @@ export default function NexoraApp() {
             </div>
 
             {/* Segmented Modal Navigation Tabs */}
-            <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 text-xs font-bold">
+            <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setRbacModalTab('personas')}
                 className={`flex-1 py-2 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
                   rbacModalTab === 'personas'
-                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-black'
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-semibold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Users className="w-4 h-4 text-[#2563EB]" />
+                <Users className="w-4 h-4 text-blue-600" />
                 <span>Pilih Peran Karyawan (RBAC)</span>
               </button>
               <button
@@ -5634,7 +5580,7 @@ export default function NexoraApp() {
                 onClick={() => setRbacModalTab('matrix')}
                 className={`flex-1 py-2 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
                   rbacModalTab === 'matrix'
-                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-black'
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-semibold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -5646,7 +5592,7 @@ export default function NexoraApp() {
                 onClick={() => setRbacModalTab('standards')}
                 className={`flex-1 py-2 px-3 rounded-xl transition cursor-pointer flex items-center justify-center gap-2 ${
                   rbacModalTab === 'standards'
-                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-black'
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-semibold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -5665,15 +5611,15 @@ export default function NexoraApp() {
                     : 'bg-amber-50/80 border-amber-200 text-amber-950'
                 }`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl ${activePersona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs`}>
+                    <div className={`w-10 h-10 rounded-xl ${activePersona.avatarBg} text-white flex items-center justify-center font-semibold text-sm shrink-0 shadow-xs`}>
                       {activePersona.avatarInitials}
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-extrabold text-xs">
+                        <span className="font-semibold text-xs">
                           Peran Saat Ini: {activePersona.name}
                         </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                        <span className={`text-[10px] font-semibold px-2 py-0.2 rounded-full ${
                           isGroupCeoOrParentExecutive ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'
                         }`}>
                           {activePersona.badge}
@@ -5685,10 +5631,10 @@ export default function NexoraApp() {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-[10px] font-bold uppercase tracking-wider block text-slate-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider block text-slate-500">
                       Cakupan Visibilitas
                     </span>
-                    <span className="font-black text-xs text-slate-900">
+                    <span className="font-semibold text-xs text-slate-900">
                       {isGroupCeoOrParentExecutive ? '👑 4/4 Seluruh Entitas Grup' : '🔒 1/4 Entitas Lokal Saja'}
                     </span>
                   </div>
@@ -5697,11 +5643,11 @@ export default function NexoraApp() {
                 {/* TIER 1: PERUSAHAAN INDUK (HOLDING) - UNIVERSAL VISIBILITY */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-800 flex items-center gap-2">
                       <Crown className="w-4 h-4 text-amber-500" />
                       Perusahaan Induk (Holding) — Akses Universal (Global Scope)
                     </h4>
-                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                       Level 5 • Visibilitas 100% Seluruh Entitas
                     </span>
                   </div>
@@ -5719,15 +5665,15 @@ export default function NexoraApp() {
                           }`}
                         >
                           <div className="flex items-start gap-3.5">
-                            <div className={`w-12 h-12 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs mt-0.5`}>
+                            <div className={`w-12 h-12 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-semibold text-sm shrink-0 shadow-xs mt-0.5`}>
                               {persona.avatarInitials}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <h5 className="text-sm font-black text-slate-900">
+                                <h5 className="text-sm font-semibold text-slate-900">
                                   {persona.name}
                                 </h5>
-                                <span className="text-[10px] px-2 py-0.5 rounded font-extrabold bg-blue-100 text-[#2563EB] border border-blue-200">
+                                <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-blue-100 text-blue-600 border border-blue-200">
                                   {persona.badge}
                                 </span>
                               </div>
@@ -5742,16 +5688,16 @@ export default function NexoraApp() {
 
                           <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                             <div>
-                              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                                 Izin Akses:
                               </span>
-                              <span className="inline-block text-xs font-black px-2 py-0.5 rounded mt-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded mt-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200">
                                 {persona.governanceLevel}
                               </span>
                             </div>
 
                             {isActive ? (
-                              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-xs self-start sm:self-center">
+                              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-xs self-start sm:self-center">
                                 <CheckCircle2 className="w-4 h-4" />
                                 Aktif
                               </span>
@@ -5763,7 +5709,7 @@ export default function NexoraApp() {
                                   setShowRbacModal(false);
                                   triggerToast(`Beralih ke Peran: ${persona.name} (${persona.title})`);
                                 }}
-                                className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer shadow-xs hover:shadow self-start sm:self-center"
+                                className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition cursor-pointer shadow-xs hover:shadow self-start sm:self-center"
                               >
                                 Pilih
                               </button>
@@ -5778,11 +5724,11 @@ export default function NexoraApp() {
                 {/* TIER 2: ANAK PERUSAHAAN (SUBSIDIARIES) - SEGREGATED SINGLE ENTITY */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-800 flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-purple-600" />
                       Anak Perusahaan (Subsidiaries) — Akses Terisolasi (Single-Entity Scope)
                     </h4>
-                    <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                    <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
                       Level 2 • Segregasi Tugas ISO 27001
                     </span>
                   </div>
@@ -5800,15 +5746,15 @@ export default function NexoraApp() {
                           }`}
                         >
                           <div className="flex items-start gap-3.5">
-                            <div className={`w-11 h-11 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs mt-0.5`}>
+                            <div className={`w-11 h-11 rounded-xl ${persona.avatarBg} text-white flex items-center justify-center font-semibold text-sm shrink-0 shadow-xs mt-0.5`}>
                               {persona.avatarInitials}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                                <h5 className="text-xs font-black text-slate-900">
+                                <h5 className="text-xs font-semibold text-slate-900">
                                   {persona.name}
                                 </h5>
-                                <span className="text-[9px] px-1.5 py-0.2 rounded font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
+                                <span className="text-[10px] px-1.5 py-0.2 rounded font-semibold bg-amber-100 text-amber-800 border border-amber-200">
                                   {persona.badge}
                                 </span>
                               </div>
@@ -5823,17 +5769,17 @@ export default function NexoraApp() {
 
                           <div className="pt-3 border-t border-slate-100 flex flex-col justify-between gap-2.5">
                             <div>
-                              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                                 Izin Akses:
                               </span>
-                              <span className="inline-block text-[11px] font-black px-2 py-0.5 rounded mt-0.5 bg-amber-50 text-amber-900 border border-amber-200 leading-snug">
+                              <span className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded mt-0.5 bg-amber-50 text-amber-900 border border-amber-200 leading-snug">
                                 {persona.governanceLevel}
                               </span>
                             </div>
 
                             <div className="pt-1 flex items-center justify-between">
                               {isActive ? (
-                                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow-xs">
+                                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold text-xs shadow-xs">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   Aktif
                                 </span>
@@ -5848,7 +5794,7 @@ export default function NexoraApp() {
                                     setShowRbacModal(false);
                                     triggerToast(`Beralih ke Peran: ${persona.name} (${persona.title})`);
                                   }}
-                                  className="w-full py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer shadow-xs hover:shadow text-center"
+                                  className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition cursor-pointer shadow-xs hover:shadow text-center"
                                 >
                                   Pilih
                                 </button>
@@ -5863,8 +5809,8 @@ export default function NexoraApp() {
 
                 {/* Standar Tata Kelola Perusahaan Internasional Footer Banner */}
                 <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1.5 mt-2">
-                  <div className="flex items-center gap-2 font-black text-slate-900 text-xs">
-                    <ShieldCheck className="w-4 h-4 text-[#2563EB]" />
+                  <div className="flex items-center gap-2 font-semibold text-slate-900 text-xs">
+                    <ShieldCheck className="w-4 h-4 text-blue-600" />
                     <span>Standar Tata Kelola Perusahaan Internasional:</span>
                   </div>
                   <p className="text-[11px] text-slate-600 leading-relaxed">
@@ -5881,7 +5827,7 @@ export default function NexoraApp() {
                   <p className="text-xs text-slate-600">
                     Matriks otorisasi hak akses berdasarkan tata kelola perusahaan internasional (ISO/IEC 27001 Access Control Matrix):
                   </p>
-                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                     5 Peran Terdaftar
                   </span>
                 </div>
@@ -5889,7 +5835,7 @@ export default function NexoraApp() {
                 <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600">
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
                         <th className="py-3 px-4">FITUR &amp; MODUL SISTEM</th>
                         <th className="py-3 px-3 text-center bg-blue-50/50">GROUP CEO (INDUK)</th>
                         <th className="py-3 px-3 text-center bg-blue-50/30">GROUP CFO (INDUK)</th>
@@ -5966,15 +5912,15 @@ export default function NexoraApp() {
                       ].map((row, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/70">
                           <td className="py-3 px-4">
-                            <span className="font-extrabold text-slate-900 block">{row.module}</span>
+                            <span className="font-semibold text-slate-900 block">{row.module}</span>
                             <span className="text-[10px] text-slate-500 block">{row.desc}</span>
                           </td>
-                          <td className="py-3 px-3 text-center bg-blue-50/20 font-bold text-emerald-700">
+                          <td className="py-3 px-3 text-center bg-blue-50/20 font-semibold text-emerald-700">
                             <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px]">
                               ✓ {row.ceo}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-center bg-blue-50/10 font-bold text-blue-700">
+                          <td className="py-3 px-3 text-center bg-blue-50/10 font-semibold text-blue-700">
                             <span className="inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px]">
                               ✓ {row.cfo}
                             </span>
@@ -6015,7 +5961,7 @@ export default function NexoraApp() {
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                      <h4 className="font-extrabold text-sm text-slate-900">
+                      <h4 className="font-semibold text-sm text-slate-900">
                         ISO/IEC 27001:2022 Annex A.9 (Access Control)
                       </h4>
                     </div>
@@ -6029,8 +5975,8 @@ export default function NexoraApp() {
 
                   <div className="p-4 rounded-2xl bg-blue-50/40 border border-blue-200 space-y-2">
                     <div className="flex items-center gap-2">
-                      <Globe2 className="w-5 h-5 text-[#2563EB]" />
-                      <h4 className="font-extrabold text-sm text-slate-900">
+                      <Globe2 className="w-5 h-5 text-blue-600" />
+                      <h4 className="font-semibold text-sm text-slate-900">
                         OECD BEPS Action 13 &amp; Pillar Two CbCR
                       </h4>
                     </div>
@@ -6044,7 +5990,7 @@ export default function NexoraApp() {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-blue-950 text-white space-y-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-blue-300 flex items-center gap-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-blue-300 flex items-center gap-2">
                     <Crown className="w-4 h-4 text-amber-400" />
                     Kebijakan Tata Kelola Visibilitas Eksekutif Induk
                   </h4>
@@ -6069,7 +6015,7 @@ export default function NexoraApp() {
                       setShowRbacModal(false);
                       triggerToast('Beralih ke Hak Akses: Ir. Aditya Pratama (Group CEO - Induk)');
                     }}
-                    className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
+                    className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
                   >
                     <Crown className="w-3.5 h-3.5 text-amber-300" />
                     <span>Masuk sebagai Group CEO Induk</span>
@@ -6078,7 +6024,7 @@ export default function NexoraApp() {
                 <button
                   type="button"
                   onClick={() => setShowRbacModal(false)}
-                  className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                  className="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
                 >
                   Tutup
                 </button>
@@ -6099,10 +6045,10 @@ export default function NexoraApp() {
             </div>
 
             <div className="text-center space-y-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
                 ROLE-BASED ACCESS CONTROL (RBAC) • ISO 27001 &amp; OECD ACTION 13
               </span>
-              <h3 className="text-lg font-black text-slate-900 pt-1">
+              <h3 className="text-lg font-bold text-slate-900 pt-1">
                 Hak Akses Terbatas — Memerlukan Otorisasi CEO Induk
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -6113,7 +6059,7 @@ export default function NexoraApp() {
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2">
               <div className="flex justify-between items-center text-slate-600">
                 <span className="text-slate-400 font-medium">Akun Saat Ini:</span>
-                <span className="font-bold text-slate-900">{activePersona.name} ({activePersona.badge})</span>
+                <span className="font-semibold text-slate-900">{activePersona.name} ({activePersona.badge})</span>
               </div>
               <div className="flex justify-between items-center text-slate-600">
                 <span className="text-slate-400 font-medium">Organisasi Anda:</span>
@@ -6121,7 +6067,7 @@ export default function NexoraApp() {
               </div>
               <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
                 <span className="text-slate-400 font-medium">Entitas Sasaran:</span>
-                <span className="font-extrabold text-blue-700 flex items-center gap-1">
+                <span className="font-semibold text-blue-700 flex items-center gap-1">
                   <span>{restrictedNoticeEntity.flag}</span>
                   <span>{restrictedNoticeEntity.legalName}</span>
                 </span>
@@ -6132,7 +6078,7 @@ export default function NexoraApp() {
               </div>
               <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
                 <span className="text-slate-400 font-medium">Tingkat Izin Wajib:</span>
-                <span className="font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[10px]">
+                <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[10px]">
                   Group CEO / Holding C-Level Scope
                 </span>
               </div>
@@ -6148,7 +6094,7 @@ export default function NexoraApp() {
             <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
               <button
                 onClick={() => setRestrictedNoticeEntity(null)}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
               >
                 Tutup
               </button>
@@ -6160,7 +6106,7 @@ export default function NexoraApp() {
                   setRestrictedNoticeEntity(null);
                   triggerToast(`Beralih ke Hak Akses: Ir. Aditya Pratama (Group CEO - Induk) • Membuka ${restrictedNoticeEntity.legalName}`);
                 }}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 transition cursor-pointer"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 transition cursor-pointer"
               >
                 <Crown className="w-3.5 h-3.5 text-amber-300" />
                 <span>Masuk sebagai Group CEO Induk</span>
@@ -6180,15 +6126,15 @@ export default function NexoraApp() {
             <div className="flex items-start justify-between border-b border-slate-200 pb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-100 text-[#2563EB] border border-blue-200">
+                  <span className="px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-blue-100 text-blue-600 border border-blue-200">
                     Executive Consolidated Portal • OECD BEPS Action 13 CbCR
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
                     👑 Hak Akses Group CEO Aktif
                   </span>
                 </div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <Globe2 className="w-5 h-5 text-[#2563EB]" />
+                <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <Globe2 className="w-5 h-5 text-blue-600" />
                   Konsolidasi Seluruh Grup — PT Nusantara Kreasi Digital Tbk &amp; 3 Anak Usaha
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -6206,10 +6152,10 @@ export default function NexoraApp() {
             {/* 4 Group KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">
+                <span className="text-[10px] font-semibold uppercase text-slate-500 block mb-1">
                   Total Omzet Konsolidasi Grup
                 </span>
-                <span className="text-lg font-black text-slate-900 block font-mono">
+                <span className="text-lg font-bold text-slate-900 block font-mono">
                   Rp 9.840.000.000
                 </span>
                 <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">
@@ -6217,10 +6163,10 @@ export default function NexoraApp() {
                 </span>
               </div>
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">
+                <span className="text-[10px] font-semibold uppercase text-slate-500 block mb-1">
                   Total Pajak Dibayar (YTD)
                 </span>
-                <span className="text-lg font-black text-slate-900 block font-mono">
+                <span className="text-lg font-bold text-slate-900 block font-mono">
                   Rp 1.482.500.000
                 </span>
                 <span className="text-[10px] text-slate-500 mt-1 block">
@@ -6228,10 +6174,10 @@ export default function NexoraApp() {
                 </span>
               </div>
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">
+                <span className="text-[10px] font-semibold uppercase text-slate-500 block mb-1">
                   Penghematan Tax Treaty (DTA)
                 </span>
-                <span className="text-lg font-black text-blue-600 block font-mono">
+                <span className="text-lg font-bold text-blue-600 block font-mono">
                   Rp 520.400.000
                 </span>
                 <span className="text-[10px] text-blue-700 font-semibold mt-1 block">
@@ -6239,10 +6185,10 @@ export default function NexoraApp() {
                 </span>
               </div>
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">
+                <span className="text-[10px] font-semibold uppercase text-slate-500 block mb-1">
                   Skor Kepatuhan Grup AI
                 </span>
-                <span className="text-lg font-black text-emerald-600 block">
+                <span className="text-lg font-bold text-emerald-600 block">
                   87.5 / 100
                 </span>
                 <span className="text-[10px] text-emerald-700 font-semibold mt-1 block">
@@ -6254,7 +6200,7 @@ export default function NexoraApp() {
             {/* Consolidated Table of All 4 Entities */}
             <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
               <div className="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-800">
+                <span className="text-xs font-semibold text-slate-800">
                   Daftar Entitas Grup Terkonsolidasi (1 Induk + 3 Anak Usaha)
                 </span>
                 <span className="text-[10px] font-semibold text-slate-500">
@@ -6264,7 +6210,7 @@ export default function NexoraApp() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-50 text-[10px] font-bold text-slate-500 border-b border-slate-200">
+                    <tr className="bg-slate-50 text-[10px] font-semibold text-slate-500 border-b border-slate-200">
                       <th className="py-2.5 px-3">Entitas</th>
                       <th className="py-2.5 px-3">Peran Korporasi</th>
                       <th className="py-2.5 px-3">Kepemilikan</th>
@@ -6278,7 +6224,7 @@ export default function NexoraApp() {
                       const isParent = c.parentCompanyId === null;
                       return (
                         <tr key={c.id} className="hover:bg-blue-50/50">
-                          <td className="py-3 px-3 font-bold text-slate-900">
+                          <td className="py-3 px-3 font-semibold text-slate-900">
                             <div className="flex items-center gap-2">
                               <span className="text-lg">{c.flag}</span>
                               <div>
@@ -6291,11 +6237,11 @@ export default function NexoraApp() {
                           </td>
                           <td className="py-3 px-3">
                             {isParent ? (
-                              <span className="px-2 py-0.5 rounded font-black text-[10px] bg-blue-100 text-blue-800">
+                              <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-blue-100 text-blue-800">
                                 Induk Holding HQ
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-100 text-emerald-800">
+                              <span className="px-2 py-0.5 rounded font-semibold text-[10px] bg-emerald-100 text-emerald-800">
                                 Anak Usaha ({c.ownershipByParent}%)
                               </span>
                             )}
@@ -6316,7 +6262,7 @@ export default function NexoraApp() {
                                 setShowConsolidationModal(false);
                                 triggerToast(`Membuka entitas: ${c.flag} ${c.legalName}`);
                               }}
-                              className="px-2.5 py-1 rounded bg-[#2563EB] hover:bg-blue-700 text-white text-[10px] font-bold transition cursor-pointer"
+                              className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-semibold transition cursor-pointer"
                             >
                               Buka Entitas →
                             </button>
@@ -6331,21 +6277,21 @@ export default function NexoraApp() {
 
             {/* Intercompany Transfer Pricing Flow */}
             <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 text-xs space-y-2">
-              <h4 className="font-extrabold text-[#2563EB] flex items-center gap-1.5">
+              <h4 className="font-semibold text-blue-600 flex items-center gap-1.5">
                 <GitBranch className="w-4 h-4" />
                 Matriks Transaksi Afiliasi Lintas Negara (Cross-Border Transfer Pricing)
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
                 <div className="p-3 bg-white rounded-lg border border-blue-100 space-y-1">
-                  <span className="font-bold text-slate-900 block">🇮🇩 ID ↔ 🇸🇬 SG (Royalti &amp; IP AI)</span>
+                  <span className="font-semibold text-slate-900 block">🇮🇩 ID ↔ 🇸🇬 SG (Royalti &amp; IP AI)</span>
                   <p className="text-slate-600">Metode: <strong>CUP Method</strong>. Tarif P3B 10% (Normal 20%) didukung Form DGT &amp; COR IRAS.</p>
                 </div>
                 <div className="p-3 bg-white rounded-lg border border-blue-100 space-y-1">
-                  <span className="font-bold text-slate-900 block">🇸🇬 SG ↔ 🇲🇾 MY (Distribusi SaaS)</span>
+                  <span className="font-semibold text-slate-900 block">🇸🇬 SG ↔ 🇲🇾 MY (Distribusi SaaS)</span>
                   <p className="text-slate-600">Metode: <strong>Cost Plus 8%</strong>. Alokasi laba terdistribusi sesuai fungsi operasional ASEAN.</p>
                 </div>
                 <div className="p-3 bg-white rounded-lg border border-blue-100 space-y-1">
-                  <span className="font-bold text-slate-900 block">🇺🇸 US ↔ 🇮🇩 ID (Kontrak Cloud/AI)</span>
+                  <span className="font-semibold text-slate-900 block">🇺🇸 US ↔ 🇮🇩 ID (Kontrak Cloud/AI)</span>
                   <p className="text-slate-600">Metode: <strong>TNMM</strong>. Form W-8BEN-E &amp; IRC §482 verified, bebas backup withholding 24%.</p>
                 </div>
               </div>
@@ -6356,125 +6302,21 @@ export default function NexoraApp() {
 
       {/* Mobile Navigation Drawer */}
       {showMobileMenu && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
+        <div className="fixed inset-0 z-50 flex lg:hidden" role="dialog" aria-modal="true">
           <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-ink-950/60 backdrop-blur-sm"
             onClick={() => setShowMobileMenu(false)}
           />
-          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col z-10 p-5 overflow-y-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#2563EB] text-white flex items-center justify-center font-black text-sm">
-                  NX
-                </div>
-                <span className="font-extrabold text-base text-slate-900">Nexora Navigasi</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowMobileMenu(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Menu Items */}
-            <div className="py-4 space-y-4">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block px-2 mb-2">
-                  Modul Utama
-                </span>
-                <div className="space-y-1">
-                  {[
-                    { id: 'companies', label: 'Companies (Direktori)', icon: Building2 },
-                    { id: 'calculation', label: 'Calculation (Rekonsiliasi)', icon: Calculator },
-                    { id: 'tax_return', label: 'Tax Return (SPT 1771)', icon: FileCheck2 },
-                    { id: 'payment', label: 'Payment (Billing & NTPN)', icon: CreditCard },
-                  ].map((m) => {
-                    const Icon = m.icon;
-                    const isAct = primaryNav === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => {
-                          setPrimaryNav(m.id as PrimaryNav);
-                          setShowMobileMenu(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer text-left ${
-                          isAct
-                            ? 'bg-blue-50 text-[#2563EB] border border-blue-200'
-                            : 'text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        <Icon className={`w-4 h-4 ${isAct ? 'text-[#2563EB]' : 'text-slate-400'}`} />
-                        <span>{m.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block px-2 mb-2">
-                  Fitur &amp; Analisis Kepatuhan
-                </span>
-                <div className="space-y-1">
-                  {[
-                    { id: 'corporate', label: 'Corporate Management', icon: Building2 },
-                    { id: 'individual', label: 'Individual Shareholder & UBO', icon: Users },
-                    { id: 'studies', label: 'Studies & Treaty Simulator', icon: BookOpen },
-                    { id: 'calendar', label: 'Tax Calendar (Tenggat Statutory)', icon: Calendar },
-                    { id: 'reports', label: 'Reports & Audit Trail', icon: BarChart3 },
-                  ].map((s) => {
-                    const Icon = s.icon;
-                    const isAct = primaryNav === 'companies' && subNav === s.id;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => {
-                          setPrimaryNav('companies');
-                          setSubNav(s.id as SubNav);
-                          setShowMobileMenu(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer text-left ${
-                          isAct
-                            ? 'bg-blue-50 text-[#2563EB] border border-blue-200'
-                            : 'text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        <Icon className={`w-4 h-4 ${isAct ? 'text-[#2563EB]' : 'text-slate-400'}`} />
-                        <span>{s.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block px-2 mb-2">
-                  Akun &amp; Hak Akses
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    setShowAccountDropdown(true);
-                  }}
-                  className="w-full flex items-center gap-2.5 p-2 rounded-xl border border-slate-200 bg-slate-50 text-left cursor-pointer"
-                >
-                  <div className={`w-8 h-8 rounded-lg ${activePersona.avatarBg} text-white flex items-center justify-center font-bold text-xs`}>
-                    {activePersona.avatarInitials}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="block text-xs font-bold text-slate-800 truncate">{activePersona.name}</span>
-                    <span className="block text-[10px] text-slate-500 truncate">{activePersona.badge} • Ganti Akun ▾</span>
-                  </div>
-                </button>
-              </div>
-            </div>
+          <div className="relative w-[86%] max-w-[300px] bg-ink-900 text-white h-full shadow-2xl flex flex-col z-10 animate-fade-up">
+            <button
+              type="button"
+              onClick={() => setShowMobileMenu(false)}
+              className="absolute top-4 right-3 z-10 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5"
+              aria-label="Tutup navigasi"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {renderSidebarBody()}
           </div>
         </div>
       )}

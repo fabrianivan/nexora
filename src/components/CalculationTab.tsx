@@ -190,14 +190,14 @@ export function CalculationTab({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                 MODUL PERHITUNGAN & REKONSILIASI FISKAL
               </span>
               <span className="text-xs text-slate-500 font-medium">
                 UU HPP & PP 55/2022
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 mt-1">
+            <h1 className="text-2xl font-bold text-slate-900 mt-1">
               {entityName} — Kalkulasi Pajak Terpadu
             </h1>
           </div>
@@ -205,7 +205,7 @@ export function CalculationTab({
           <div className="flex items-center gap-2">
             <button
               onClick={() => onProceedToReturn && onProceedToReturn()}
-              className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-sm transition-all"
+              className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-sm transition-all"
             >
               <span>Lanjut ke Draf SPT</span>
               <ArrowRight className="w-4 h-4" />
@@ -214,10 +214,10 @@ export function CalculationTab({
         </div>
 
         {/* Sub-Navigation */}
-        <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-1">
+        <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-1 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveSubTab('cit_recon')}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeSubTab === 'cit_recon'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -228,7 +228,7 @@ export function CalculationTab({
           </button>
           <button
             onClick={() => setActiveSubTab('vat_recon')}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeSubTab === 'vat_recon'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -239,7 +239,7 @@ export function CalculationTab({
           </button>
           <button
             onClick={() => setActiveSubTab('wht_calc')}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeSubTab === 'wht_calc'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -250,7 +250,7 @@ export function CalculationTab({
           </button>
           <button
             onClick={() => setActiveSubTab('what_if')}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeSubTab === 'what_if'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -269,7 +269,7 @@ export function CalculationTab({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
             <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm">
               <span className="text-slate-500 font-semibold block">Laba Komersial Bersih</span>
-              <span className="text-xl font-mono font-extrabold text-slate-900 mt-1 block">
+              <span className="text-xl tabular tracking-tight font-bold text-slate-900 mt-1 block">
                 {formatCurrency(commercialProfit, countryCode)}
               </span>
               <span className="text-[11px] text-slate-400 mt-1 block">
@@ -278,10 +278,10 @@ export function CalculationTab({
             </div>
 
             <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/50 shadow-sm">
-              <span className="text-rose-700 font-bold block flex items-center gap-1">
+              <span className="text-rose-700 font-semibold block flex items-center gap-1">
                 Koreksi Fiskal Positif (+)
               </span>
-              <span className="text-xl font-mono font-extrabold text-rose-700 mt-1 block">
+              <span className="text-xl tabular tracking-tight font-bold text-rose-700 mt-1 block">
                 +{formatCurrency(totalPositiveCorrection, countryCode)}
               </span>
               <span className="text-[11px] text-rose-600 mt-1 block">
@@ -290,10 +290,10 @@ export function CalculationTab({
             </div>
 
             <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 shadow-sm">
-              <span className="text-emerald-700 font-bold block">
+              <span className="text-emerald-700 font-semibold block">
                 Penghasilan Neto Fiskal (PKP)
               </span>
-              <span className="text-xl font-mono font-extrabold text-emerald-800 mt-1 block">
+              <span className="text-xl tabular tracking-tight font-bold text-emerald-800 mt-1 block">
                 {formatCurrency(taxableIncome, countryCode)}
               </span>
               <span className="text-[11px] text-emerald-600 mt-1 block">
@@ -302,10 +302,10 @@ export function CalculationTab({
             </div>
 
             <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 shadow-sm">
-              <span className="text-blue-700 font-bold block">
+              <span className="text-blue-700 font-semibold block">
                 PPh Kurang Bayar (Pasal 29)
               </span>
-              <span className="text-xl font-mono font-extrabold text-blue-800 mt-1 block">
+              <span className="text-xl tabular tracking-tight font-bold text-blue-800 mt-1 block">
                 {formatCurrency(citUnderpayment, countryCode)}
               </span>
               <span className="text-[11px] text-blue-600 mt-1 block">
@@ -318,7 +318,7 @@ export function CalculationTab({
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70">
               <div>
-                <h2 className="text-base font-extrabold text-slate-900">
+                <h2 className="text-base font-semibold text-slate-900">
                   Tabel Rekonsiliasi Laba Komersial ke Fiskal (SPT 1771-I)
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -342,7 +342,7 @@ export function CalculationTab({
                 </label>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Tambah Koreksi</span>
@@ -352,14 +352,14 @@ export function CalculationTab({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+                <thead className="bg-slate-100/75 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
                   <tr>
                     <th className="p-3.5">Akun & Deskripsi</th>
                     <th className="p-3.5">Grup</th>
-                    <th className="p-3.5 text-right">Komersial</th>
-                    <th className="p-3.5 text-right text-rose-600">Koreksi (+)</th>
-                    <th className="p-3.5 text-right text-emerald-600">Koreksi (-)</th>
-                    <th className="p-3.5 text-right">Fiskal</th>
+                    <th className="p-3.5 text-right whitespace-nowrap">Komersial</th>
+                    <th className="p-3.5 text-right whitespace-nowrap text-rose-600">Koreksi (+)</th>
+                    <th className="p-3.5 text-right whitespace-nowrap text-emerald-600">Koreksi (-)</th>
+                    <th className="p-3.5 text-right whitespace-nowrap">Fiskal</th>
                     <th className="p-3.5">Dasar Hukum & Catatan</th>
                     <th className="p-3.5 text-center">Aksi</th>
                   </tr>
@@ -368,24 +368,24 @@ export function CalculationTab({
                   {items.map((row) => (
                     <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="p-3.5">
-                        <div className="font-bold text-slate-900">{row.accountName}</div>
+                        <div className="font-semibold text-slate-900">{row.accountName}</div>
                         <div className="text-[11px] font-mono text-slate-500">Kode: {row.accountCode}</div>
                       </td>
                       <td className="p-3.5">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
                           {row.group}
                         </span>
                       </td>
-                      <td className="p-3.5 text-right font-mono text-slate-700">
+                      <td className="p-3.5 text-right whitespace-nowrap font-mono text-slate-700">
                         {formatCurrency(row.commercialAmount, countryCode)}
                       </td>
-                      <td className="p-3.5 text-right font-mono font-bold text-rose-600">
+                      <td className="p-3.5 text-right whitespace-nowrap font-mono font-semibold text-rose-600">
                         {row.positiveCorrection > 0 ? `+${formatCurrency(row.positiveCorrection, countryCode)}` : '-'}
                       </td>
-                      <td className="p-3.5 text-right font-mono font-bold text-emerald-600">
+                      <td className="p-3.5 text-right whitespace-nowrap font-mono font-semibold text-emerald-600">
                         {row.negativeCorrection > 0 ? `-${formatCurrency(row.negativeCorrection, countryCode)}` : '-'}
                       </td>
-                      <td className="p-3.5 text-right font-mono font-bold text-slate-900">
+                      <td className="p-3.5 text-right whitespace-nowrap font-mono font-semibold text-slate-900">
                         {formatCurrency(row.fiscalAmount, countryCode)}
                       </td>
                       <td className="p-3.5 max-w-xs">
@@ -400,7 +400,7 @@ export function CalculationTab({
                           <button
                             type="button"
                             onClick={() => onNavigateToFinding && onNavigateToFinding('ID_FRAUD_TBTS_01')}
-                            className="px-2 py-1 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer mb-1 block"
+                            className="px-2 py-1 rounded-md text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer mb-1 block whitespace-nowrap"
                             title="Lihat Temuan Fraud Terkait"
                           >
                             Bukti Fraud
@@ -418,13 +418,13 @@ export function CalculationTab({
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300">
+                <tfoot className="bg-slate-100 font-semibold text-slate-900 border-t-2 border-slate-300">
                   <tr>
                     <td colSpan={2} className="p-3.5 text-right uppercase text-[11px]">Total Laba Neto Fiskal:</td>
-                    <td className="p-3.5 text-right font-mono">{formatCurrency(commercialProfit, countryCode)}</td>
-                    <td className="p-3.5 text-right font-mono text-rose-600">+{formatCurrency(totalPositiveCorrection, countryCode)}</td>
-                    <td className="p-3.5 text-right font-mono text-emerald-600">-{formatCurrency(totalNegativeCorrection, countryCode)}</td>
-                    <td className="p-3.5 text-right font-mono text-base font-extrabold text-blue-700">
+                    <td className="p-3.5 text-right whitespace-nowrap font-mono">{formatCurrency(commercialProfit, countryCode)}</td>
+                    <td className="p-3.5 text-right whitespace-nowrap font-mono text-rose-600">+{formatCurrency(totalPositiveCorrection, countryCode)}</td>
+                    <td className="p-3.5 text-right whitespace-nowrap font-mono text-emerald-600">-{formatCurrency(totalNegativeCorrection, countryCode)}</td>
+                    <td className="p-3.5 text-right whitespace-nowrap font-mono text-base font-semibold text-blue-700">
                       {formatCurrency(taxableIncome, countryCode)}
                     </td>
                     <td colSpan={2} className="p-3.5 text-[11px] text-slate-500">
@@ -442,7 +442,7 @@ export function CalculationTab({
       {activeSubTab === 'vat_recon' && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
           <div>
-            <h2 className="text-base font-extrabold text-slate-900">
+            <h2 className="text-base font-semibold text-slate-900">
               Rekapitulasi Pajak Pertambahan Nilai (PPN 11%) — Masa Pajak Oktober 2026
             </h2>
             <p className="text-xs text-slate-500 mt-1">
@@ -453,7 +453,7 @@ export function CalculationTab({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
               <span className="text-slate-500 font-semibold block">Total PPN Keluaran (Diserahkan)</span>
-              <span className="text-xl font-mono font-extrabold text-slate-900 mt-1 block">
+              <span className="text-xl tabular tracking-tight font-bold text-slate-900 mt-1 block">
                 Rp 94.050.000
               </span>
               <span className="text-[11px] text-slate-400 mt-1 block">DPP: Rp 855.000.000</span>
@@ -461,7 +461,7 @@ export function CalculationTab({
 
             <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/60">
               <span className="text-emerald-700 font-semibold block">PPN Masukan Dapat Dikreditkan</span>
-              <span className="text-xl font-mono font-extrabold text-emerald-700 mt-1 block">
+              <span className="text-xl tabular tracking-tight font-bold text-emerald-700 mt-1 block">
                 Rp 61.500.000
               </span>
               <span className="text-[11px] text-emerald-600 mt-1 block">Diverifikasi sah Document AI</span>
@@ -469,7 +469,7 @@ export function CalculationTab({
 
             <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/60">
               <span className="text-rose-700 font-semibold block">Faktur TBTS Diblokir (Tidak Dikreditkan)</span>
-              <span className="text-xl font-mono font-extrabold text-rose-700 mt-1 block">
+              <span className="text-xl tabular tracking-tight font-bold text-rose-700 mt-1 block">
                 Rp 13.200.000
               </span>
               <span className="text-[11px] text-rose-600 mt-1 block">CV Mega Suplai (NPWP Non-Aktif)</span>
@@ -478,14 +478,14 @@ export function CalculationTab({
 
           <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between">
             <div>
-              <span className="text-xs font-bold text-blue-900 block">
+              <span className="text-xs font-semibold text-blue-900 block">
                 PPN Kurang Bayar Masa Oktober 2026 (Form 1111 Induk)
               </span>
               <span className="text-sm text-blue-700 font-medium">
                 PPh Keluaran (Rp 94.050.000) - PPN Masukan Sah (Rp 61.500.000) =
               </span>
             </div>
-            <span className="text-2xl font-mono font-black text-blue-900">
+            <span className="text-2xl tabular tracking-tight font-bold text-blue-900">
               Rp 32.550.000
             </span>
           </div>
@@ -496,7 +496,7 @@ export function CalculationTab({
       {activeSubTab === 'wht_calc' && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
           <div>
-            <h2 className="text-base font-extrabold text-slate-900">
+            <h2 className="text-base font-semibold text-slate-900">
               Kalkulator Pemotongan & Pemungutan Pajak (PPh 21 / 23 / 4(2) / 26)
             </h2>
             <p className="text-xs text-slate-500 mt-1">
@@ -507,7 +507,7 @@ export function CalculationTab({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
             <div className="space-y-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Pilih Jenis Pajak Pemotongan</label>
+                <label className="font-semibold text-slate-700 block mb-1">Pilih Jenis Pajak Pemotongan</label>
                 <select
                   value={whtType}
                   onChange={(e) => setWhtType(e.target.value as 'pph23_jasa' | 'pph4_2_sewa' | 'pph21_bukan_pegawai' | 'pph26_luar_negeri')}
@@ -521,12 +521,12 @@ export function CalculationTab({
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Nilai Bruto Transaksi (IDR)</label>
+                <label className="font-semibold text-slate-700 block mb-1">Nilai Bruto Transaksi (IDR)</label>
                 <input
                   type="number"
                   value={whtGrossAmount}
                   onChange={(e) => setWhtGrossAmount(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-lg border border-slate-300 font-mono font-bold"
+                  className="w-full p-2.5 rounded-lg border border-slate-300 font-mono font-semibold"
                 />
               </div>
 
@@ -546,25 +546,25 @@ export function CalculationTab({
 
             <div className="p-5 rounded-xl border border-slate-200 bg-slate-50 flex flex-col justify-between">
               <div>
-                <span className="text-[11px] font-bold uppercase text-slate-500">Hasil Perhitungan Bukti Potong</span>
+                <span className="text-[11px] font-semibold uppercase text-slate-500">Hasil Perhitungan Bukti Potong</span>
                 <div className="mt-3 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Dasar Pengenaan Pajak (DPP):</span>
-                    <span className="font-mono font-bold text-slate-900">{formatCurrency(calculatedWht.basis, countryCode)}</span>
+                    <span className="font-mono font-semibold text-slate-900">{formatCurrency(calculatedWht.basis, countryCode)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Tarif Efektif:</span>
-                    <span className="font-mono font-bold text-slate-900">{(calculatedWht.rate * 100).toFixed(1)}%</span>
+                    <span className="font-mono font-semibold text-slate-900">{(calculatedWht.rate * 100).toFixed(1)}%</span>
                   </div>
                   <div className="flex justify-between border-t border-slate-200 pt-2">
-                    <span className="font-bold text-slate-800">Pajak yang Dipotong:</span>
-                    <span className="font-mono font-black text-blue-700 text-lg">{formatCurrency(calculatedWht.taxAmount, countryCode)}</span>
+                    <span className="font-semibold text-slate-800">Pajak yang Dipotong:</span>
+                    <span className="font-mono font-bold text-blue-700 text-lg">{formatCurrency(calculatedWht.taxAmount, countryCode)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 p-3 bg-white rounded-lg border border-slate-200 text-[11px] text-slate-600">
-                <span className="font-bold text-slate-800 block">Dasar Regulasi:</span>
+                <span className="font-semibold text-slate-800 block">Dasar Regulasi:</span>
                 <span>{calculatedWht.rule}</span>
               </div>
             </div>
@@ -577,7 +577,7 @@ export function CalculationTab({
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-extrabold text-slate-900">
+              <h2 className="text-base font-semibold text-slate-900">
                 Simulator Skenario Pajak (What-If Optimization)
               </h2>
               <p className="text-xs text-slate-500 mt-1">
@@ -611,7 +611,7 @@ export function CalculationTab({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
-              <span className="font-bold text-slate-600 block">Skenario Baseline Saat Ini</span>
+              <span className="font-semibold text-slate-600 block">Skenario Baseline Saat Ini</span>
               <div className="mt-3 space-y-1 font-mono">
                 <div className="flex justify-between">
                   <span>Laba Bersih:</span>
@@ -621,7 +621,7 @@ export function CalculationTab({
                   <span>Koreksi Positif:</span>
                   <span>+{formatCurrency(totalPositiveCorrection, countryCode)}</span>
                 </div>
-                <div className="flex justify-between font-bold border-t border-slate-200 pt-1 text-slate-900">
+                <div className="flex justify-between font-semibold border-t border-slate-200 pt-1 text-slate-900">
                   <span>PPh Terutang:</span>
                   <span>{formatCurrency(citDue, countryCode)}</span>
                 </div>
@@ -629,7 +629,7 @@ export function CalculationTab({
             </div>
 
             <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50">
-              <span className="font-bold text-blue-900 block">
+              <span className="font-semibold text-blue-900 block">
                 Hasil Simulasi ({whatIfMultiplier}%) {excludeNonDeductibles ? '• Remediasi Aktif' : ''}
               </span>
               <div className="mt-3 space-y-1 font-mono">
@@ -641,7 +641,7 @@ export function CalculationTab({
                   <span>Simulasi Koreksi:</span>
                   <span>+{formatCurrency(excludeNonDeductibles ? 0 : totalPositiveCorrection * (whatIfMultiplier / 100), countryCode)}</span>
                 </div>
-                <div className="flex justify-between font-bold border-t border-blue-200 pt-1 text-blue-900">
+                <div className="flex justify-between font-semibold border-t border-blue-200 pt-1 text-blue-900">
                   <span>Estimasi PPh Terutang:</span>
                   <span>
                     {formatCurrency(
@@ -662,12 +662,12 @@ export function CalculationTab({
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-xs">
-            <h3 className="text-base font-extrabold text-slate-900 mb-4">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">
               Tambah Baris Koreksi Fiskal Baru
             </h3>
             <form onSubmit={handleAddAdjustment} className="space-y-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Kode Akun</label>
+                <label className="font-semibold text-slate-700 block mb-1">Kode Akun</label>
                 <input
                   type="text"
                   value={newAccountCode}
@@ -677,7 +677,7 @@ export function CalculationTab({
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Nama Akun Beban / Pendapatan</label>
+                <label className="font-semibold text-slate-700 block mb-1">Nama Akun Beban / Pendapatan</label>
                 <input
                   type="text"
                   value={newAccountName}
@@ -688,7 +688,7 @@ export function CalculationTab({
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Komersial (IDR)</label>
+                  <label className="font-semibold text-slate-700 block mb-1">Komersial (IDR)</label>
                   <input
                     type="number"
                     value={newCommercialAmount}
@@ -698,7 +698,7 @@ export function CalculationTab({
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-rose-700 block mb-1">Koreksi Pos (+)</label>
+                  <label className="font-semibold text-rose-700 block mb-1">Koreksi Pos (+)</label>
                   <input
                     type="number"
                     value={newPositiveCorrection}
@@ -708,7 +708,7 @@ export function CalculationTab({
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-emerald-700 block mb-1">Koreksi Neg (-)</label>
+                  <label className="font-semibold text-emerald-700 block mb-1">Koreksi Neg (-)</label>
                   <input
                     type="number"
                     value={newNegativeCorrection}
@@ -719,7 +719,7 @@ export function CalculationTab({
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Alasan Koreksi</label>
+                <label className="font-semibold text-slate-700 block mb-1">Alasan Koreksi</label>
                 <input
                   type="text"
                   value={newReason}
@@ -729,7 +729,7 @@ export function CalculationTab({
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Dasar Regulasi</label>
+                <label className="font-semibold text-slate-700 block mb-1">Dasar Regulasi</label>
                 <input
                   type="text"
                   value={newLegalBasis}
@@ -748,7 +748,7 @@ export function CalculationTab({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold cursor-pointer"
                 >
                   Simpan Koreksi
                 </button>

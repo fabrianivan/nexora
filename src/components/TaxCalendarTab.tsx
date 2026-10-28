@@ -189,14 +189,14 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                 STATUTORY TAX DEADLINE CALENDAR
               </span>
               <span className="text-xs text-slate-500 font-medium">
                 Otoritas DJP, IRAS, LHDN & IRS
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 mt-1">
+            <h1 className="text-2xl font-bold text-slate-900 mt-1">
               Kalender Kepatuhan & Tenggat Pajak Multinasional
             </h1>
           </div>
@@ -204,7 +204,7 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
           <div className="flex items-center gap-2 text-xs">
             <button
               onClick={handleExportICS}
-              className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm"
               title="Unduh file .ics kalender"
             >
               <Download className="w-3.5 h-3.5" />
@@ -212,7 +212,7 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
             </button>
             <button
               onClick={() => setShowTaskModal(true)}
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold flex items-center gap-1.5 cursor-pointer shadow-sm"
             >
               <Plus className="w-4 h-4" />
               <span>Buat Tugas Tenggat</span>
@@ -223,7 +223,7 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
         {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-2 border-t border-slate-200 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-slate-500 font-bold">Filter Jenis Pajak:</span>
+            <span className="text-slate-500 font-semibold">Filter Jenis Pajak:</span>
             <select
               value={filterTaxType}
               onChange={(e) => setFilterTaxType(e.target.value)}
@@ -240,7 +240,7 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1 rounded-md font-bold cursor-pointer transition-colors ${
+              className={`px-3 py-1 rounded-md font-semibold cursor-pointer transition-colors ${
                 viewMode === 'list' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
               }`}
             >
@@ -248,7 +248,7 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
             </button>
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1 rounded-md font-bold cursor-pointer transition-colors ${
+              className={`px-3 py-1 rounded-md font-semibold cursor-pointer transition-colors ${
                 viewMode === 'month' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
               }`}
             >
@@ -269,12 +269,12 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
           >
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
                   {item.jurisdiction}
                 </span>
-                <h3 className="font-extrabold text-slate-900 text-sm">{item.title}</h3>
+                <h3 className="font-semibold text-slate-900 text-sm">{item.title}</h3>
                 <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
                     item.status === 'Overdue'
                       ? 'bg-rose-100 text-rose-800 border border-rose-300'
                       : item.status === 'Completed'
@@ -297,13 +297,13 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
 
             <div className="flex items-center md:flex-col items-end justify-between md:justify-center gap-2 shrink-0 border-t md:border-t-0 md:border-l border-slate-200 pt-3 md:pt-0 md:pl-6">
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Batas Waktu</span>
-                <span className="text-sm font-mono font-black text-slate-900">{item.dueDate}</span>
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Batas Waktu</span>
+                <span className="text-sm font-mono font-semibold text-slate-900">{item.dueDate}</span>
               </div>
               <button
                 type="button"
                 onClick={() => onTriggerToast?.(`Pengingat disetel untuk ${item.title}`)}
-                className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold cursor-pointer"
               >
                 Set Pengingat
               </button>
@@ -316,12 +316,12 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
       {showTaskModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 text-xs">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <h3 className="text-base font-extrabold text-slate-900 mb-4">
+            <h3 className="text-base font-semibold text-slate-900 mb-4">
               Buat Tugas Tenggat Pajak Baru
             </h3>
             <form onSubmit={handleAddTask} className="space-y-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Judul Tugas</label>
+                <label className="font-semibold text-slate-700 block mb-1">Judul Tugas</label>
                 <input
                   type="text"
                   value={newTitle}
@@ -333,7 +333,7 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Jenis Kewajiban</label>
+                <label className="font-semibold text-slate-700 block mb-1">Jenis Kewajiban</label>
                 <input
                   type="text"
                   value={newTaxType}
@@ -344,7 +344,7 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Tanggal Jatuh Tempo</label>
+                <label className="font-semibold text-slate-700 block mb-1">Tanggal Jatuh Tempo</label>
                 <input
                   type="date"
                   value={newDate}
@@ -355,7 +355,7 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Penanggung Jawab (PIC)</label>
+                <label className="font-semibold text-slate-700 block mb-1">Penanggung Jawab (PIC)</label>
                 <input
                   type="text"
                   value={newAssignee}
@@ -375,7 +375,7 @@ export function TaxCalendarTab({ countryCode, entityName, initialEvents, onDataC
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold cursor-pointer"
                 >
                   Simpan Jadwal
                 </button>

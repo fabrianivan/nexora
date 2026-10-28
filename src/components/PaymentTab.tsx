@@ -152,14 +152,14 @@ export function PaymentTab({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                 MULTI-SUBSIDIARY TAX TREASURY & E-BILLING
               </span>
               <span className="text-xs text-slate-500 font-medium">
                 DJP Coretax e-Billing & Bank Persepsi
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 mt-1">
+            <h1 className="text-2xl font-bold text-slate-900 mt-1">
               {entityName} — Jadwal & Eksekusi Pembayaran Pajak
             </h1>
           </div>
@@ -169,7 +169,7 @@ export function PaymentTab({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6 text-xs">
           <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
             <span className="text-slate-500 font-semibold block">Total Kewajiban Menunggu Bayar</span>
-            <span className="text-xl font-mono font-black text-slate-900 mt-1 block">
+            <span className="text-xl tabular tracking-tight font-bold text-slate-900 mt-1 block">
               {formatCurrency(
                 liabilities.filter((l) => l.status !== 'Dibayar').reduce((acc, curr) => acc + curr.amount, 0),
                 countryCode
@@ -181,8 +181,8 @@ export function PaymentTab({
           </div>
 
           <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
-            <span className="text-emerald-700 font-bold block">Pajak Telah Disetor (YTD 2026)</span>
-            <span className="text-xl font-mono font-black text-emerald-800 mt-1 block">
+            <span className="text-emerald-700 font-semibold block">Pajak Telah Disetor (YTD 2026)</span>
+            <span className="text-xl tabular tracking-tight font-bold text-emerald-800 mt-1 block">
               {formatCurrency(284500000, countryCode)}
             </span>
             <span className="text-[11px] text-emerald-600 mt-1 block">
@@ -191,8 +191,8 @@ export function PaymentTab({
           </div>
 
           <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/50">
-            <span className="text-rose-700 font-bold block">Estimasi Sanksi Keterlambatan</span>
-            <span className="text-xl font-mono font-black text-rose-800 mt-1 block">
+            <span className="text-rose-700 font-semibold block">Estimasi Sanksi Keterlambatan</span>
+            <span className="text-xl tabular tracking-tight font-bold text-rose-800 mt-1 block">
               {formatCurrency(157500, countryCode)}
             </span>
             <span className="text-[11px] text-rose-600 mt-1 block">
@@ -207,7 +207,7 @@ export function PaymentTab({
         {/* Left 2 Cols: Liabilities Table */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden text-xs">
           <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-            <h2 className="font-extrabold text-slate-900">
+            <h2 className="font-semibold text-slate-900">
               Daftar Tagihan & Kewajiban Setor Pajak
             </h2>
             <span className="text-[11px] text-slate-500 font-medium">
@@ -226,8 +226,8 @@ export function PaymentTab({
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-slate-900 text-sm">{item.taxType}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    <span className="font-semibold text-slate-900 text-sm">{item.taxType}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                       item.status === 'Dibayar'
                         ? 'bg-emerald-100 text-emerald-800'
                         : item.status === 'Terlambat'
@@ -247,7 +247,7 @@ export function PaymentTab({
                 </div>
 
                 <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-2">
-                  <span className="text-base font-mono font-black text-slate-900">
+                  <span className="text-base font-mono font-semibold text-slate-900">
                     {formatCurrency(item.amount, countryCode)}
                   </span>
 
@@ -259,12 +259,12 @@ export function PaymentTab({
                           e.stopPropagation();
                           handleOpenPayModal(item);
                         }}
-                        className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer shadow-xs text-[11px]"
+                        className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer shadow-xs text-[11px]"
                       >
                         Catat Bayar
                       </button>
                     ) : (
-                      <span className="text-[10px] font-mono text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      <span className="text-[10px] font-mono text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                         NTPN: {item.ntpn?.slice(0, 10)}...
                       </span>
                     )}
@@ -280,7 +280,7 @@ export function PaymentTab({
           {activeBillingSlip ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <div className="flex items-center gap-1.5 text-blue-700 font-extrabold">
+                <div className="flex items-center gap-1.5 text-blue-700 font-semibold">
                   <CreditCard className="w-4 h-4" />
                   <span>SURAT SETORAN ELEKTRONIK (e-Billing)</span>
                 </div>
@@ -289,7 +289,7 @@ export function PaymentTab({
 
               <div>
                 <span className="text-slate-500 block text-[11px]">Kode Billing DJP (15 Digit):</span>
-                <div className="flex items-center justify-between bg-slate-900 text-emerald-400 p-3 rounded-lg font-mono font-black text-lg mt-1 tracking-wider shadow-inner">
+                <div className="flex items-center justify-between bg-slate-900 text-emerald-400 p-3 rounded-lg font-mono font-bold text-lg mt-1 tracking-wider shadow-inner">
                   <span>{activeBillingSlip.billingCode || '0100139482142026'}</span>
                   <button
                     onClick={() => handleCopy(activeBillingSlip.billingCode || '0100139482142026')}
@@ -311,24 +311,24 @@ export function PaymentTab({
               <div className="space-y-2 bg-slate-50 p-3 rounded-lg border border-slate-200 font-mono text-[11px]">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Nama WP:</span>
-                  <span className="font-bold text-slate-800 text-right truncate max-w-[150px]">{entityName}</span>
+                  <span className="font-semibold text-slate-800 text-right truncate max-w-[150px]">{entityName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">NPWP:</span>
-                  <span className="font-bold text-slate-800">{taxId}</span>
+                  <span className="font-semibold text-slate-800">{taxId}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Jenis Pajak:</span>
-                  <span className="font-bold text-slate-800">{activeBillingSlip.taxType}</span>
+                  <span className="font-semibold text-slate-800">{activeBillingSlip.taxType}</span>
                 </div>
-                <div className="flex justify-between border-t border-slate-200 pt-2 text-slate-900 font-bold">
+                <div className="flex justify-between border-t border-slate-200 pt-2 text-slate-900 font-semibold">
                   <span>Jumlah Setor:</span>
-                  <span className="text-blue-700 font-black">{formatCurrency(activeBillingSlip.amount, countryCode)}</span>
+                  <span className="text-blue-700 font-semibold">{formatCurrency(activeBillingSlip.amount, countryCode)}</span>
                 </div>
               </div>
 
               <div className="text-[11px] text-slate-600 space-y-1">
-                <span className="font-bold text-slate-800 block">Kanal Pembayaran:</span>
+                <span className="font-semibold text-slate-800 block">Kanal Pembayaran:</span>
                 <p>• Teller Bank Persepsi / Kantor Pos</p>
                 <p>• ATM Mandiri, BCA, BNI, BRI (Menu Bayar Pajak DJP)</p>
                 <p>• Corporate Internet Banking (e-Tax MPN G3)</p>
@@ -336,7 +336,7 @@ export function PaymentTab({
 
               <button
                 onClick={() => handleGenerateNewBilling(activeBillingSlip.id)}
-                className="w-full py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer border border-slate-300 text-center text-xs"
+                className="w-full py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer border border-slate-300 text-center text-xs"
               >
                 Terbitkan Ulang Kode Billing
               </button>
@@ -353,7 +353,7 @@ export function PaymentTab({
       {showPayModal && targetPayLiability && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-xs">
-            <h3 className="text-base font-extrabold text-slate-900 mb-2">
+            <h3 className="text-base font-semibold text-slate-900 mb-2">
               Konfirmasi & Catat Bukti Setor Pajak
             </h3>
             <p className="text-slate-500 mb-4">
@@ -362,7 +362,7 @@ export function PaymentTab({
 
             <form onSubmit={handleConfirmPayment} className="space-y-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Jenis Pajak</label>
+                <label className="font-semibold text-slate-700 block mb-1">Jenis Pajak</label>
                 <input
                   type="text"
                   value={targetPayLiability.taxType}
@@ -372,23 +372,23 @@ export function PaymentTab({
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Jumlah Disetor</label>
+                <label className="font-semibold text-slate-700 block mb-1">Jumlah Disetor</label>
                 <input
                   type="text"
                   value={formatCurrency(targetPayLiability.amount, countryCode)}
                   disabled
-                  className="w-full p-2 rounded bg-slate-100 border border-slate-300 font-mono font-bold"
+                  className="w-full p-2 rounded bg-slate-100 border border-slate-300 font-mono font-semibold"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Nomor Transaksi Penerimaan Negara (NTPN)</label>
+                <label className="font-semibold text-slate-700 block mb-1">Nomor Transaksi Penerimaan Negara (NTPN)</label>
                 <input
                   type="text"
                   value={inputNtpn}
                   onChange={(e) => setInputNtpn(e.target.value.toUpperCase())}
                   placeholder="Contoh: 7A920F819203BC11"
-                  className="w-full p-2 rounded border border-slate-300 font-mono uppercase font-bold"
+                  className="w-full p-2 rounded border border-slate-300 font-mono uppercase font-semibold"
                   required
                 />
               </div>
@@ -403,7 +403,7 @@ export function PaymentTab({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold cursor-pointer"
                 >
                   Simpan Bukti Pembayaran
                 </button>

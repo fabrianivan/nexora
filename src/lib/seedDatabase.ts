@@ -478,6 +478,7 @@ export const SEED_STUDIES = [
     summary: 'Kajian pemotongan PPh 26 atas pembayaran royalti piranti lunak dan deviden anak usaha Singapura. Tarif domestik 20% diturunkan menjadi 10% dengan verifikasi Form DGT-1 Coretax.',
     source: 'P3B RI – Singapore Pasal 11 & 12 • SE-25/PJ/2018',
     tags: ['Treaty Relief', 'Singapore', 'Royalty 10%', 'Form DGT'],
+    applicableJurisdictions: ['🇮🇩 Indonesia', '🇸🇬 Singapore'],
     simulationType: 'treaty_relief',
   },
   {
@@ -487,6 +488,7 @@ export const SEED_STUDIES = [
     summary: 'Analisis dampak ambang batas omzet grup konsolidasian €750 Juta. Evaluasi tarif pajak efektif (ETR) yurisdiksi Singapura (17%) dan Indonesia (22%) terhadap potensi Top-Up Tax (QDMTT).',
     source: 'OECD Pillar Two Model Rules • PMK CbCR Action 13',
     tags: ['Pillar Two', 'GloBE', 'Top-Up Tax', 'ETR Analysis'],
+    applicableJurisdictions: ['🇮🇩 Indonesia', '🇸🇬 Singapore', '🇲🇾 Malaysia', '🇺🇸 United States'],
     simulationType: 'pillar_two_etr',
   },
 ];
