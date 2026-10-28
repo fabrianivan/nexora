@@ -40,88 +40,64 @@ Submitted for **Google Cloud AI Builder Cup, Track 1: BFSI (Smart Risk, Fraud Pr
 
 ---
 
-## 🌟 Key Innovations & 7-Stage Hero Flow
+## 🌟 One connected compliance cycle
 
-Nexora is designed with zero dead buttons, zero hollow views, and zero mandatory sign-ins. Judges and evaluators can experience the entire end-to-end compliance journey with **1-Click Sample Data** (`Muat Sample Kasus Nyata`):
+Nexora v5 is organised around the 7-step cycle a tax team actually runs. Each step feeds the next, so a fraud finding becomes a fiscal correction, the correction changes the return, and the approved return issues the billing code — no copy-paste between screens. Everything works with sample data and no API key.
 
 ```mermaid
 flowchart LR
-  S1[1. Struktur Entitas] --> S2[2. Scanner Dokumen]
-  S2 --> S3[3. Deteksi Fraud]
-  S3 --> S4[4. Rekonsiliasi Fiskal]
-  S4 --> S5[5. Draf SPT 1771]
-  S5 --> S6[6. Pembayaran & Billing]
-  S6 --> S7[7. Kalender & Audit]
+  S1[1. Entitas & struktur] --> S2[2. Dokumen]
+  S2 --> S3[3. Risiko & fraud]
+  S3 --> S4[4. Review temuan<br/>maker-checker]
+  S4 --> S5[5. Rekonsiliasi fiskal]
+  S5 --> S6[6. SPT tahunan<br/>maker-checker]
+  S6 --> S7[7. Pembayaran]
 ```
 
-1. **Multi-tier Corporate Ownership Graph**:
-   - Visualizes parent companies (UPE), intermediate subsidiaries, individual UBO shareholders, and cross-border shareholdings.
-   - Detects circular ownership and enforces 100% cap validation in real-time.
-2. **Smart Document & e-Invoice Scanner**:
-   - Multimodal document ingestion (PDF, JPEG, PNG up to 10 MB).
-   - In **Live Mode**, extracts structured data with Gemini Vision with confidence scores.
-   - In **Smart Demo Mode**, operates with instant local deterministic parsing without requiring an API key.
-3. **Explainable Fraud & Anomaly Detection**:
-   - Statistically calibrated Z-score outlier detection (minimum 5 invoices threshold).
-   - Local risk rules: Indikasi Faktur TBTS (UU KUP Pasal 39A), Singapore MTIC carousel fraud, Malaysia MyInvois UUID absence, split invoicing, and non-deductible items.
-   - Full legal basis, root-cause explanation, and remediating fiscal adjustment suggestions.
-4. **Interactive Fiscal Reconciliation & Tax Calculation**:
-   - Automated commercial-to-fiscal reconciliation across positive corrections (natura PMK-66/2023, sumbangan PP 93/2010, sanksi administrasi) and negative corrections (dividen non-objek UU HPP Pasal 4(3)f, selisih penyusutan).
-   - PPh Badan calculation with **UU PPh Pasal 31E 50% discount** for revenues under Rp 50 Miliar.
-   - Withholding tax simulator (PPh 21 TER, PPh 23 jasa, PPh 4(2) final, PPh 26 luar negeri).
-   - What-If sensitivity simulator for gross margin scaling and non-deductible remediation impact.
-5. **SPT 1771 Induk & Lampiran with Maker-Checker Sign-off**:
-   - Official SPT 1771 Induk, Lampiran I (Penghasilan Neto Fiskal), Lampiran II (HPP & Biaya Usaha), and Lampiran III (Kredit Pajak).
-   - **Maker-Checker Governance**: Konsultan Pajak drafts the return; Head of Tax / Group CEO reviews and approves. Self-approval is strictly forbidden.
-   - Real `.xml` export formatted for DJP Coretax XML import, plus structured `.json` export and watermark protection.
-6. **Tax Payment & 15-Digit e-Billing Generation**:
-   - Real 15-digit e-Billing code generation (`411126-200` PPh Badan, `411211-100` PPN).
-   - Payment confirmation modal with real NTPN (Nomor Transaksi Penerimaan Negara) recording and bank validation.
-   - Statutory late payment penalty interest calculator.
-7. **Statutory Tax Calendar & Immutable Audit Trail**:
-   - Country-specific tax calendar with `.ics` file download (import directly into Google Calendar / Outlook).
-   - Immutable audit trail recording every user action with `.csv` export for compliance audits (ISO 27001 / OECD CbCR).
+| Step | Module | What it does |
+|---|---|---|
+| — | **Ringkasan** (`/overview`) | Group dashboard: dues ≤ 30 days, open findings, exposure, compliance score per entity, action centre, VAT trend, next deadlines. |
+| 1 | **Entitas & struktur** (`/entities`) | Org chart of the group, entity profiles, legal-document checklist with Document AI verification, shareholders/UBO, add subsidiaries, group consolidation & Pillar Two threshold. |
+| 2 | **Dokumen** (`/documents`) | Inbox of e-Faktur / invoices / share registers per entity. Upload (PDF/PNG/JPG ≤ 10 MB), AI extraction with per-field confidence, manual override, verification. |
+| 3 | **Risiko & fraud** (`/risk`) | Deterministic rule engine over the documents: TBTS, Missing Trader, split invoicing, Z-Score outliers, MyInvois UUID, non-deductible costs, and cross-validation of vendor master data & share registers. Every finding carries evidence, legal basis, money at risk and a suggested fiscal correction. |
+| 4 | **Review temuan** (`/review`) | Maker proposes (confirm / dismiss + reason), an independent parent-company checker approves. Confirmed findings push their correction into the reconciliation with one click. Full decision history. |
+| 5 | **Rekonsiliasi fiskal** (`/calculation`) | Commercial → fiscal reconciliation per entity, CIT for ID (Pasal 31E), SG (partial exemption), MY (SME tiers), US (21%); tax credits; VAT recap with blocked input VAT; withholding calculator; what-if simulator. |
+| 6 | **SPT tahunan** (`/tax-return`) | SPT 1771 / Form C-S / Borang C / Form 1120 generated live from the reconciliation, pre-submission checks, maker-checker approval that locks the figures, XML/JSON export, print. |
+| 7 | **Pembayaran** (`/payments`) | All liabilities across jurisdictions, billing codes, NTPN recording, overdue detection and indicative penalties. Approving the return issues the PPh 29 / balance-due billing automatically. |
+| | **Kalender**, **Pemegang saham & UBO**, **Laporan & audit**, **Studi & simulator** | Deadlines with .ics export, group-wide UBO register with PII masking & dividend WHT simulator, executive report & append-only audit trail (CSV), treaty / Pillar Two / TP simulators and knowledge library. |
+
+Cross-cutting: **⌘K command palette** (pages, entities, findings, documents), live **notifications**, **RBAC personas** (parent executives see the group; subsidiary staff are scoped to their entity), and the **Tax Copilot** side panel (Gemini when `GEMINI_API_KEY` is set, deterministic fallback otherwise).
 
 ---
 
-## 🏛️ Architecture & Country Adapter Layer
-
-Nexora separates statutory country tax rules into versioned JSON configurations and decoupled adapter classes:
+## 🏛️ Architecture
 
 ```text
 src/
-├── config/                  Versioned Statutory Tax Rules
-│   ├── taxRules.id.json     Indonesia (PPh Badan 22%, Pasal 31E, PPN 11%, DJP Coretax)
-│   ├── taxRules.sg.json     Singapore (CIT 17%, Partial Tax Exemption, GST 9%, IRAS)
-│   ├── taxRules.my.json     Malaysia (SME 15%/17%/24%, Non-SME 24%, SST 8%, LHDN)
-│   └── taxRules.us.json     United States (IRC Section 11 Flat 21%, Form 1120, IRS)
+├── app/                     Next.js App Router — one route per module
+│   ├── layout.tsx           Fonts, globals, <Providers>
+│   ├── providers.tsx        WorkspaceProvider + UiProvider + AppShell
+│   ├── overview/ entities/ entities/[id]/ documents/ risk/ review/
+│   ├── calculation/ tax-return/ payments/ calendar/ shareholders/ reports/ studies/
+│   └── api/                 bootstrap · sync · reset · status · copilot · scan-document
+├── features/                Feature modules (one folder per route)
+├── shell/                   Sidebar, top bar, command palette, notifications,
+│                            account/RBAC menu, copilot, toasts, cycle status
+├── ui/                      Design system: Button, Card, Badge, Field, Dialog, Sheet,
+│                            Tabs, Table, Stat, Meter, charts (SVG), Popover …
+├── state/                   WorkspaceProvider (single source of truth, DB sync), UI state
 ├── lib/
-│   ├── adapters/            Pluggable Country Adapters
-│   │   ├── types.ts         CountryAdapter interface
-│   │   ├── idAdapter.ts     Indonesia Adapter
-│   │   ├── sgAdapter.ts     Singapore Adapter
-│   │   ├── myAdapter.ts     Malaysia Adapter
-│   │   ├── usAdapter.ts     United States Adapter
-│   │   └── index.ts         Adapter Registry & helper functions
-│   ├── domain.ts            Strict Zod schemas and TypeScript domain types
-│   ├── fraud.ts             Deterministic fraud rules and Z-score statistics
-│   ├── tax.ts               Deterministic tax simulation engine
-│   ├── reconciliation.ts    Fiscal reconciliation calculation
-│   ├── returns.ts           Draft return generation and XML/JSON serialization
-│   └── mysql.ts             MySQL persistence with automatic in-memory fallback
-└── components/              Modular Interactive UI Components
-    ├── HeroStepper.tsx              7-step hero flow stepper
-    ├── CalculationTab.tsx           Fiscal reconciliation & PPh calculator
-    ├── TaxReturnTab.tsx             SPT 1771 draft, Maker-Checker, XML export
-    ├── PaymentTab.tsx               e-Billing code generator & NTPN modal
-    ├── IndividualShareholdersTab.tsx Natural person shareholders & UBO
-    ├── StudiesTab.tsx               P3B treaty relief & OECD Pillar Two simulator
-    ├── TaxCalendarTab.tsx           Tax calendar & .ics export
-    ├── ReportsTab.tsx               Executive report & CSV audit trail
-    ├── CommandPalette.tsx           Global Cmd+K search and navigation
-    ├── NotificationCenter.tsx       Alert popover for findings & approvals
-    └── DataPersistenceControl.tsx   Demo/Live indicator with 1-click sample data
+│   ├── compliance.ts        Documents → risk engine → maker-checker review → corrections
+│   ├── cit.ts               Corporate income tax per jurisdiction
+│   ├── fraud.ts             Rule engine & Z-Score (used by compliance.ts)
+│   ├── crossValidation.ts   Vendor/share-register consistency checks
+│   ├── returns.ts           Return draft + XML serialisation
+│   ├── database.ts          SQLite (node:sqlite) / MySQL / memory persistence
+│   └── format.ts fx.ts schedule.ts download.ts
+└── data/                    Sample group, personas, seed dataset, country configs
 ```
+
+Persistence: entity, payment, calendar, audit and study tables plus an `app_state` key/value table holding the compliance workspace (`compliance`) and per-entity reconciliations & returns (`ledger`). The database is re-seeded automatically when the sample dataset version changes.
 
 ---
 
@@ -175,7 +151,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. Click **Mua
 Nexora enforces strict enterprise quality standards:
 
 ```bash
-# Run 25 unit tests (tax, adapters, Z-score, reconciliation, returns)
+# Run unit tests (tax engine, CIT per country, risk engine, maker-checker, adapters)
 npm run test
 
 # Run TypeScript typecheck with zero errors
@@ -195,13 +171,16 @@ npm run test:e2e
 
 ## 👥 Role-Based Access Control (RBAC) & Governance
 
-Nexora implements ISO 27001-aligned access governance with 5 enterprise roles:
+Switch persona from the account menu (top right). Access follows ISO 27001 segregation of duties:
 
-1. **Konsultan Pajak (Tax Consultant)**: Can edit entities, upload documents, review findings, edit reconciliation, and draft SPT 1771 returns. Cannot approve returns or record payments.
-2. **Head of Tax**: Full supervisory authority. Can approve and lock tax returns, generate billing codes, and record NTPN payments.
-3. **Group CEO / CFO**: Executive oversight. Can approve returns and sign off on high-value billing and filings.
-4. **Auditor / Compliance**: Read-only oversight with full access to audit trails, executive reports, and CSV exports.
-5. **Viewer**: Read-only access across entity profiles.
+| Persona | Scope | Maker | Checker |
+|---|---|---|---|
+| Group CEO · Group CFO (parent company) | All entities | ✓ | ✓ (never on their own proposal or draft) |
+| Director SG · Director MY · Controller US | Own entity only | ✓ | — |
+
+- Maker-checker applies to **finding decisions** (Review temuan) and **annual returns** (SPT tahunan); the UI offers a one-click switch to an eligible checker for demos.
+- Subsidiary personas cannot open other entities; identity numbers in the UBO register are masked unless revealed (the reveal is audit-logged).
+- Every mutation writes to the append-only audit trail (Laporan & audit → Jejak audit, CSV export).
 
 ---
 

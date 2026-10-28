@@ -1,105 +1,78 @@
 import { expect, test } from '@playwright/test';
 
-test.describe('Nexora Platform Smoke & Navigation Suite', () => {
-  test('supports manual entity creation and document scanner', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByText('Mode Manual', { exact: true })).toBeVisible();
-    await page.getByLabel('Nama legal').fill('PT Uji Kepatuhan');
-    await page.getByLabel('NPWP / UEN / TIN / EIN').fill('1234567890123456');
-    await page.getByLabel('Alamat').fill('Jalan Uji Nomor 1 Jakarta');
-    await page.getByRole('button', { name: 'Simpan entitas' }).click();
-    await expect(page.getByText('PT Uji Kepatuhan').first()).toBeVisible();
-    await page.getByRole('button', { name: 'Dokumen' }).first().click();
-    await expect(page.getByText('Smart Document & e-Invoice Scanner')).toBeVisible();
-  });
+test.beforeEach(async ({ page, request }) => {
+  await request.post('/api/db/reset');
+  await page.goto('/overview');
+  await page.evaluate(() => localStorage.clear());
+});
 
-  test('navigates seamlessly across primary tabs with zero hollow views', async ({ page }) => {
-    await page.goto('/');
+test('every module renders from the sidebar', async ({ page }) => {
+  await page.goto('/overview');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(/Selamat/);
+  const pages: [string, RegExp][] = [
+    ['Entitas & struktur', /Entitas & struktur grup/],
+    ['Dokumen', /^Dokumen$/],
+    ['Risiko & fraud', /Risiko & fraud/],
+    ['Review temuan', /Review temuan/],
+    ['Rekonsiliasi fiskal', /Rekonsiliasi fiskal/],
+    ['SPT tahunan', /SPT Tahunan PPh Badan 1771/],
+    ['Pembayaran', /Pembayaran/],
+    ['Pemegang saham & UBO', /Pemegang saham/],
+    ['Kalender pajak', /Kalender pajak/],
+    ['Laporan & audit', /Laporan & audit/],
+    ['Studi & simulator', /Studi & simulator/],
+  ];
+  for (const [link, heading] of pages) {
+    await page.getByRole('navigation', { name: 'Navigasi utama' }).getByRole('link', { name: link }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading);
+  }
+});
 
-    // 1. Calculation tab
-    await page.getByRole('button', { name: /Kalkulasi Pajak/i }).click();
-    await expect(page.getByText('Rekonsiliasi Fiskal & Perhitungan Pajak')).toBeVisible();
-    await expect(page.getByText('PPh Badan (Pasal 31E)')).toBeVisible();
+test('maker-checker: a maker cannot approve their own proposal', async ({ page }) => {
+  await page.goto('/review');
+  await page.getByRole('option').filter({ hasText: '13.875.000' }).click();
+  await page.getByLabel('Catatan maker').fill('Tidak ada kontrak & laporan jasa konsultan.');
+  await page.getByRole('button', { name: 'Ajukan ke checker' }).click();
+  await page.getByRole('tab', { name: /Menunggu checker/ }).click();
+  await expect(page.getByText('Maker-checker: pengusul tidak boleh menyetujui usulannya sendiri.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Setujui' })).toHaveCount(0);
 
-    // 2. Tax Return tab
-    await page.getByRole('button', { name: /Draf SPT & Return/i }).click();
-    await expect(page.getByText(/SPT 1771 Induk/i)).toBeVisible();
-    await expect(page.getByText('Alur Persetujuan Maker-Checker')).toBeVisible();
+  // Switch to the CFO as independent checker, approve, then apply the correction.
+  await page.getByRole('button', { name: /Masuk sebagai/ }).click();
+  await page.getByRole('button', { name: 'Setujui' }).click();
+  await page.getByRole('tab', { name: /Selesai/ }).click();
+  await page.getByRole('option').filter({ hasText: 'Koreksi belum diterapkan' }).click();
+  await page.getByRole('button', { name: 'Terapkan' }).click();
 
-    // 3. Payment tab
-    await page.getByRole('button', { name: /Pembayaran & Billing/i }).click();
-    await expect(page.getByText('Jadwal & Billing Pembayaran Pajak')).toBeVisible();
-    await expect(page.getByText('Generate Kode Billing')).toBeVisible();
+  await page.goto('/calculation');
+  await expect(page.locator('tr', { hasText: '6300' })).toContainText('Rp 23.375.000');
+});
 
-    // 4. Return to Entities tab
-    await page.getByRole('button', { name: /Struktur Entitas/i }).click();
-    await expect(page.getByText('Mode Manual', { exact: true })).toBeVisible();
-  });
+test('uploading a document runs the risk engine', async ({ page }) => {
+  await page.goto('/documents');
+  await page.getByRole('button', { name: 'Unggah dokumen' }).click();
+  await page.getByLabel('Nomor dokumen').fill('010.000-26.00099999');
+  await page.getByLabel('Vendor / pemasok').fill('CV Bayangan Fiktif');
+  await page.getByLabel('Identitas pajak pihak lawan').fill('0999888777666000');
+  await page.getByLabel(/^DPP/).fill('50000000');
+  await page.getByRole('button', { name: 'Simpan & analisis' }).click();
+  await expect(page.getByText(/temuan risiko baru/)).toBeVisible();
+  await page.goto('/risk');
+  await expect(page.getByText('CV Bayangan Fiktif').first()).toBeVisible();
+});
 
-  test('navigates sub-navigation tabs and verifies interactive features', async ({ page }) => {
-    await page.goto('/');
+test('subsidiary staff cannot open other entities', async ({ page }) => {
+  await page.goto('/overview');
+  await page.getByRole('button', { name: 'Akun & peran' }).click();
+  await page.getByRole('button', { name: /Marcus Tan/ }).click();
+  await page.goto('/entities/ENT-US-004');
+  await expect(page.getByText('Di luar cakupan akses Anda')).toBeVisible();
+});
 
-    // 1. Individual Shareholders
-    await page.getByRole('button', { name: /Pemegang Saham/i }).click();
-    await expect(page.getByText('Daftar Pemegang Saham Individu')).toBeVisible();
-    await expect(page.getByText('Rezim Dividen UU HPP')).toBeVisible();
-
-    // 2. Studies & TP
-    await page.getByRole('button', { name: /Studi & TP/i }).click();
-    await expect(page.getByText('Pusat Studi Perpajakan & OECD BEPS 2.0')).toBeVisible();
-    await expect(page.getByText('Simulasi Treaty Relief P3B')).toBeVisible();
-
-    // 3. Tax Calendar
-    await page.getByRole('button', { name: /Kalender Pajak/i }).click();
-    await expect(page.getByText('Kalender Jatuh Tempo Perpajakan')).toBeVisible();
-    await expect(page.getByText('Export Kalender (.ics)')).toBeVisible();
-
-    // 4. Reports
-    await page.getByRole('button', { name: /Laporan & Audit/i }).click();
-    await expect(page.getByText('Laporan Kepatuhan & Audit Trail')).toBeVisible();
-    await expect(page.getByText('Cetak PDF Resmi')).toBeVisible();
-  });
-
-  test('verifies hero flow interactive stepper and sample data reset', async ({ page }) => {
-    await page.goto('/');
-
-    // Hero Stepper should be visible
-    await expect(page.getByText('1. Struktur')).toBeVisible();
-    await expect(page.getByText('2. Dokumen')).toBeVisible();
-
-    // Click step 3 (Fraud)
-    await page.getByRole('button', { name: /Deteksi Fraud/i }).click();
-    await expect(page.getByText('Deteksi Fraud & Risiko Anomali')).toBeVisible();
-
-    // Click step 4 (Kalkulasi)
-    await page.getByRole('button', { name: /Kalkulasi/i }).first().click();
-    await expect(page.getByText('Rekonsiliasi Fiskal & Perhitungan Pajak')).toBeVisible();
-
-    // Sample data button should be present
-    const resetBtn = page.getByRole('button', { name: /Muat Sample/i }).first();
-    await expect(resetBtn).toBeVisible();
-  });
-
-  test('enforces maker-checker authorization controls in tax return tab', async ({ page }) => {
-    await page.goto('/');
-
-    // Navigate to Tax Return
-    await page.getByRole('button', { name: /Draf SPT & Return/i }).click();
-
-    // Should indicate draft status and maker-checker audit status
-    await expect(page.getByText('Alur Persetujuan Maker-Checker')).toBeVisible();
-    await expect(page.getByText(/Peran Aktif:/i)).toBeVisible();
-
-    // When role is Konsultan Pajak, cannot approve own return
-    const approveBtn = page.getByRole('button', { name: /Setujui & Kunci SPT/i });
-    if (await approveBtn.isVisible()) {
-      // If visible, clicking it when not authorized or when drafter is same user should show error or be disabled
-      const isDisabled = await approveBtn.isDisabled();
-      if (!isDisabled) {
-        await approveBtn.click();
-        // Should show alert message or reject self-approval
-        await expect(page.getByText(/tidak diizinkan|hanya dapat disetujui|Maker-Checker/i)).toBeVisible();
-      }
-    }
-  });
+test('command palette navigates', async ({ page }) => {
+  await page.goto('/overview');
+  await page.keyboard.press('Control+k');
+  await page.getByRole('combobox').fill('kalender');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/calendar/);
 });

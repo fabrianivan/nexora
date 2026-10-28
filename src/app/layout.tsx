@@ -1,28 +1,28 @@
 import type { Metadata, Viewport } from 'next';
-// Self-hosted variable fonts (bundled at build time — no network fetch needed for Docker/CI builds)
-import '@fontsource-variable/plus-jakarta-sans';
+// Self-hosted variable fonts (bundled at build time — no network needed in Docker/CI)
+import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import './globals.css';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'Nexora — Global Corporate Tax Compliance, Document Intelligence & Fraud Prevention',
+  title: {
+    default: 'Nexora — Kepatuhan Pajak & Pencegahan Fraud Multi-Negara',
+    template: '%s · Nexora',
+  },
   description:
-    'Solusi berbasis Google Cloud Vertex AI, Document AI, dan BigQuery untuk Otomatisasi Kepatuhan Pajak Multi-Negara, Deteksi Faktur Fiktif, dan Pencegahan Risiko Keuangan oleh Team Nexora (Track 1: BFSI - AI Builder Cup).',
+    'Nexora menghubungkan dokumen, deteksi fraud, review maker-checker, rekonsiliasi fiskal, SPT, dan pembayaran untuk grup usaha di Indonesia, Singapura, Malaysia, dan Amerika Serikat.',
 };
 
 export const viewport: Viewport = {
-  themeColor: '#10142a',
+  themeColor: '#f6f7f9',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
-      <body className="min-h-screen font-sans selection:bg-blue-600 selection:text-white antialiased">
-        {children}
+      <body className="min-h-screen antialiased">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

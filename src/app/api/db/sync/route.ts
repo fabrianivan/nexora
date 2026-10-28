@@ -11,6 +11,8 @@ import {
   dbSaveCalendarEvents, 
   dbAddAuditLog,
   dbSaveStudies,
+  dbSetAppState,
+  isAllowedAppStateKey,
   getDatabaseStatus 
 } from '@/lib/database';
 
@@ -18,7 +20,12 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
 
     if (body.company) {
       await dbSaveCompany(body.company);
@@ -52,6 +59,13 @@ export async function POST(request: NextRequest) {
     }
     if (body.studies && Array.isArray(body.studies)) {
       await dbSaveStudies(body.studies);
+    }
+
+    if (body.appState && typeof body.appState === 'object' && typeof body.appState.key === 'string') {
+      if (!isAllowedAppStateKey(body.appState.key)) {
+        return NextResponse.json({ error: 'Unknown app state key' }, { status: 400 });
+      }
+      await dbSetAppState(body.appState.key, body.appState.value);
     }
 
     const status = await getDatabaseStatus();

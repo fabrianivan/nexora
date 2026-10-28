@@ -1,208 +1,157 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   Nexora Design System v4
-   - Iris accent (remaps Tailwind's `blue-*` scale so every existing utility
-     follows the brand), cool "ink" neutrals, soft elevation, 14px radius.
+   Nexora — Design System v5 ("Ledger")
+   Clean light fintech: white surfaces on a cool canvas, one cobalt accent,
+   hairline borders, dense-but-airy data, tabular numerals everywhere.
    ========================================================================== */
+
 @theme {
-  --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Brand — Iris */
-  --color-brand-50: #f3f3ff;
-  --color-brand-100: #e8e7fe;
-  --color-brand-200: #d3d1fd;
-  --color-brand-300: #b2aefa;
-  --color-brand-400: #8b85f4;
-  --color-brand-500: #6c63ec;
-  --color-brand-600: #5847df;
-  --color-brand-700: #4a39c4;
-  --color-brand-800: #3d309f;
-  --color-brand-900: #332c7e;
-  --color-brand-950: #1e1a4a;
-  --color-brand: var(--color-brand-600);
+  /* Surfaces & lines */
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-subtle: #f9fafb;
+  --color-muted: #f1f3f6;
+  --color-line: #e5e7eb;
+  --color-line-strong: #d4d8de;
 
-  /* Remap blue → brand so legacy utilities inherit the new identity */
-  --color-blue-50: var(--color-brand-50);
-  --color-blue-100: var(--color-brand-100);
-  --color-blue-200: var(--color-brand-200);
-  --color-blue-300: var(--color-brand-300);
-  --color-blue-400: var(--color-brand-400);
-  --color-blue-500: var(--color-brand-500);
-  --color-blue-600: var(--color-brand-600);
-  --color-blue-700: var(--color-brand-700);
-  --color-blue-800: var(--color-brand-800);
-  --color-blue-900: var(--color-brand-900);
-  --color-blue-950: var(--color-brand-950);
+  /* Ink (text) */
+  --color-ink: #0d1117;
+  --color-ink-2: #454c59;
+  --color-ink-3: #6f7685;
+  --color-ink-4: #a0a6b1;
 
-  /* Ink — cool neutral surfaces for the shell */
-  --color-ink-950: #0a0d1a;
-  --color-ink-900: #10142a;
-  --color-ink-800: #181d38;
-  --color-ink-700: #252b4d;
-  --color-ink-600: #39406a;
+  /* Brand — Cobalt */
+  --color-brand-50: #f0f4ff;
+  --color-brand-100: #e1e9ff;
+  --color-brand-200: #c4d3ff;
+  --color-brand-300: #96b0ff;
+  --color-brand-400: #6185ff;
+  --color-brand-500: #3d64fb;
+  --color-brand-600: #2649e8;
+  --color-brand-700: #1e3ac4;
+  --color-brand-800: #1e339d;
+  --color-brand-900: #1d2f7b;
 
-  --color-navy: var(--color-ink-900);
-  --color-success: #059669;
-  --color-corporate: var(--color-brand-600);
-  --color-warning: #d97706;
-  --color-danger: #e11d48;
+  /* Semantic */
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
 
-  --radius-xl: 0.875rem;
-  --radius-2xl: 1.125rem;
-  --radius-3xl: 1.5rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
 
-  --shadow-2xs: 0 1px 0 0 rgb(16 20 42 / 0.03);
-  --shadow-xs: 0 1px 2px 0 rgb(16 20 42 / 0.05);
-  --shadow-sm: 0 1px 3px 0 rgb(16 20 42 / 0.06), 0 1px 2px -1px rgb(16 20 42 / 0.05);
-  --shadow-md: 0 6px 16px -6px rgb(16 20 42 / 0.12), 0 2px 4px -2px rgb(16 20 42 / 0.06);
-  --shadow-lg: 0 16px 32px -12px rgb(16 20 42 / 0.16), 0 4px 8px -4px rgb(16 20 42 / 0.06);
-  --shadow-xl: 0 24px 48px -16px rgb(16 20 42 / 0.22);
-  --shadow-2xl: 0 32px 64px -20px rgb(16 20 42 / 0.32);
+  --shadow-xs: 0 1px 2px 0 rgb(13 17 23 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgb(13 17 23 / 0.05), 0 1px 3px 0 rgb(13 17 23 / 0.04);
+  --shadow-md: 0 4px 12px -2px rgb(13 17 23 / 0.08), 0 2px 4px -2px rgb(13 17 23 / 0.05);
+  --shadow-lg: 0 12px 32px -8px rgb(13 17 23 / 0.14), 0 4px 8px -4px rgb(13 17 23 / 0.06);
+  --shadow-xl: 0 24px 56px -12px rgb(13 17 23 / 0.22);
 
-  --animate-fade-up: fade-up 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-in: nx-in 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-sheet: nx-sheet 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop: nx-pop 0.14s ease-out both;
 
-  @keyframes fade-up {
-    from { opacity: 0; transform: translateY(6px); }
+  @keyframes nx-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes nx-sheet {
+    from { opacity: 0.6; transform: translateX(24px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes nx-pop {
+    from { opacity: 0; transform: scale(0.97); }
     to { opacity: 1; transform: none; }
   }
 }
 
 :root {
-  --app-bg: #f5f6fa;
-  --sidebar-w: 264px;
+  --sidebar-w: 248px;
   color-scheme: light;
 }
 
 html {
-  scroll-padding-top: 5rem;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   font-family: var(--font-sans);
-  font-feature-settings: 'cv11', 'ss01';
+  font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--app-bg);
-  background-image:
-    radial-gradient(1200px 400px at 85% -120px, rgb(108 99 236 / 0.07), transparent 70%),
-    radial-gradient(900px 360px at 20% -160px, rgb(14 165 233 / 0.05), transparent 70%);
-  background-repeat: no-repeat;
-  color: var(--color-ink-900);
+  background: var(--color-canvas);
+  color: var(--color-ink);
 }
 
-/* Money & IDs read better with tabular figures */
-.font-mono,
-.tabular {
-  font-variant-numeric: tabular-nums slashed-zero;
+/* Numbers align in columns */
+.num,
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+.font-mono {
+  font-size: 0.92em;
   letter-spacing: -0.01em;
 }
 
-/* Headings: tighter, more editorial */
-h1, h2, h3 {
-  letter-spacing: -0.02em;
+h1, h2, h3, h4 {
+  letter-spacing: -0.015em;
 }
 
-/* Custom subtle scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+::selection {
+  background: var(--color-brand-200);
+  color: var(--color-ink);
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+/* Hairline scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
 }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgb(148 163 184 / 0.35);
-  border-radius: 9999px;
-  border: 2px solid transparent;
+  background: var(--color-line-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
   background-clip: padding-box;
 }
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(88 71 223 / 0.55);
-}
 
-button:focus-visible,
-a:focus-visible,
-[role='button']:focus-visible {
+:where(button, a, [role='button'], [tabindex]):focus-visible {
   outline: 2px solid var(--color-brand-500);
   outline-offset: 2px;
   border-radius: 6px;
 }
 
-@layer components {
-  /* Shared surface used across tabs */
-  .fintech-card {
-    background-color: #fff;
-    border: 1px solid rgb(226 232 240 / 0.9);
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .nx-sidebar-link {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: 0.75rem;
-    border-radius: 0.625rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: rgb(203 213 225 / 0.85);
-    transition: background-color 150ms, color 150ms;
-    cursor: pointer;
-    text-align: left;
-  }
-  .nx-sidebar-link:hover {
-    background-color: rgb(255 255 255 / 0.05);
-    color: #fff;
-  }
-  .nx-sidebar-link[data-active='true'] {
-    background: linear-gradient(90deg, rgb(108 99 236 / 0.22), rgb(108 99 236 / 0.06));
-    color: #fff;
-    box-shadow: inset 2px 0 0 0 var(--color-brand-400);
-  }
-  .nx-sidebar-link svg {
-    width: 1rem;
-    height: 1rem;
-    flex-shrink: 0;
-    color: rgb(148 163 184 / 0.9);
-  }
-  .nx-sidebar-link[data-active='true'] svg {
-    color: var(--color-brand-300);
-  }
-
-  .nx-icon-btn {
-    display: inline-flex;
-    height: 2.5rem;
-    min-width: 2.5rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
-    border-radius: 0.75rem;
-    border: 1px solid rgb(226 232 240);
-    background: #fff;
-    color: rgb(71 85 105);
-    transition: all 150ms;
-    cursor: pointer;
-  }
-  .nx-icon-btn:hover {
-    border-color: rgb(203 213 225);
-    color: var(--color-ink-900);
-    box-shadow: var(--shadow-xs);
-  }
+@layer utilities {
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .text-balance { text-wrap: balance; }
 }
 
-@layer utilities {
-  .scrollbar-none {
-    scrollbar-width: none;
-  }
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
-  .mask-fade-x {
-    mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 24px), transparent);
-  }
+@media print {
+  aside, header[data-shell], [data-no-print] { display: none !important; }
+  body { background: #fff; }
+  main { padding: 0 !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -210,6 +159,59 @@ a:focus-visible,
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
+}
+
+/* Org chart (ownership tree) */
+.org ul {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 22px;
+  margin: 0;
+}
+.org > ul { padding-top: 0; }
+.org li {
+  position: relative;
+  list-style: none;
+  padding: 22px 8px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.org li::before,
+.org li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 22px;
+  border-top: 1px solid var(--color-line-strong);
+}
+.org li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1px solid var(--color-line-strong);
+}
+.org li:only-child::before,
+.org li:only-child::after { display: none; }
+.org li:only-child { padding-top: 0; }
+.org ul ul > li:only-child { padding-top: 22px; }
+.org ul ul > li:only-child::after { display: block; border-top: 0; left: 50%; width: 0; }
+.org li:first-child::before,
+.org li:last-child::after { border: 0 none; }
+.org li:last-child::before {
+  border-right: 1px solid var(--color-line-strong);
+  border-radius: 0 8px 0 0;
+}
+.org li:first-child::after { border-radius: 8px 0 0 0; }
+.org ul ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 22px;
+  border-left: 1px solid var(--color-line-strong);
 }

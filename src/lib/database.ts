@@ -758,6 +758,54 @@ export async function dbSaveStudies(studies: { id: string; title: string; catego
 }
 
 // ---------------------------------------------------------------------------
+// APP STATE (key/value JSON — compliance workspace, preferences)
+// ---------------------------------------------------------------------------
+const APP_STATE_KEYS = new Set(['compliance', 'ledger', 'seedVersion']);
+const CLIENT_WRITABLE_KEYS = new Set(['compliance', 'ledger']);
+
+/** Keys the browser may write through /api/db/sync. */
+export function isAllowedAppStateKey(key: string): boolean {
+  return CLIENT_WRITABLE_KEYS.has(key);
+}
+
+export async function dbGetAppState<T = unknown>(key: string): Promise<T | null> {
+  await initDatabase();
+  const engine = getDatabaseEngine();
+  if (engine === 'sqlite') {
+    const db = getSqliteDb();
+    if (!db) return null;
+    const row = db.prepare('SELECT value FROM nexora_app_state WHERE key = ?').get(key);
+    return row ? parseJsonRow<T>(row.value) : null;
+  } else if (engine === 'mysql') {
+    const pool = getMysqlPool();
+    const [rows] = await pool.query<RowDataPacket[]>('SELECT `value` FROM nexora_app_state WHERE `key` = ?', [key]);
+    return rows[0] ? parseJsonRow<T>(rows[0].value) : null;
+  }
+  return (memoryStore.app_state.get(key)?.value as T) ?? null;
+}
+
+export async function dbSetAppState(key: string, value: unknown): Promise<void> {
+  if (!APP_STATE_KEYS.has(key)) throw new Error(`Unknown app state key: ${key}`);
+  await initDatabase();
+  const engine = getDatabaseEngine();
+  const json = JSON.stringify(value);
+  if (json.length > 2_000_000) throw new Error('App state too large');
+  if (engine === 'sqlite') {
+    const db = getSqliteDb();
+    if (!db) return;
+    db.prepare(`
+      INSERT INTO nexora_app_state (key, value, updated_at) VALUES (?, ?, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+    `).run(key, json);
+  } else if (engine === 'mysql') {
+    const pool = getMysqlPool();
+    await pool.execute('INSERT INTO nexora_app_state (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)', [key, json]);
+  } else {
+    memoryStore.app_state.set(key, { value });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // GET ALL UNIFIED DATA FOR PAGE HYDRATION
 // ---------------------------------------------------------------------------
 export async function dbGetAllUnifiedData(): Promise<{
@@ -768,6 +816,7 @@ export async function dbGetAllUnifiedData(): Promise<{
   calendarEvents: DbGenericRecord[];
   auditLogs: DbGenericRecord[];
   studies: DbGenericRecord[];
+  appState: { compliance: unknown; ledger: unknown };
   databaseStatus: {
     connected: boolean;
     engine: 'mysql' | 'sqlite' | 'memory';
@@ -775,7 +824,7 @@ export async function dbGetAllUnifiedData(): Promise<{
   };
 }> {
   await initDatabase();
-  const [companies, calculations, taxReturns, payments, calendarEvents, auditLogs, studies, status] = await Promise.all([
+  const [companies, calculations, taxReturns, payments, calendarEvents, auditLogs, studies, compliance, ledger, status] = await Promise.all([
     dbGetCompanies(),
     dbGetCalculations(),
     dbGetTaxReturn('ENT-ID-001'),
@@ -783,6 +832,8 @@ export async function dbGetAllUnifiedData(): Promise<{
     dbGetCalendarEvents(),
     dbGetAuditLogs(),
     dbGetStudies(),
+    dbGetAppState('compliance'),
+    dbGetAppState('ledger'),
     getDatabaseStatus(),
   ]);
 
@@ -794,6 +845,7 @@ export async function dbGetAllUnifiedData(): Promise<{
     calendarEvents,
     auditLogs,
     studies,
+    appState: { compliance, ledger },
     databaseStatus: {
       connected: status.connected,
       engine: status.engine,

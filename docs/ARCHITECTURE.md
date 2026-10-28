@@ -70,10 +70,11 @@ flowchart TD
 ## 2. Layer Specifications
 
 ### 2.1 UI Layer
-- Next.js 15 App Router with Tailwind CSS (v4) and modern design tokens.
-- Strict layout fidelity matching the Figma reference (Navy sub-nav `#0F172A`, asymmetric corporate forms, side-by-side document viewer, modal drawers, and status badges).
-- Built-in internationalization (ID default, EN secondary) via dictionary tokens.
-- Immediate empty states, accessible error callouts, and skeleton loaders.
+- Next.js 15 App Router: one route per module (`src/app/<module>/page.tsx`) rendering a feature component from `src/features/<module>/`.
+- `src/app/providers.tsx` mounts `WorkspaceProvider` (all domain state, hydration from `/api/db/bootstrap`, writes through `/api/db/sync`), `UiProvider` (toasts, command palette, copilot) and `AppShell` (sidebar, top bar, overlays).
+- Design system in `src/ui/` (Tailwind v4 tokens in `globals.css`): Button, Card, Badge, Field/Input/Select, Dialog/Sheet/ConfirmDialog, Tabs/Segmented, Table, Stat, Meter, Popover, SVG charts following the dataviz rules (thin marks, one axis, legend for ≥ 2 series, hover/focus tooltips, sr-only table).
+- Pages render after mount (the shell is server-rendered) because they depend on the viewer's clock and client-hydrated data.
+- Compliance logic is pure and unit-tested: `lib/compliance.ts` (documents → findings → maker-checker → corrections), `lib/cit.ts` (CIT per jurisdiction), `lib/schedule.ts` (derived due-date status).
 
 ### 2.2 Server API Layer (`src/app/api/*`)
 - Server-only execution (`import 'server-only'`).
