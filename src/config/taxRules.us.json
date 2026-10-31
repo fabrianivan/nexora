@@ -1,0 +1,48 @@
+{
+  "countryCode": "US",
+  "countryName": "United States",
+  "taxAuthority": "Internal Revenue Service (IRS)",
+  "currency": "USD",
+  "currencySymbol": "$",
+  "rates": [
+    {
+      "key": "cit_federal_standard_rate",
+      "label": "US Federal Corporate Income Tax Flat Rate",
+      "value": 0.21,
+      "regulation": "Internal Revenue Code Section 11(b) (TCJA 2017)",
+      "effectiveDate": "2018-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "wht_statutory_non_treaty_rate",
+      "label": "FDAP Statutory Withholding Tax (Non-Treaty)",
+      "value": 0.30,
+      "regulation": "Internal Revenue Code Section 1441 / 1442",
+      "effectiveDate": "1986-01-01",
+      "verified": true,
+      "flag": null
+    }
+  ],
+  "thresholds": [
+    {
+      "key": "beat_threshold",
+      "label": "Base Erosion and Anti-Abuse Tax (BEAT) Gross Receipts Threshold",
+      "value": 500000000,
+      "regulation": "IRC Section 59A",
+      "effectiveDate": "2018-01-01",
+      "verified": true,
+      "flag": null
+    }
+  ],
+  "deadlines": [
+    {
+      "key": "cit_form_1120",
+      "label": "US Corporation Income Tax Return (Form 1120)",
+      "deadlineRule": "15th day of the 4th month following the end of the tax year (April 15 for calendar year filers)",
+      "regulation": "IRC Section 6072(b)",
+      "verified": true,
+      "flag": null
+    }
+  ]
+}

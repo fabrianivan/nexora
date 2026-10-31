@@ -1,0 +1,217 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Nexora — Design System v5 ("Ledger")
+   Clean light fintech: white surfaces on a cool canvas, one cobalt accent,
+   hairline borders, dense-but-airy data, tabular numerals everywhere.
+   ========================================================================== */
+
+@theme {
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Surfaces & lines */
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-subtle: #f9fafb;
+  --color-muted: #f1f3f6;
+  --color-line: #e5e7eb;
+  --color-line-strong: #d4d8de;
+
+  /* Ink (text) */
+  --color-ink: #0d1117;
+  --color-ink-2: #454c59;
+  --color-ink-3: #6f7685;
+  --color-ink-4: #a0a6b1;
+
+  /* Brand — Cobalt */
+  --color-brand-50: #f0f4ff;
+  --color-brand-100: #e1e9ff;
+  --color-brand-200: #c4d3ff;
+  --color-brand-300: #96b0ff;
+  --color-brand-400: #6185ff;
+  --color-brand-500: #3d64fb;
+  --color-brand-600: #2649e8;
+  --color-brand-700: #1e3ac4;
+  --color-brand-800: #1e339d;
+  --color-brand-900: #1d2f7b;
+
+  /* Semantic */
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  --shadow-xs: 0 1px 2px 0 rgb(13 17 23 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgb(13 17 23 / 0.05), 0 1px 3px 0 rgb(13 17 23 / 0.04);
+  --shadow-md: 0 4px 12px -2px rgb(13 17 23 / 0.08), 0 2px 4px -2px rgb(13 17 23 / 0.05);
+  --shadow-lg: 0 12px 32px -8px rgb(13 17 23 / 0.14), 0 4px 8px -4px rgb(13 17 23 / 0.06);
+  --shadow-xl: 0 24px 56px -12px rgb(13 17 23 / 0.22);
+
+  --animate-in: nx-in 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-sheet: nx-sheet 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop: nx-pop 0.14s ease-out both;
+
+  @keyframes nx-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes nx-sheet {
+    from { opacity: 0.6; transform: translateX(24px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes nx-pop {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+:root {
+  --sidebar-w: 248px;
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+/* Numbers align in columns */
+.num,
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+.font-mono {
+  font-size: 0.92em;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.015em;
+}
+
+::selection {
+  background: var(--color-brand-200);
+  color: var(--color-ink);
+}
+
+/* Hairline scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+:where(button, a, [role='button'], [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@layer utilities {
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .text-balance { text-wrap: balance; }
+}
+
+@media print {
+  aside, header[data-shell], [data-no-print] { display: none !important; }
+  body { background: #fff; }
+  main { padding: 0 !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Org chart (ownership tree) */
+.org ul {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 22px;
+  margin: 0;
+}
+.org > ul { padding-top: 0; }
+.org li {
+  position: relative;
+  list-style: none;
+  padding: 22px 8px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.org li::before,
+.org li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 22px;
+  border-top: 1px solid var(--color-line-strong);
+}
+.org li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1px solid var(--color-line-strong);
+}
+.org li:only-child::before,
+.org li:only-child::after { display: none; }
+.org li:only-child { padding-top: 0; }
+.org ul ul > li:only-child { padding-top: 22px; }
+.org ul ul > li:only-child::after { display: block; border-top: 0; left: 50%; width: 0; }
+.org li:first-child::before,
+.org li:last-child::after { border: 0 none; }
+.org li:last-child::before {
+  border-right: 1px solid var(--color-line-strong);
+  border-radius: 0 8px 0 0;
+}
+.org li:first-child::after { border-radius: 8px 0 0 0; }
+.org ul ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 22px;
+  border-left: 1px solid var(--color-line-strong);
+}
