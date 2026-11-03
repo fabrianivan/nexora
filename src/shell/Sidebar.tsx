@@ -69,21 +69,23 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                       aria-current={active ? 'page' : undefined}
                       title={st?.hint ?? item.description}
                       className={cn(
-                        'group flex items-center gap-2.5 h-8 px-2.5 rounded-lg text-[13px] transition-colors',
-                        active ? 'bg-muted text-ink font-medium' : 'text-ink-2 hover:bg-muted/70 hover:text-ink',
+                        'group relative flex items-center gap-2.5 h-8 px-2.5 rounded-lg text-[13px] transition-colors',
+                        active
+                          ? 'bg-brand-50 text-brand-900 font-medium before:absolute before:inset-y-1.5 before:-left-0.5 before:w-0.5 before:rounded-full before:bg-brand-600'
+                          : 'text-ink-2 hover:bg-muted/70 hover:text-ink',
                       )}
                     >
                       {item.step ? (
                         <span
                           className={cn(
                             'size-[18px] rounded-full text-[10px] font-semibold flex items-center justify-center shrink-0 num',
-                            st?.done ? 'bg-success-100 text-success-700' : active ? 'bg-ink text-white' : 'bg-surface ring-1 ring-line-strong text-ink-3',
+                            st?.done ? 'bg-success-100 text-success-700' : active ? 'bg-brand-600 text-white' : 'bg-surface ring-1 ring-line-strong text-ink-3',
                           )}
                         >
                           {st?.done ? <Check className="size-3" strokeWidth={3} /> : item.step}
                         </span>
                       ) : (
-                        <Icon className={cn('size-4 shrink-0', active ? 'text-ink' : 'text-ink-3 group-hover:text-ink-2')} />
+                        <Icon className={cn('size-4 shrink-0', active ? 'text-brand-700' : 'text-ink-3 group-hover:text-ink-2')} />
                       )}
                       <span className="flex-1 truncate">{item.label}</span>
                       {st?.count ? (

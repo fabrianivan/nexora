@@ -146,6 +146,15 @@ h1, h2, h3, h4 {
   .scrollbar-none { scrollbar-width: none; }
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .text-balance { text-wrap: balance; }
+  /* Restrained ledger grid for the executive summary surface. */
+  .nx-grid {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.7) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.7) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 90% 110% at 100% 0%, black 10%, transparent 72%);
+    mask-image: radial-gradient(ellipse 90% 110% at 100% 0%, black 10%, transparent 72%);
+  }
 }
 
 @media print {
