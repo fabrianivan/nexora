@@ -8,6 +8,7 @@ export * from './tabs';
 export * from './table';
 export * from './page';
 export * from './misc';
+export * from './band';
 export * from './charts';
 export * from './menu';
 export * from './mounted';

@@ -433,6 +433,18 @@ export function entityRiskScore(findings: RiskFinding[], reviews: Record<string,
   return Math.max(0, 100 - penalty);
 }
 
+/**
+ * Score a set of entities as a group.
+ * `entityRiskScore` deducts a penalty per open finding from 100, so it is only
+ * meaningful for one entity: pooling a whole group's findings into it stacks the
+ * penalties and collapses the score. A group is the average of its entities.
+ */
+export function groupRiskScore(findings: RiskFinding[], entityIds: string[], reviews: Record<string, FindingReview>): number {
+  if (!entityIds.length) return 100;
+  const total = entityIds.reduce((sum, id) => sum + entityRiskScore(findings.filter((f) => f.entityId === id), reviews), 0);
+  return Math.round(total / entityIds.length);
+}
+
 export function riskBand(score: number): { label: string; tone: 'emerald' | 'amber' | 'rose' } {
   if (score >= 80) return { label: 'Rendah', tone: 'emerald' };
   if (score >= 55) return { label: 'Sedang', tone: 'amber' };

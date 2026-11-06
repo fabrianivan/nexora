@@ -26,16 +26,18 @@ import { entityRiskScore, isUnresolved, riskBand } from '@/lib/compliance';
 import { money } from '@/lib/format';
 import {
   Badge,
+  BandLead,
   Button,
   Callout,
   Card,
   CardBody,
   CardHeader,
+  ComplianceRing,
   ConfirmDialog,
   DescriptionList,
   EmptyState,
   IconButton,
-  Meter,
+  MetricBand,
   PageHeader,
   Sheet,
   Table,
@@ -594,27 +596,41 @@ export function EntityDetailPage({ id }: { id: string }) {
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="rounded-xl border border-line bg-surface px-4 py-3">
-          <div className="text-xs text-ink-3">Identitas pajak</div>
-          <div className="mt-1 font-mono text-sm text-ink truncate">{entity.taxId.split('(')[0].trim()}</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface px-4 py-3">
-          <div className="text-xs text-ink-3">Skor kepatuhan</div>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="text-sm font-semibold text-ink num">{score}</span>
-            <Meter value={score} tone={band.tone === 'rose' ? 'danger' : band.tone === 'amber' ? 'warning' : 'success'} className="flex-1" label="Skor kepatuhan" />
-          </div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface px-4 py-3">
-          <div className="text-xs text-ink-3">Dokumen legal</div>
-          <div className="mt-1 text-sm text-ink">{entity.documents.filter((d) => d.status === 'Verified by Document AI').length}/{entity.documents.length} terverifikasi</div>
-        </div>
-        <div className="rounded-xl border border-line bg-surface px-4 py-3">
-          <div className="text-xs text-ink-3">Mata uang · sistem e-faktur</div>
-          <div className="mt-1 text-sm text-ink truncate">{meta.currencyCode} · {meta.eInvoiceSystem.split('(')[0]}</div>
-        </div>
-      </div>
+      <MetricBand
+        className="mb-6"
+        label="Profil kepatuhan entitas"
+        lead={
+          <BandLead
+            eyebrow="Skor kepatuhan"
+            title={`Risiko ${band.label.toLowerCase()}`}
+            detail={entity.parentCompanyId ? `Anak usaha · kepemilikan ${entity.ownershipByParent}%` : 'Induk grup (UPE)'}
+            tone={band.tone === 'rose' ? 'danger' : band.tone === 'amber' ? 'warning' : 'success'}
+            visual={<ComplianceRing value={score} tone={band.tone} label={`Skor kepatuhan ${score} dari 100`} />}
+          />
+        }
+        metrics={[
+          {
+            label: 'Dokumen legal',
+            value: `${entity.documents.filter((d) => d.status === 'Verified by Document AI').length}/${entity.documents.length}`,
+            detail: 'Terverifikasi Document AI',
+            icon: <FileText />,
+          },
+          {
+            label: 'Identitas pajak',
+            value: entity.taxId.split('(')[0].trim(),
+            detail: meta.authorityShort,
+            icon: <Building2 />,
+            compact: true,
+            mono: true,
+          },
+          {
+            label: 'Mata uang · e-faktur',
+            value: `${meta.currencyCode} · ${meta.eInvoiceSystem.split(/[(&]/)[0].trim()}`,
+            detail: meta.eInvoiceSystem,
+            compact: true,
+          },
+        ]}
+      />
 
       <Tabs<Tab>
         className="mb-5"

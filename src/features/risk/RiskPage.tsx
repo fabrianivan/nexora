@@ -5,25 +5,25 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, FileText, Search, ShieldCheck, Sparkles, Wallet, Scale } from 'lucide-react';
 import type { RiskFinding } from '@/lib/compliance';
-import { RULES, isUnresolved } from '@/lib/compliance';
+import { RULES, groupRiskScore, isUnresolved, riskBand } from '@/lib/compliance';
 import { useWorkspace } from '@/state/workspace';
 import { useUi } from '@/state/ui';
 import { dateShort, dateTime, money, moneyCompact } from '@/lib/format';
 import { toIdr } from '@/lib/fx';
 import {
   Badge,
+  BandLead,
   Button,
   Callout,
   Card,
-  CardBody,
-  CardHeader,
+  ComplianceRing,
   EmptyState,
   Input,
+  MetricBand,
   PageHeader,
   Segmented,
   Sheet,
   StackBar,
-  Stat,
   STATUS,
   Table,
   TD,
@@ -180,6 +180,12 @@ export function RiskPage() {
 
   const exposure = open.reduce((s, f) => s + toIdr(f.amountAtRisk, f.country), 0);
   const impact = open.reduce((s, f) => s + toIdr(f.taxImpact, f.country), 0);
+  const criticalCount = open.filter((f) => f.severity === 'critical').length;
+  const highCount = open.filter((f) => f.severity === 'high').length;
+  // Score per entity and average, so the dial follows the entity/group toggle
+  // and matches the group score on the overview.
+  const scopeScore = groupRiskScore(all, ids, ws.compliance.reviews);
+  const scopeBand = riskBand(scopeScore);
   const ruleCounts = Object.keys(RULES)
     .map((r) => ({ r, n: all.filter((f) => f.rule === r && isUnresolved(ws.reviewOf(f.id).status)).length, total: all.filter((f) => f.rule === r).length }))
     .filter((x) => x.total > 0);
@@ -212,22 +218,50 @@ export function RiskPage() {
         <ScopeToggle value={scope} onChange={setScope} />
       </PageHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <Card className="lg:col-span-1">
-          <CardHeader title={`${open.length} temuan terbuka`} description="Berdasarkan tingkat keparahan" />
-          <CardBody>
-            <StackBar
-              parts={[
-                { key: 'critical', label: 'Kritis', value: open.filter((f) => f.severity === 'critical').length, color: STATUS.critical },
-                { key: 'high', label: 'Tinggi', value: open.filter((f) => f.severity === 'high').length, color: STATUS.serious },
-                { key: 'medium', label: 'Sedang', value: open.filter((f) => f.severity === 'medium').length, color: STATUS.warning },
-              ]}
-            />
-          </CardBody>
-        </Card>
-        <Stat label="Eksposur dokumen" value={moneyCompact(exposure)} hint="Nilai dokumen dengan temuan terbuka (≈ IDR)" icon={<Wallet />} />
-        <Stat label="Potensi koreksi PPh" value={moneyCompact(impact)} hint="Jika semua usulan koreksi dikonfirmasi" icon={<Scale />} />
-      </div>
+      <MetricBand
+        className="mb-6"
+        label="Posisi risiko"
+        lead={
+          <BandLead
+            eyebrow={scope === 'group' ? 'Skor risiko grup' : 'Skor risiko entitas'}
+            title={`Risiko ${scopeBand.label.toLowerCase()}`}
+            detail={`${open.length} temuan terbuka dari ${all.length} diperiksa`}
+            tone={scopeBand.tone === 'rose' ? 'danger' : scopeBand.tone === 'amber' ? 'warning' : 'success'}
+            visual={<ComplianceRing value={scopeScore} tone={scopeBand.tone} label={`Skor risiko ${scopeScore} dari 100`} />}
+          />
+        }
+        metrics={[
+          {
+            label: 'Temuan terbuka',
+            value: open.length,
+            detail: `${criticalCount} kritis · ${highCount} tinggi`,
+            icon: <ShieldCheck />,
+            tone: criticalCount ? 'danger' : undefined,
+          },
+          {
+            label: 'Eksposur dokumen',
+            value: moneyCompact(exposure),
+            detail: 'Nilai dokumen dengan temuan terbuka (≈ IDR)',
+            icon: <Wallet />,
+          },
+          {
+            label: 'Potensi koreksi PPh',
+            value: moneyCompact(impact),
+            detail: 'Jika semua usulan koreksi dikonfirmasi',
+            icon: <Scale />,
+          },
+        ]}
+        footnote={
+          <StackBar
+            onDark
+            parts={[
+              { key: 'critical', label: 'Kritis', value: criticalCount, color: STATUS.critical },
+              { key: 'high', label: 'Tinggi', value: highCount, color: STATUS.serious },
+              { key: 'medium', label: 'Sedang', value: open.filter((f) => f.severity === 'medium').length, color: STATUS.warning },
+            ]}
+          />
+        }
+      />
 
       <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label="Filter aturan">
         <button type="button" onClick={() => setRule('all')} className={cn('h-8 px-3 rounded-full border text-[13px] cursor-pointer', rule === 'all' ? 'bg-ink text-white border-ink' : 'bg-surface border-line text-ink-2 hover:border-line-strong')}>

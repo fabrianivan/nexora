@@ -10,19 +10,21 @@ import { useUi } from '@/state/ui';
 import { dateShort, money } from '@/lib/format';
 import {
   Badge,
+  BandLead,
   Button,
   Callout,
   Card,
   Checkbox,
+  ComplianceRing,
   ConfirmDialog,
   DescriptionList,
   EmptyState,
   Input,
+  MetricBand,
   PageHeader,
   Segmented,
   Select,
   Sheet,
-  Stat,
   Table,
   TD,
   TH,
@@ -273,6 +275,8 @@ export function DocumentsPage() {
   }, [docs, status, type, q]);
 
   const pending = docs.filter((d) => d.status !== 'verified').length;
+  const verifiedPct = docs.length ? Math.round(((docs.length - pending) / docs.length) * 100) : 100;
+  const verifiedTone = verifiedPct >= 90 ? 'emerald' : verifiedPct >= 60 ? 'amber' : 'rose';
   const conf = docs.length ? docs.reduce((s, d) => s + (d.doc.counterparty.confidence ?? 1), 0) / docs.length : 1;
   const flagged = new Set(ws.findings.flatMap((f) => f.documentIds));
   const flaggedCount = docs.filter((d) => flagged.has(d.doc.id)).length;
@@ -300,12 +304,50 @@ export function DocumentsPage() {
         <ScopeToggle value={scope} onChange={setScope} />
       </PageHeader>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <Stat label="Dokumen" value={docs.length} hint={`${docs.filter((d) => d.doc.type === 'e_invoice').length} faktur/invoice`} icon={<FileText />} />
-        <Stat label="Perlu verifikasi" value={pending} hint="Belum masuk status terverifikasi" icon={<Inbox />} tone={pending ? 'warning' : undefined} onClick={() => setStatus('pending')} />
-        <Stat label="Rata-rata confidence AI" value={`${Math.round(conf * 100)}%`} hint="Field < 90% ditandai" icon={<CheckCircle2 />} />
-        <Stat label="Dokumen bertemuan" value={flaggedCount} hint="Terkait temuan risiko" icon={<ShieldAlert />} tone={flaggedCount ? 'danger' : undefined} onClick={() => router.push('/risk')} />
-      </div>
+      <MetricBand
+        className="mb-6"
+        label="Posisi inbox dokumen"
+        lead={
+          <BandLead
+            eyebrow="Terverifikasi"
+            title={`${verifiedPct}% selesai`}
+            detail={`${docs.length} dokumen · ${docs.filter((d) => d.doc.type === 'e_invoice').length} faktur/invoice`}
+            tone={verifiedTone === 'rose' ? 'danger' : verifiedTone === 'amber' ? 'warning' : 'success'}
+            visual={
+              <ComplianceRing
+                value={verifiedPct}
+                tone={verifiedTone}
+                caption="%"
+                label={`${verifiedPct} persen dokumen terverifikasi`}
+              />
+            }
+          />
+        }
+        metrics={[
+          {
+            label: 'Perlu verifikasi',
+            value: pending,
+            detail: 'Belum masuk status terverifikasi',
+            icon: <Inbox />,
+            tone: pending ? 'warning' : undefined,
+            onClick: () => setStatus('pending'),
+          },
+          {
+            label: 'Confidence AI',
+            value: `${Math.round(conf * 100)}%`,
+            detail: 'Field di bawah 90% ditandai untuk ditinjau',
+            icon: <CheckCircle2 />,
+          },
+          {
+            label: 'Bertemuan risiko',
+            value: flaggedCount,
+            detail: 'Dokumen yang terkait temuan risiko',
+            icon: <ShieldAlert />,
+            tone: flaggedCount ? 'danger' : undefined,
+            href: '/risk',
+          },
+        ]}
+      />
 
       <Card>
         <div className="flex flex-wrap items-center gap-3 px-5 py-3.5">

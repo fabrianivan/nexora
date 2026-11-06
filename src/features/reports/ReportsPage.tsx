@@ -9,7 +9,7 @@ import { entityRiskScore, isUnresolved, riskBand } from '@/lib/compliance';
 import { downloadFile, toCsv } from '@/lib/download';
 import { dateShort, money } from '@/lib/format';
 import { paymentStatus } from '@/lib/schedule';
-import { Badge, Button, Card, CardBody, CardHeader, EmptyState, Input, PageHeader, Stat, Table, TD, TH, THead, TR, Tabs, cn } from '@/ui';
+import { Badge, BandLead, Button, Card, CardBody, CardHeader, ComplianceRing, EmptyState, Input, MetricBand, PageHeader, Table, TD, TH, THead, TR, Tabs, cn } from '@/ui';
 import { ReviewBadge, SeverityBadge } from '../shared';
 
 type Tab = 'summary' | 'audit';
@@ -35,12 +35,37 @@ function ExecutiveSummary() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Stat label="Skor kepatuhan" value={<span>{score}<span className="text-sm text-ink-3 font-medium"> / 100</span></span>} hint={`Risiko ${band.label.toLowerCase()}`} tone={band.tone === 'rose' ? 'danger' : band.tone === 'amber' ? 'warning' : 'success'} />
-        <Stat label="Pajak terutang tahun berjalan" value={money(cit.taxDue, country)} hint={`${form.short}: ${ret.returnStatus === 'Draft' ? 'draf' : ret.returnStatus === 'Review' ? 'review checker' : 'disetujui'}`} />
-        <Stat label="Kerugian/risiko dicegah" value={money(prevented, country)} hint="Kredit pajak diblokir + koreksi atas temuan dikonfirmasi" tone="success" />
-        <Stat label="Kewajiban belum disetor" value={unpaid.length} hint={late.length ? `${late.length} terlambat` : 'Tidak ada yang terlambat'} tone={late.length ? 'danger' : undefined} />
-      </div>
+      <MetricBand
+        label="Ringkasan eksekutif"
+        lead={
+          <BandLead
+            eyebrow="Skor kepatuhan"
+            title={`Risiko ${band.label.toLowerCase()}`}
+            detail={`${e.flag} ${e.legalName}`}
+            tone={band.tone === 'rose' ? 'danger' : band.tone === 'amber' ? 'warning' : 'success'}
+            visual={<ComplianceRing value={score} tone={band.tone} label={`Skor kepatuhan ${score} dari 100`} />}
+          />
+        }
+        metrics={[
+          {
+            label: 'Pajak terutang tahun berjalan',
+            value: money(cit.taxDue, country),
+            detail: `${form.short}: ${ret.returnStatus === 'Draft' ? 'draf' : ret.returnStatus === 'Review' ? 'review checker' : 'disetujui'}`,
+          },
+          {
+            label: 'Kerugian/risiko dicegah',
+            value: money(prevented, country),
+            detail: 'Kredit pajak diblokir + koreksi atas temuan dikonfirmasi',
+            tone: prevented > 0 ? 'success' : undefined,
+          },
+          {
+            label: 'Kewajiban belum disetor',
+            value: unpaid.length,
+            detail: late.length ? `${late.length} terlambat` : 'Tidak ada yang terlambat',
+            tone: late.length ? 'danger' : undefined,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader title={`Laporan kepatuhan pajak — ${e.legalName}`} description={`Tahun buku 2026 · dibuat ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} oleh ${ws.persona.name}`} />

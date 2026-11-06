@@ -199,23 +199,30 @@ export function BarList({
 export function StackBar({
   parts,
   className,
+  onDark,
 }: {
   parts: { key: string; label: string; value: number; color: string }[];
   className?: string;
+  /** Use on the dark metric band: lifts the track and legend off `--color-ink`. */
+  onDark?: boolean;
 }) {
   const total = parts.reduce((s, p) => s + p.value, 0) || 1;
   return (
     <div className={className}>
-      <div className="flex h-2.5 w-full gap-[2px] rounded-full overflow-hidden bg-muted" role="img" aria-label={parts.map((p) => `${p.label} ${p.value}`).join(', ')}>
+      <div
+        className={cn('flex h-2.5 w-full gap-[2px] rounded-full overflow-hidden', onDark ? 'bg-white/10' : 'bg-muted')}
+        role="img"
+        aria-label={parts.map((p) => `${p.label} ${p.value}`).join(', ')}
+      >
         {parts.filter((p) => p.value > 0).map((p) => (
           <div key={p.key} title={`${p.label}: ${p.value}`} style={{ width: `${(p.value / total) * 100}%`, background: p.color }} className="h-full first:rounded-l-full last:rounded-r-full" />
         ))}
       </div>
-      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
+      <div className={cn('mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs', onDark ? 'text-white/55' : 'text-ink-2')}>
         {parts.map((p) => (
           <span key={p.key} className="inline-flex items-center gap-1.5">
             <span className="size-2.5 rounded-[3px]" style={{ background: p.color }} />
-            {p.label} <span className="text-ink font-medium num">{p.value}</span>
+            {p.label} <span className={cn('font-medium num', onDark ? 'text-white' : 'text-ink')}>{p.value}</span>
           </span>
         ))}
       </div>

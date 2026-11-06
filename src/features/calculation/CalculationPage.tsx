@@ -13,6 +13,7 @@ import { isUnresolved } from '@/lib/compliance';
 import { money, pct } from '@/lib/format';
 import {
   Badge,
+  BandLead,
   Button,
   Callout,
   Card,
@@ -22,9 +23,9 @@ import {
   Dialog,
   IconButton,
   Input,
+  MetricBand,
   PageHeader,
   SelectField,
-  Stat,
   Switch,
   Table,
   TD,
@@ -137,12 +138,35 @@ function ReconTab() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Stat label="Laba komersial" value={money(result.commercialProfit, country)} hint={`Pendapatan ${money(result.revenue, country)}`} />
-        <Stat label="Koreksi positif" value={`+${money(result.positive, country)}`} hint="Biaya tidak dapat dikurangkan" tone="danger" />
-        <Stat label="Penghasilan kena pajak" value={money(result.taxableIncome, country)} hint={`Koreksi negatif ${money(result.negative, country)}`} />
-        <Stat label={result.payable > 0 ? 'Kurang bayar' : 'Lebih bayar'} value={money(result.payable || result.overpaid, country)} hint={`Pajak terutang ${money(result.taxDue, country)}`} tone={result.payable > 0 ? 'warning' : 'success'} />
-      </div>
+      <MetricBand
+        label="Posisi rekonsiliasi fiskal"
+        lead={
+          <BandLead
+            eyebrow={result.payable > 0 ? 'Kurang bayar' : 'Lebih bayar'}
+            title={money(result.payable || result.overpaid, country)}
+            detail={`Pajak terutang ${money(result.taxDue, country)}${result.facilityApplied ? ' · fasilitas tarif diterapkan' : ''}`}
+            tone={result.payable > 0 ? 'warning' : 'success'}
+          />
+        }
+        metrics={[
+          {
+            label: 'Laba komersial',
+            value: money(result.commercialProfit, country),
+            detail: `Pendapatan ${money(result.revenue, country)}`,
+          },
+          {
+            label: 'Koreksi positif',
+            value: `+${money(result.positive, country)}`,
+            detail: 'Biaya tidak dapat dikurangkan',
+            tone: result.positive > 0 ? 'danger' : undefined,
+          },
+          {
+            label: 'Penghasilan kena pajak',
+            value: money(result.taxableIncome, country),
+            detail: `Koreksi negatif ${money(result.negative, country)}`,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader
@@ -316,12 +340,35 @@ function VatTab() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <Stat label={`${vatName} keluaran (${shortMonth(last.month)})`} value={money(last.ppnKeluaran, country)} />
-        <Stat label={`${vatName} masukan (${shortMonth(last.month)})`} value={money(last.ppnMasukan, country)} />
-        <Stat label="Kurang bayar masa ini" value={money(Math.max(0, last.ppnKeluaran - last.ppnMasukan + blockedTotal), country)} hint={blockedTotal ? 'Termasuk masukan yang diblokir' : undefined} tone="warning" />
-        <Stat label="Masukan diblokir" value={money(blockedTotal, country)} hint={`${blocked.length} faktur berisiko`} tone={blockedTotal ? 'danger' : undefined} />
-      </div>
+      <MetricBand
+        label={`Posisi ${vatName} masa ${shortMonth(last.month)}`}
+        lead={
+          <BandLead
+            eyebrow={`${vatName} kurang bayar · ${shortMonth(last.month)}`}
+            title={money(Math.max(0, last.ppnKeluaran - last.ppnMasukan + blockedTotal), country)}
+            detail={blockedTotal ? 'Termasuk masukan yang diblokir mesin risiko' : 'Seluruh masukan dapat dikreditkan'}
+            tone={blockedTotal ? 'danger' : 'warning'}
+          />
+        }
+        metrics={[
+          {
+            label: `${vatName} keluaran`,
+            value: money(last.ppnKeluaran, country),
+            detail: `Masa ${shortMonth(last.month)}`,
+          },
+          {
+            label: `${vatName} masukan`,
+            value: money(last.ppnMasukan, country),
+            detail: `Masa ${shortMonth(last.month)}`,
+          },
+          {
+            label: 'Masukan diblokir',
+            value: money(blockedTotal, country),
+            detail: `${blocked.length} faktur berisiko`,
+            tone: blockedTotal ? 'danger' : undefined,
+          },
+        ]}
+      />
       {blocked.length > 0 && (
         <Callout tone="danger" title={`${vatName} masukan dari ${blocked.length} faktur tidak dikreditkan`}>
           {blocked.map((b) => `${b.doc!.counterparty.value} (${money(b.doc!.taxAmount.value, country)})`).join(', ')} — menunggu keputusan atau sudah dikonfirmasi berisiko.{' '}

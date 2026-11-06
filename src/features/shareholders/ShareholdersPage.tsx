@@ -9,18 +9,20 @@ import { TAX_CONFIG } from '@/lib/tax';
 import { money, pct } from '@/lib/format';
 import {
   Badge,
+  BandLead,
   Button,
   Callout,
   Card,
   Checkbox,
+  ComplianceRing,
   DescriptionList,
   Dialog,
   EmptyState,
   Input,
+  MetricBand,
   PageHeader,
   SelectField,
   Sheet,
-  Stat,
   Table,
   TD,
   TextField,
@@ -122,6 +124,8 @@ export function ShareholdersPage() {
   const pep = rows.filter(({ p }) => !p.pepAndSanctionStatus.startsWith('Verified'));
   const kyc = rows.filter(({ p }) => !p.kycDocStatus.startsWith('Verified'));
   const foreign = rows.filter(({ p, entity }) => !isResident(p, entity));
+  const kycPct = rows.length ? Math.round(((rows.length - kyc.length) / rows.length) * 100) : 100;
+  const kycTone = kycPct >= 90 ? 'emerald' : kycPct >= 60 ? 'amber' : 'rose';
   const addEntity = ws.entityById(addFor || ws.activeEntityId) ?? ws.activeEntity;
   const live = selected ? rows.find((r) => r.p.id === selected.p.id && r.entity.id === selected.entity.id) ?? selected : null;
 
@@ -140,12 +144,40 @@ export function ShareholdersPage() {
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <Stat label="Pemilik manfaat (≥ 25%)" value={ubo.length} hint={`dari ${rows.length} perorangan`} icon={<UserCheck />} />
-        <Stat label="PEP — perlu EDD" value={pep.length} hint="Enhanced due diligence" icon={<ShieldAlert />} tone={pep.length ? 'warning' : undefined} />
-        <Stat label="KYC belum lengkap" value={kyc.length} hint="Dokumen identitas belum diverifikasi" icon={<Users />} tone={kyc.length ? 'warning' : undefined} />
-        <Stat label="Non-residen" value={foreign.length} hint="Dividen kena WHT / treaty" icon={<Globe2 />} />
-      </div>
+      <MetricBand
+        className="mb-6"
+        label="Posisi uji tuntas pemegang saham"
+        lead={
+          <BandLead
+            eyebrow="KYC terverifikasi"
+            title={`${kycPct}% lengkap`}
+            detail={kyc.length ? `${kyc.length} dokumen identitas belum diverifikasi` : 'Seluruh dokumen identitas terverifikasi'}
+            tone={kycTone === 'rose' ? 'danger' : kycTone === 'amber' ? 'warning' : 'success'}
+            visual={<ComplianceRing value={kycPct} tone={kycTone} caption="%" label={`${kycPct} persen KYC lengkap`} />}
+          />
+        }
+        metrics={[
+          {
+            label: 'Pemilik manfaat (≥ 25%)',
+            value: ubo.length,
+            detail: `dari ${rows.length} perorangan terdaftar`,
+            icon: <UserCheck />,
+          },
+          {
+            label: 'PEP — perlu EDD',
+            value: pep.length,
+            detail: 'Enhanced due diligence',
+            icon: <ShieldAlert />,
+            tone: pep.length ? 'warning' : undefined,
+          },
+          {
+            label: 'Non-residen',
+            value: foreign.length,
+            detail: 'Dividen kena WHT / tarif treaty',
+            icon: <Globe2 />,
+          },
+        ]}
+      />
 
       <Card>
         <div className="flex flex-wrap items-center gap-3 px-5 py-3.5">

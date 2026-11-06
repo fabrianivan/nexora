@@ -2,6 +2,20 @@
 
 All notable changes to Nexora will be documented in this file.
 
+## [2.1.0] - 2026-11-06
+### Changed — one visual system across every module
+- **Metric band**: every module now opens with the same dark executive summary strip instead of a loose grid of white stat tiles. The band pairs a lead panel — a `ComplianceRing` dial plus the headline status — with two to four metric cells that can navigate or filter. Applied to Ringkasan, Risiko & fraud, Dokumen, Rekonsiliasi fiskal (reconciliation and VAT), Pembayaran, Laporan & audit, Pemegang saham & UBO, and the entity profile.
+- New design-system components `MetricBand`, `BandLead` and `ComplianceRing` (`src/ui/band.tsx`) hold the pattern in one place; each band's cells reserve two detail lines so every label sits on a shared baseline.
+- `StackBar` gained an `onDark` variant so the severity breakdown can sit inside the band on Risiko & fraud.
+- Each band's dial reports the progress that module is accountable for: compliance score (Ringkasan, Risiko, Laporan, entity profile), verification progress (Dokumen), settlement by value (Pembayaran), and KYC completeness (Pemegang saham).
+- The `Stat` tile was removed. `MetricBand` supersedes it and nothing imported it any more.
+
+### Added
+- `groupRiskScore()` (`src/lib/compliance.ts`) scores a set of entities as the average of their per-entity scores. `entityRiskScore()` deducts a penalty per open finding from 100, so pooling a whole group's findings into it stacks the penalties and collapses the score. Ringkasan and Risiko & fraud now share this helper and report the same number, covered by unit tests.
+
+### Fixed
+- Documentation referenced branches that no longer exist (`improve/concept-v3`, `rebuild/v5`) and an out-of-date test count. README, the AI Builder Cup submission guide, and the completeness matrix now point at `main` and state the real suite: 51 Vitest unit tests and 6 Playwright end-to-end tests.
+
 ## [2.0.1] - 2026-10-29
 ### Changed
 - **Unggah dokumen**: Document AI now reads the file as soon as it is chosen or dropped, so there is no separate "Ekstrak AI" button. The drop zone shows reading → done / risk / error states with a retry. Fields filled by AI carry an `AI` tag and per-field provenance, and values the user typed are never overwritten. Removing the file clears only what AI filled. Changing the entity re-reads the file for that jurisdiction.

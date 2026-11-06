@@ -11,16 +11,18 @@ import { paymentStatus } from '@/lib/schedule';
 import type { PaymentLiability } from '@/state/types';
 import {
   Badge,
+  BandLead,
   Button,
   Callout,
   Card,
+  ComplianceRing,
   DescriptionList,
   Dialog,
   EmptyState,
+  MetricBand,
   PageHeader,
   Segmented,
   SelectField,
-  Stat,
   Table,
   TD,
   TextField,
@@ -227,6 +229,9 @@ export function PaymentsPage() {
   const paidIdr = list.filter((p) => p.status === 'Dibayar').reduce((s, p) => s + toIdr(p.amount, country(p.entityId)), 0);
   const penalty = late.reduce((s, p) => s + toIdr(penaltyFor(p, country(p.entityId)), country(p.entityId)), 0);
   const selectedP = selected ? ws.payments.find((p) => p.id === selected) ?? null : null;
+  // Settlement progress by value, so a large unpaid liability cannot hide behind many small paid ones.
+  const settledPct = paidIdr + openIdr > 0 ? Math.round((paidIdr / (paidIdr + openIdr)) * 100) : 100;
+  const settledTone = late.length ? 'rose' : settledPct >= 90 ? 'emerald' : 'amber';
 
   return (
     <div>
@@ -239,12 +244,43 @@ export function PaymentsPage() {
         <ScopeToggle value={scope} onChange={setScope} />
       </PageHeader>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <Stat label="Belum disetor" value={moneyCompact(openIdr)} hint={`${open.length} kewajiban`} icon={<Wallet />} />
-        <Stat label="Jatuh tempo 7 hari" value={week.length} hint={week.length ? moneyCompact(week.reduce((s, p) => s + toIdr(p.amount, country(p.entityId)), 0)) : 'Tidak ada'} icon={<CalendarClock />} tone={week.length ? 'warning' : undefined} />
-        <Stat label="Terlambat" value={late.length} hint={late.length ? `Estimasi sanksi ≈ ${moneyCompact(penalty)}` : 'Tidak ada'} icon={<AlertTriangle />} tone={late.length ? 'danger' : undefined} />
-        <Stat label="Sudah disetor" value={moneyCompact(paidIdr)} hint="Dengan NTPN / referensi bank" icon={<Landmark />} tone="success" />
-      </div>
+      <MetricBand
+        className="mb-6"
+        label="Posisi setoran pajak"
+        lead={
+          <BandLead
+            eyebrow="Sudah disetor"
+            title={`${settledPct}% lunas`}
+            detail={`${moneyCompact(paidIdr)} dengan NTPN · ${list.length} kewajiban`}
+            tone={settledTone === 'rose' ? 'danger' : settledTone === 'amber' ? 'warning' : 'success'}
+            visual={
+              <ComplianceRing value={settledPct} tone={settledTone} caption="%" label={`${settledPct} persen kewajiban sudah disetor`} />
+            }
+          />
+        }
+        metrics={[
+          {
+            label: 'Belum disetor',
+            value: moneyCompact(openIdr),
+            detail: `${open.length} kewajiban menunggu setoran`,
+            icon: <Wallet />,
+          },
+          {
+            label: 'Jatuh tempo 7 hari',
+            value: week.length,
+            detail: week.length ? moneyCompact(week.reduce((s, p) => s + toIdr(p.amount, country(p.entityId)), 0)) : 'Tidak ada yang mendekati tenggat',
+            icon: <CalendarClock />,
+            tone: week.length ? 'warning' : undefined,
+          },
+          {
+            label: 'Terlambat',
+            value: late.length,
+            detail: late.length ? `Estimasi sanksi ≈ ${moneyCompact(penalty)}` : 'Tidak ada keterlambatan',
+            icon: <AlertTriangle />,
+            tone: late.length ? 'danger' : undefined,
+          },
+        ]}
+      />
 
       <Card>
         <div className="flex flex-wrap items-center gap-3 px-5 py-3.5">

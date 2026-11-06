@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowRight,
-  ArrowUpRight,
   CalendarClock,
   Check,
   FileCheck2,
@@ -17,7 +16,7 @@ import {
 import { useWorkspace } from '@/state/workspace';
 import { useUi } from '@/state/ui';
 import { MULTI_COUNTRY_DATA } from '@/data/multiCountryTaxData';
-import { canApprove, entityRiskScore, isUnresolved, riskBand } from '@/lib/compliance';
+import { canApprove, entityRiskScore, groupRiskScore, isUnresolved, riskBand } from '@/lib/compliance';
 import { daysUntil, dateShort, money, moneyCompact, relativeDays } from '@/lib/format';
 import { FX_NOTE, toIdr } from '@/lib/fx';
 import { paymentStatus } from '@/lib/schedule';
@@ -25,12 +24,15 @@ import { CYCLE } from '@/shell/nav';
 import { useCycleStatus } from '@/shell/cycle';
 import {
   Badge,
+  BandLead,
   Button,
   Card,
   CardBody,
   CardHeader,
   ColumnChart,
+  ComplianceRing,
   Meter,
+  MetricBand,
   PageHeader,
   SERIES,
   Table,
@@ -41,35 +43,6 @@ import {
   cn,
 } from '@/ui';
 import { SeverityBadge, shortMonth } from '../shared';
-
-function ComplianceRing({ value, tone }: { value: number; tone: 'emerald' | 'amber' | 'rose' }) {
-  const radius = 42;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.max(0, Math.min(100, value)) / 100) * circumference;
-  const stroke = { emerald: 'var(--color-success-500)', amber: 'var(--color-warning-500)', rose: 'var(--color-danger-500)' }[tone];
-  return (
-    <div className="relative size-[92px] shrink-0">
-      <svg viewBox="0 0 96 96" className="size-full -rotate-90" role="img" aria-label={`Skor kepatuhan ${value} dari 100`}>
-        <circle cx="48" cy="48" r={radius} fill="none" stroke="rgb(255 255 255 / 0.12)" strokeWidth="6" />
-        <circle
-          cx="48"
-          cy="48"
-          r={radius}
-          fill="none"
-          stroke={stroke}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-        />
-      </svg>
-      <span className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[25px] font-semibold leading-none tracking-tight num">{value}</span>
-        <span className="mt-1 text-[10px] uppercase tracking-wider text-white/45">/ 100</span>
-      </span>
-    </div>
-  );
-}
 
 function greeting() {
   const h = new Date().getHours();
@@ -95,8 +68,7 @@ export function OverviewPage() {
   const due30Idr = due30.reduce((s, p) => s + toIdr(p.amount, entityCountry(p.entityId)), 0);
   const overduePayments = unpaid.filter((p) => paymentStatus(p) === 'Terlambat');
 
-  const scores = ws.accessibleEntities.map((e) => entityRiskScore(findings.filter((f) => f.entityId === e.id), ws.compliance.reviews));
-  const groupScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 100;
+  const groupScore = groupRiskScore(findings, ws.accessibleEntities.map((e) => e.id), ws.compliance.reviews);
   const band = riskBand(groupScore);
   const jurisdictionCount = new Set(ws.accessibleEntities.map((e) => e.countryCode)).size;
 
@@ -146,64 +118,43 @@ export function OverviewPage() {
         }
       />
 
-      <section aria-label="Posisi kepatuhan grup" className="relative overflow-hidden rounded-2xl border border-ink bg-ink text-white shadow-md">
-        <div aria-hidden className="nx-grid pointer-events-none absolute inset-0 opacity-20" />
-        <div aria-hidden className="pointer-events-none absolute -right-24 -top-28 size-80 rounded-full bg-brand-500/25 blur-3xl" />
-        <div className="relative grid lg:grid-cols-[minmax(300px,360px)_1fr]">
-          <div className="flex items-center gap-5 border-b border-white/10 p-5 sm:p-6 lg:border-b-0 lg:border-r">
-            <ComplianceRing value={groupScore} tone={band.tone} />
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/45">Skor kepatuhan grup</p>
-              <p className="mt-1.5 flex items-center gap-2 text-lg font-semibold">
-                <span className={cn('size-2 rounded-full', band.tone === 'rose' ? 'bg-danger-500' : band.tone === 'amber' ? 'bg-warning-500' : 'bg-success-500')} />
-                Risiko {band.label.toLowerCase()}
-              </p>
-              <p className="mt-1 text-[13px] leading-5 text-white/55">
-                {ws.accessibleEntities.length} entitas · {jurisdictionCount} yurisdiksi
-              </p>
-            </div>
-          </div>
-          <div className="grid divide-y divide-white/10 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            {[
-              {
-                label: 'Temuan terbuka',
-                value: unresolved.length,
-                detail: `${critical.length} kritis · ${approvals.length} menunggu checker`,
-                icon: <ShieldAlert />,
-                href: '/risk',
-              },
-              {
-                label: 'Eksposur berisiko',
-                value: moneyCompact(exposure),
-                detail: 'Nilai dokumen dengan temuan terbuka',
-                icon: <Wallet />,
-                href: '/risk',
-              },
-              {
-                label: 'Jatuh tempo ≤ 30 hari',
-                value: moneyCompact(due30Idr),
-                detail: `${due30.length} kewajiban${overduePayments.length ? ` · ${overduePayments.length} terlambat` : ''}`,
-                icon: <CalendarClock />,
-                href: '/payments',
-              },
-            ].map((metric) => (
-              <Link
-                key={metric.label}
-                href={metric.href}
-                className="group relative flex min-w-0 flex-col justify-center p-5 transition-colors hover:bg-white/[0.045] sm:p-6"
-              >
-                <span className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.12em] text-white/45">
-                  <span className="[&_svg]:size-3.5 text-white/60">{metric.icon}</span>
-                  {metric.label}
-                </span>
-                <span className="mt-2 text-2xl font-semibold tracking-tight num">{metric.value}</span>
-                <span className="mt-1 line-clamp-2 text-xs leading-5 text-white/50">{metric.detail}</span>
-                <ArrowUpRight className="absolute right-5 top-5 size-3.5 text-white/20 transition-colors group-hover:text-white/70" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <MetricBand
+        label="Posisi kepatuhan grup"
+        lead={
+          <BandLead
+            eyebrow="Skor kepatuhan grup"
+            title={`Risiko ${band.label.toLowerCase()}`}
+            detail={`${ws.accessibleEntities.length} entitas · ${jurisdictionCount} yurisdiksi`}
+            tone={band.tone === 'rose' ? 'danger' : band.tone === 'amber' ? 'warning' : 'success'}
+            visual={<ComplianceRing value={groupScore} tone={band.tone} label={`Skor kepatuhan ${groupScore} dari 100`} />}
+          />
+        }
+        metrics={[
+          {
+            label: 'Temuan terbuka',
+            value: unresolved.length,
+            detail: `${critical.length} kritis · ${approvals.length} menunggu checker`,
+            icon: <ShieldAlert />,
+            href: '/risk',
+            tone: critical.length ? 'danger' : undefined,
+          },
+          {
+            label: 'Eksposur berisiko',
+            value: moneyCompact(exposure),
+            detail: 'Nilai dokumen dengan temuan terbuka',
+            icon: <Wallet />,
+            href: '/risk',
+          },
+          {
+            label: 'Jatuh tempo ≤ 30 hari',
+            value: moneyCompact(due30Idr),
+            detail: `${due30.length} kewajiban${overduePayments.length ? ` · ${overduePayments.length} terlambat` : ''}`,
+            icon: <CalendarClock />,
+            href: '/payments',
+            tone: overduePayments.length ? 'warning' : undefined,
+          },
+        ]}
+      />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
         <Card className="xl:col-span-2">

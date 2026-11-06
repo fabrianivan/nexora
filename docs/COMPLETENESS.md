@@ -1,6 +1,6 @@
 # Nexora — Navigation & Completeness Matrix
 
-> **Version**: v5 (rebuild) · branch `rebuild/v5`
+> **Version**: v5 · branch `main`
 > **Status taxonomy**: **Live** — wired to real state/DB · **Simulasi** — deterministic simulation with sample data · **Live/Simulasi** — Gemini when `GEMINI_API_KEY` is set, deterministic fallback otherwise.
 
 ## Compliance cycle

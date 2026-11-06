@@ -5,7 +5,7 @@
 - **Team**: Solo Principal Engineer + Product Strategist
 - **Live Production URL**: [https://nexora-chi-cyan.vercel.app](https://nexora-chi-cyan.vercel.app)
 - **Repository**: [https://github.com/fabrianivan/nexora](https://github.com/fabrianivan/nexora)
-- **Target Branch**: `improve/concept-v3`
+- **Target Branch**: `main`
 
 ---
 
@@ -69,11 +69,11 @@ Nexora provides a unified, enterprise-grade tax workspace that connects the enti
 
 ## 4. Submission Evaluation Checklist
 
-- [x] **Zero Hollow Pages & Zero Dead Buttons**: All 4 primary navigation tabs (`Companies`, `Calculation`, `Tax Return`, `Payment`) and 5 sub-nav tabs (`Corporate`, `Individual Shareholder`, `Studies`, `Tax Calendar`, `Reports`) are fully interactive.
+- [x] **Zero Hollow Pages & Zero Dead Buttons**: All 13 routes are fully interactive — the seven cycle steps (`/overview`, `/entities`, `/documents`, `/risk`, `/review`, `/calculation`, `/tax-return`, `/payments`) plus the governance modules (`/shareholders`, `/calendar`, `/reports`, `/studies`) — and every action writes to real state.
 - [x] **End-to-End 7-Step Hero Flow**: Stepper guides the user smoothly from corporate structure to document scanning, risk detection, fiscal reconciliation, SPT drafting, billing, and audit logs.
 - [x] **1-Click Real Sample Data**: Zero login and zero API key required to experience the full multi-tier group scenario.
 - [x] **Pluggable Country Adapters**: Modular architecture decoupling `ID`, `SG`, `MY`, and `US` rules into versioned JSON configs.
 - [x] **Explainable AI & Risk Findings**: Z-score outlier + rule + human explanation + verifiable evidence + remediating fiscal action.
 - [x] **Maker-Checker Workflow**: Strict separation between drafter and approver prevents unauthorized self-filing.
-- [x] **Code Quality & Testing**: 25 Vitest unit tests pass, `tsc --noEmit` is clean, ESLint passes with 0 errors and 0 warnings, and Playwright smoke tests pass.
+- [x] **Code Quality & Testing**: 51 Vitest unit tests and 6 Playwright end-to-end smoke tests pass, `tsc --noEmit` is clean, and ESLint passes with 0 errors and 0 warnings.
 - [x] **Enterprise Security**: Strict security headers (CSP, X-Frame-Options, X-Content-Type-Options) in `next.config.mjs`, and masking of sensitive tax IDs (NPWP/NIK).

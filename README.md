@@ -15,7 +15,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Gemini](https://img.shields.io/badge/Google_AI-Gemini_2.5_Flash-4285F4?style=flat-square&logo=googlegemini&logoColor=white)](https://ai.google.dev)
-[![Tests Passing](https://img.shields.io/badge/Vitest-25%20Passed-success?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev)
+[![Tests Passing](https://img.shields.io/badge/Vitest-51%20Passed-success?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev)
 [![Code Style: ESLint](https://img.shields.io/badge/Code_Style-ESLint_9-4B32C3?style=flat-square&logo=eslint&logoColor=white)](https://eslint.org)
 
 <br/>
@@ -36,7 +36,7 @@
 Submitted for **Google Cloud AI Builder Cup, Track 1: BFSI (Smart Risk, Fraud Prevention & Financial Experience)**.
 
 - **Live Production URL**: <https://nexora-chi-cyan.vercel.app>
-- **Active Branch**: `improve/concept-v3`
+- **Active Branch**: `main`
 
 ---
 
@@ -126,7 +126,6 @@ Persistence: entity, payment, calendar, audit and study tables plus an `app_stat
 ```bash
 git clone https://github.com/fabrianivan/nexora.git
 cd nexora
-git checkout improve/concept-v3
 npm install
 ```
 

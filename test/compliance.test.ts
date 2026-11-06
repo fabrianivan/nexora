@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { documentSchema } from '../src/lib/domain';
 import {
   SAMPLE_DOCUMENTS, createInitialComplianceState, runRiskEngine, proposeDecision, decide, canApprove,
-  emptyReview, entityRiskScore, applyCorrectionToItems, isCorrectionReflected, normalizeComplianceState, type Actor,
+  emptyReview, entityRiskScore, groupRiskScore, applyCorrectionToItems, isCorrectionReflected, normalizeComplianceState, type Actor,
 } from '../src/lib/compliance';
 
 const ENTITIES = [
@@ -82,6 +82,19 @@ describe('scores & reconciliation link', () => {
     const after = entityRiskScore(id, Object.fromEntries(id.map((f) => [f.id, { status: 'confirmed' as const, history: [] }])));
     expect(after).toBe(100);
     expect(before).toBeLessThan(after);
+  });
+  it('scores a group as the average of its entities, not the pooled findings', () => {
+    const { findings } = runRiskEngine(SAMPLE_DOCUMENTS, ENTITIES);
+    const ids = ENTITIES.map((e) => e.id);
+    const group = groupRiskScore(findings, ids, {});
+    const perEntity = ids.map((id) => entityRiskScore(findings.filter((f) => f.entityId === id), {}));
+    expect(group).toBe(Math.round(perEntity.reduce((a, b) => a + b, 0) / perEntity.length));
+    // Pooling every finding into the per-entity score over-penalises; the group must stay above it.
+    expect(group).toBeGreaterThan(entityRiskScore(findings, {}));
+    expect(group).toBeLessThanOrEqual(100);
+  });
+  it('scores an empty group as clean', () => {
+    expect(groupRiskScore([], [], {})).toBe(100);
   });
   it('applies a correction once', () => {
     const items = [{ accountCode: '6300', commercialAmount: 340, positiveCorrection: 9, negativeCorrection: 0, fiscalAmount: 331, correctionReason: 'Denda' }];

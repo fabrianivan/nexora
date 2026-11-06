@@ -1,6 +1,6 @@
 {
   "name": "nexora",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "private": true,
   "description": "Nexora — Global Corporate Tax Compliance, Document Intelligence & Financial Fraud Prevention Platform on Google Cloud Vertex AI",
   "scripts": {
