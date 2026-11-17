@@ -19,9 +19,9 @@ export function EntitySwitcher() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="w-full flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-muted transition cursor-pointer"
+        className="w-full flex items-center gap-2.5 rounded-md border border-line bg-surface/60 px-2.5 py-2 text-left hover:border-line-strong transition cursor-pointer"
       >
-        <span className="size-8 rounded-lg bg-muted border border-line flex items-center justify-center text-base shrink-0">{e.flag}</span>
+        <span className="text-lg leading-none shrink-0">{e.flag}</span>
         <span className="min-w-0 flex-1">
           <span className="block text-[13px] font-medium text-ink truncate">{e.legalName}</span>
           <span className="block text-xs text-ink-3 truncate">
@@ -48,7 +48,7 @@ export function EntitySwitcher() {
                   onClick={() => {
                     setOpen(false);
                     if (!ws.selectEntity(ent.id)) {
-                      ui.toast(`Akses ke ${ent.legalName} memerlukan otorisasi CEO induk (segregasi ISO 27001).`, 'warning');
+                      ui.toast(`Akses ke ${ent.legalName} memerlukan otorisasi CEO induk (segregasi tugas).`, 'warning');
                       return;
                     }
                     if (!selected) ui.toast(`Beralih ke ${ent.legalName}`, 'info');
@@ -61,10 +61,10 @@ export function EntitySwitcher() {
                 >
                   <span className="text-lg leading-none">{ent.flag}</span>
                   <span className="min-w-0 flex-1">
-                    <span className={cn('block text-[13px] truncate', selected ? 'text-brand-700 font-medium' : 'text-ink')}>{ent.legalName}</span>
+                    <span className={cn('block text-[13px] truncate', selected ? 'text-ink font-medium' : 'text-ink')}>{ent.legalName}</span>
                     <span className="block text-xs text-ink-3 truncate">{ent.taxAuthority.split('(')[0].trim()}</span>
                   </span>
-                  {selected ? <Check className="size-4 text-brand-600" /> : !allowed ? <Lock className="size-3.5 text-ink-4" /> : null}
+                  {selected ? <Check className="size-4 text-ink" /> : !allowed ? <Lock className="size-3.5 text-ink-4" /> : null}
                 </button>
               </li>
             );

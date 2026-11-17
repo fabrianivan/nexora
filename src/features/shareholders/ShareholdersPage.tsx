@@ -132,6 +132,7 @@ export function ShareholdersPage() {
   return (
     <div>
       <PageHeader
+        eyebrow={<span>Tata kelola</span>}
         title="Pemegang saham & pemilik manfaat"
         description="Register perorangan di seluruh entitas: kepemilikan efektif, status PEP/KYC, dan perlakuan pajak dividen. Identitas disamarkan secara default."
         actions={
@@ -145,6 +146,7 @@ export function ShareholdersPage() {
       />
 
       <MetricBand
+        variant="light"
         className="mb-6"
         label="Posisi uji tuntas pemegang saham"
         lead={

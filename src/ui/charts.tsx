@@ -9,7 +9,7 @@
 import React, { useMemo, useState } from 'react';
 import { cn } from './cn';
 
-export const SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100'] as const; // categorical slots 1-4 (validated order)
+export const SERIES = ['#2a62a8', '#d2613b', '#7a5ba8', '#16927f'] as const; // categorical slots 1-4 (validated on #fffefb: CVD ≥ 11, contrast ≥ 3:1)
 export const STATUS = { good: '#0ca30c', warning: '#fab219', serious: '#ec835a', critical: '#d03b3b' } as const;
 
 function niceMax(v: number) {

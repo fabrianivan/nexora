@@ -10,11 +10,10 @@
 | — | `/overview` | Group position & priorities | All modules, `entityRiskScore` | Action centre, open entity, ask Copilot | Live |
 | 1 | `/entities`, `/entities/[id]` | Group structure & entity master data | `data/entities.ts`, DB `companies` | Org chart, add entity/subsidiary, edit profile, upload & verify legal docs, shareholders/UBO, consolidation | Live |
 | 2 | `/documents` | Transaction & register documents | `app_state.compliance.documents`, `/api/scan-document` | Upload, AI extract, correct fields, verify, delete | Live/Simulasi |
-| 3 | `/risk` | Explainable findings | `lib/compliance.ts` (`fraud.ts`, `crossValidation.ts`) | Filter by rule/status/scope, evidence sheet, ask Copilot | Live |
-| 4 | `/review` | Human-in-the-loop decisions | `proposeDecision`, `decide`, `applyCorrectionToItems` | Propose, approve/return (maker-checker), apply correction, reopen | Live |
-| 5 | `/calculation` | Fiscal reconciliation & CIT | `lib/cit.ts`, `app_state.ledger` | Add/edit/delete lines, facility toggle, tax credits, VAT recap, WHT calculator, what-if | Live |
-| 6 | `/tax-return` | Annual return & approval | `computeCit`, `lib/returns.ts` | Pre-checks, submit, approve/return, lock, issue billing, XML/JSON, print | Live |
-| 7 | `/payments` | Liabilities & settlement | DB `payments`, `lib/schedule.ts` | Billing code, record NTPN, add liability, penalty estimate | Live/Simulasi |
+| 3 | `/cases` (`/risk`, `/review` redirect) | One case per finding: evidence, AI investigation, decision, money effect | `lib/compliance.ts`, `lib/cases.ts`, `lib/investigation.ts`, `lib/rupiahTrail.ts`, `/api/investigate` | Filter by status/rule/scope, failing checks & flagged fields, run investigation (cited steps), draft maker note, propose, approve/return (maker-checker), apply correction, reopen, case-scoped Copilot | Live (rules, decisions) · Live/Simulasi (investigation) |
+| 4 | `/calculation` | Fiscal reconciliation & CIT | `lib/cit.ts`, `app_state.ledger` | Add/edit/delete lines, facility toggle, tax credits, VAT recap, WHT calculator, what-if | Live |
+| 5 | `/tax-return` | Annual return & approval | `computeCit`, `lib/returns.ts` | Pre-checks, submit, approve/return, lock, issue billing, XML/JSON, print | Live |
+| 6 | `/payments` | Liabilities & settlement | DB `payments`, `lib/schedule.ts` | Billing code, record NTPN, add liability, penalty estimate | Live/Simulasi |
 
 ## Governance & insight
 
@@ -33,4 +32,4 @@
 | ⌘K palette | Pages, entities, findings, documents, actions | Live |
 | Notifications | Critical findings, approvals for the current checker, returns awaiting approval, deadlines ≤ 14 days | Live |
 | Account menu | Persona switch (RBAC demo), access matrix | Live |
-| Tax Copilot | Side panel, country presets, citations | Live/Simulasi |
+| Tax Copilot | Side panel, case scope, numbered citations (case · workspace · rule library), refusals, engine badge | Live/Simulasi |

@@ -2,6 +2,41 @@
 
 All notable changes to Nexora will be documented in this file.
 
+## [2.3.0] - 2026-11-17
+### Changed — editorial redesign ("Editorial")
+- New visual language across the shell and every page: warm paper canvas, ink text, Newsreader serif for headlines and key figures (Inter stays for UI text, JetBrains Mono for IDs), one Prussian-blue accent, muted status colours, hairline rules instead of boxed cards and shadows, and a yellow highlighter mark for "look here".
+- **Ringkasan** is now a front page: a data-driven headline (e.g. "1 kasus kritis perlu diputuskan sebelum SPT grup bisa disetujui") with its next move as the primary button, a key-figures strip, the six-step cycle as one ribbon with the current step highlighted, a ranked "Perlu keputusan Anda" list, deadlines, entities and the VAT chart with its latest figures.
+- Every cycle page shows a **Berikutnya** line under its lede: what is still open on this step, or that it is done, plus a link to the next step.
+- `MetricBand` renders as an editorial key-figures strip (heavy ink rule, hairline columns, serif figures that step down in size for long Rupiah amounts); the dark slab is gone everywhere.
+- Lighter density: sidebar as a numbered table of contents, quieter badges and tabs, scope toggles moved into filter rows, fewer repeated row buttons (Pembayaran, Kalender, Studi), the documents table merged from 7 to 6 columns, serif section and dialog titles.
+- Chart series colours replaced with a palette validated for colour-vision deficiency on the paper surface.
+- Remaining "temuan" labels on entity screens now say "kasus".
+
+### Added
+- `@fontsource-variable/newsreader` (self-hosted serif). Run `npm install` after pulling.
+- UI primitives: `Section`, `NextStep`, `CycleNext`, `CycleRibbon`, `useNextStep()`.
+
+## [2.2.0] - 2026-11-17
+### Changed — one Kasus screen
+- **Kasus** (`/cases`) replaces *Risiko & fraud* and *Review temuan*. Each finding is one case: the checks that fired, the flagged document fields with per-field extraction confidence, the rule basis, an AI investigation, the maker-checker decision, and its money effect. `/risk` and `/review` redirect (keeping `?f=` and `?tab=`); every in-app link points at `/cases`. The cycle is now six steps.
+- **Rupiah trail**: a case's correction is run through the same CIT engine as the return. For the sample TBTS case that is +Rp 13,2 jt PPh with Pasal 31E, not the Rp 26,4 jt a flat 22% estimate suggests.
+- Working pages (Dokumen, Kasus, Pembayaran, Laporan, Pemegang saham, entity profile, PPN recap) use a new light `MetricBand` variant; the dark band stays on Ringkasan and the reconciliation.
+- One score direction: aggregate scores are always *Skor kepatuhan* (100 = no open risk). A finding's own number is labelled *Prioritas*.
+- Compact Rupiah amounts spell out *miliar* / *triliun* (`Rp 1,23 miliar`), so they cannot be read as millions.
+
+### Added — AI that shows its work
+- **Investigation agent** (`/api/investigate`, `lib/investigation.ts`, `lib/ai/investigator.ts`): Gemini function calling over eight deterministic tools. Every brief line must cite the tool steps it relies on; uncited lines are dropped. Offline, a rule-specific plan runs the same tools. Results are stored per finding, drafted maker notes are labelled, and each run is audit-logged with its engine.
+- **Grounded Copilot** (`lib/ai/copilot.ts`): answers only from case data, workspace findings and a rule library (`data/taxCorpus.ts`, internal summaries marked unverified), with numbered citations. Off-topic and prompt-injection questions are refused before any model call. The panel can be scoped to a case; confidence is a word with its basis.
+- **Engine badges** on every AI output: `Gemini · live` (with model id), `Simulasi lokal · offline`, or `fallback`.
+- **Document extraction** reads the file with Gemini when a key is set (per-field confidence; instructions hidden in a document are surfaced and ignored). Without a key the simulation says so. Extraction no longer marks a vendor as validated.
+- `GEMINI_MODEL` configures the model id (default `gemini-2.5-flash`); the key is read on the server only and the Copilot no longer accepts one from the client.
+- 16 unit tests (cases, Rupiah trail, offline and mocked-live investigation, Copilot grounding and refusals) and 3 end-to-end tests.
+
+### Fixed
+- Removed claims the product cannot back: the ISO 27001 badge and persona labels, "enterprise-grade", "real" Coretax XML and e-Billing, "statistically calibrated", and fixed 99.x% confidence figures. Legal-document uploads now wait for a person to mark them checked instead of being auto-verified with an invented confidence.
+- The sample CFO persona is now *Dewi Anggraini* (fictional).
+- `/risk` was marked done when no *critical* finding was open even if others were; the Kasus step is done only when every case is decided.
+
 ## [2.1.0] - 2026-11-06
 ### Changed — one visual system across every module
 - **Metric band**: every module now opens with the same dark executive summary strip instead of a loose grid of white stat tiles. The band pairs a lead panel — a `ComplianceRing` dial plus the headline status — with two to four metric cells that can navigate or filter. Applied to Ringkasan, Risiko & fraud, Dokumen, Rekonsiliasi fiskal (reconciliation and VAT), Pembayaran, Laporan & audit, Pemegang saham & UBO, and the entity profile.

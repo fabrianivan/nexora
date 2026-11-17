@@ -32,6 +32,7 @@ import {
   cn,
 } from '@/ui';
 import { CycleFooter } from '@/shell/CycleFooter';
+import { CycleNext } from '@/shell/CycleNext';
 import { EntityName, ScopeToggle, useScopedIds, type Scope } from '../shared';
 
 type Filter = 'open' | 'paid' | 'all';
@@ -236,15 +237,15 @@ export function PaymentsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow={<span>Langkah 7 · Siklus kepatuhan</span>}
+        next={<CycleNext current="/payments" />}
+        eyebrow={<span>Langkah 6 dari 6 · Siklus kepatuhan</span>}
         title="Pembayaran"
         description="Kewajiban setor seluruh yurisdiksi: kode billing, bukti penerimaan (NTPN), dan estimasi sanksi keterlambatan."
         actions={<Button variant="primary" icon={<Plus />} onClick={() => setAdding(true)}>Tambah kewajiban</Button>}
-      >
-        <ScopeToggle value={scope} onChange={setScope} />
-      </PageHeader>
+      />
 
       <MetricBand
+        variant="light"
         className="mb-6"
         label="Posisi setoran pajak"
         lead={
@@ -283,7 +284,8 @@ export function PaymentsPage() {
       />
 
       <Card>
-        <div className="flex flex-wrap items-center gap-3 px-5 py-3.5">
+        <div className="flex flex-wrap items-center gap-3 px-5 py-3.5 border-b border-line">
+          <ScopeToggle value={scope} onChange={setScope} />
           <Segmented<Filter>
             value={filter}
             onChange={setFilter}
@@ -334,7 +336,7 @@ export function PaymentsPage() {
                     </TD>
                     <TD className="font-mono text-xs">{p.ntpn ?? p.billingCode ?? <span className="font-sans text-ink-4">—</span>}</TD>
                     <TD align="right">
-                      <Button size="sm" variant={p.status === 'Dibayar' ? 'ghost' : p.billingCode ? 'primary' : 'secondary'} onClick={() => setSelected(p.id)}>
+                      <Button size="sm" variant={p.status === 'Dibayar' || !p.billingCode ? 'ghost' : 'secondary'} onClick={() => setSelected(p.id)}>
                         {p.status === 'Dibayar' ? 'Bukti' : p.billingCode ? 'Bayar' : 'Buat billing'}
                       </Button>
                     </TD>

@@ -61,28 +61,28 @@ export function Dialog({
   return (
     <Portal>
       <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-6">
-        <div className="absolute inset-0 bg-ink/30 backdrop-blur-[2px] animate-in" onClick={onClose} />
+        <div className="absolute inset-0 bg-ink/35 animate-in" onClick={onClose} />
         <div
           ref={ref}
           role="dialog"
           aria-modal="true"
           tabIndex={-1}
           className={cn(
-            'relative w-full bg-surface rounded-t-2xl sm:rounded-2xl shadow-xl border border-line flex flex-col max-h-[92vh] animate-pop outline-none',
+            'relative w-full bg-surface rounded-t-xl sm:rounded-xl shadow-xl border border-line flex flex-col max-h-[92vh] animate-pop outline-none',
             width,
           )}
         >
           <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-line">
             <div className="min-w-0">
-              <h2 className="text-base font-semibold text-ink">{title}</h2>
-              {description && <p className="text-[13px] text-ink-3 mt-0.5">{description}</p>}
+              <h2 className="font-serif text-[22px] leading-7 text-ink">{title}</h2>
+              {description && <p className="text-[13px] text-ink-3 mt-1">{description}</p>}
             </div>
             <button data-close type="button" onClick={onClose} aria-label="Tutup" className="-mr-2 -mt-1 size-8 inline-flex items-center justify-center rounded-lg text-ink-3 hover:bg-muted hover:text-ink cursor-pointer">
               <X className="size-4" />
             </button>
           </div>
           <div className="px-6 py-5 overflow-y-auto">{children}</div>
-          {footer && <div className="px-6 py-3.5 border-t border-line bg-subtle rounded-b-2xl flex flex-wrap items-center justify-end gap-2">{footer}</div>}
+          {footer && <div className="px-6 py-3.5 border-t border-line rounded-b-xl flex flex-wrap items-center justify-end gap-2">{footer}</div>}
         </div>
       </div>
     </Portal>
@@ -113,7 +113,7 @@ export function Sheet({
   return (
     <Portal>
       <div className="fixed inset-0 z-[60] flex">
-        <div className="absolute inset-0 bg-ink/25 backdrop-blur-[1px] animate-in" onClick={onClose} />
+        <div className="absolute inset-0 bg-ink/25 animate-in" onClick={onClose} />
         <div
           ref={ref}
           role="dialog"
@@ -128,8 +128,8 @@ export function Sheet({
           {title && (
             <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-line">
               <div className="min-w-0">
-                <h2 className="text-base font-semibold text-ink">{title}</h2>
-                {description && <div className="text-[13px] text-ink-3 mt-0.5">{description}</div>}
+                <h2 className="font-serif text-[22px] leading-7 text-ink">{title}</h2>
+                {description && <div className="text-[13px] text-ink-3 mt-1">{description}</div>}
               </div>
               <button data-close type="button" onClick={onClose} aria-label="Tutup" className="-mr-2 -mt-1 size-8 inline-flex items-center justify-center rounded-lg text-ink-3 hover:bg-muted hover:text-ink cursor-pointer">
                 <X className="size-4" />
@@ -137,7 +137,7 @@ export function Sheet({
             </div>
           )}
           <div className="flex-1 overflow-y-auto">{children}</div>
-          {footer && <div className="px-6 py-3.5 border-t border-line bg-subtle flex flex-wrap items-center justify-end gap-2">{footer}</div>}
+          {footer && <div className="px-6 py-3.5 border-t border-line flex flex-wrap items-center justify-end gap-2">{footer}</div>}
         </div>
       </div>
     </Portal>
@@ -169,7 +169,7 @@ export function ConfirmDialog({
       title={title}
       footer={
         <>
-          <button type="button" onClick={onClose} className="h-9 px-3.5 rounded-lg text-sm font-medium text-ink-2 hover:bg-muted cursor-pointer">
+          <button type="button" onClick={onClose} className="h-9 px-4 rounded-md text-sm font-medium text-ink-2 hover:bg-muted cursor-pointer">
             Batal
           </button>
           <button
@@ -180,8 +180,8 @@ export function ConfirmDialog({
               onClose();
             }}
             className={cn(
-              'h-9 px-3.5 rounded-lg text-sm font-medium text-white cursor-pointer',
-              danger ? 'bg-danger-600 hover:bg-danger-700' : 'bg-brand-600 hover:bg-brand-700',
+              'h-9 px-4 rounded-md text-sm font-medium text-white cursor-pointer',
+              danger ? 'bg-danger-600 hover:bg-danger-700' : 'bg-brand-700 hover:bg-brand-800',
             )}
           >
             {confirmLabel}

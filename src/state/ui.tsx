@@ -20,13 +20,21 @@ interface UiState {
 
   copilotOpen: boolean;
   setCopilotOpen: (v: boolean) => void;
-  /** Opens the copilot and asks a question on the user's behalf. */
-  askCopilot: (prompt: string) => void;
-  pendingPrompt: string | null;
-  consumePendingPrompt: () => string | null;
+  /**
+   * Opens the copilot and asks a question on the user's behalf. Pass a finding id to
+   * scope the conversation to that case (its documents, checks and investigation).
+   */
+  askCopilot: (prompt: string, options?: { caseId?: string }) => void;
+  pendingPrompt: PendingPrompt | null;
+  consumePendingPrompt: () => PendingPrompt | null;
 
   mobileNavOpen: boolean;
   setMobileNavOpen: (v: boolean) => void;
+}
+
+export interface PendingPrompt {
+  prompt: string;
+  caseId?: string;
 }
 
 const UiContext = createContext<UiState | null>(null);
@@ -36,7 +44,7 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
+  const [pendingPrompt, setPendingPrompt] = useState<PendingPrompt | null>(null);
   const seq = useRef(0);
 
   const dismissToast = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);
@@ -49,8 +57,8 @@ export function UiProvider({ children }: { children: React.ReactNode }) {
     [dismissToast],
   );
 
-  const askCopilot = useCallback((prompt: string) => {
-    setPendingPrompt(prompt);
+  const askCopilot = useCallback((prompt: string, options?: { caseId?: string }) => {
+    setPendingPrompt({ prompt, caseId: options?.caseId });
     setCopilotOpen(true);
   }, []);
 

@@ -14,6 +14,7 @@ import type { CountryCode, TaxDocument } from './domain';
 import { detectFraud, type Severity } from './fraud';
 import { crossValidateDocuments } from './crossValidation';
 import { TAX_CONFIG } from './tax';
+import type { Investigation } from './investigation';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -87,6 +88,8 @@ export interface ComplianceState {
   version: 1;
   documents: WorkspaceDocument[];
   reviews: Record<string, FindingReview>;
+  /** Latest AI investigation per finding (evidence steps + cited brief). */
+  investigations?: Record<string, Investigation>;
 }
 
 export interface Actor {
@@ -149,7 +152,7 @@ function sample(input: SampleInput): WorkspaceDocument {
   const slug = input.number.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   return {
     status: input.status ?? 'verified',
-    uploadedBy: input.uploadedBy ?? 'Document AI · auto-ingest',
+    uploadedBy: input.uploadedBy ?? 'Impor contoh · ekstraksi AI',
     ledger: input.ledger,
     doc: {
       id: input.id,
@@ -217,13 +220,13 @@ export function createInitialComplianceState(): ComplianceState {
   // One historical decision so the review trail isn't empty on first load.
   reviews['TBTS:DOC-ID-001'] = {
     status: 'confirmed',
-    decidedBy: 'Sri Mulyani Dewi, S.E., Ak., CA',
+    decidedBy: 'Dewi Anggraini, S.E., Ak., CA',
     correctionApplied: true,
     proposal: { action: 'confirm', byId: 'consultant', by: 'Bambang Soeprapto, BKP', role: 'Konsultan Pajak (Maker)', note: 'Vendor tidak terdaftar PKP aktif & tanpa surat jalan.', at: '2026-10-24T02:10:00.000Z' },
     history: [
       { at: '2026-10-24T02:10:00.000Z', by: 'Bambang Soeprapto, BKP', role: 'Konsultan Pajak (Maker)', action: 'proposed', note: 'Konfirmasi: vendor tidak terdaftar PKP aktif & tanpa surat jalan.' },
-      { at: '2026-10-25T07:30:00.000Z', by: 'Sri Mulyani Dewi, S.E., Ak., CA', role: 'Group CFO (Checker)', action: 'approved', note: 'Disetujui. Koreksi fiskal positif Rp 120 jt.' },
-      { at: '2026-10-25T07:31:00.000Z', by: 'Sri Mulyani Dewi, S.E., Ak., CA', role: 'Group CFO (Checker)', action: 'correction_applied', note: 'Akun 5100 · +Rp 120.000.000' },
+      { at: '2026-10-25T07:30:00.000Z', by: 'Dewi Anggraini, S.E., Ak., CA', role: 'Group CFO (Checker)', action: 'approved', note: 'Disetujui. Koreksi fiskal positif Rp 120 jt.' },
+      { at: '2026-10-25T07:31:00.000Z', by: 'Dewi Anggraini, S.E., Ak., CA', role: 'Group CFO (Checker)', action: 'correction_applied', note: 'Akun 5100 · +Rp 120.000.000' },
     ],
   };
   return { version: 1, documents: SAMPLE_DOCUMENTS, reviews };
@@ -238,6 +241,7 @@ export function normalizeComplianceState(raw: unknown): ComplianceState {
     version: 1,
     documents: r.documents.filter((d): d is WorkspaceDocument => Boolean(d && d.doc && d.doc.id)),
     reviews: r.reviews && typeof r.reviews === 'object' ? r.reviews : {},
+    investigations: r.investigations && typeof r.investigations === 'object' ? r.investigations : {},
   };
 }
 

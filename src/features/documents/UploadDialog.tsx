@@ -11,6 +11,9 @@ import { useUi } from '@/state/ui';
 import { money } from '@/lib/format';
 import { Button, Callout, Checkbox, Dialog, SelectField, Spinner, TextField, cn } from '@/ui';
 import { useRouter } from 'next/navigation';
+import type { ScanResult } from '@/lib/scan';
+import type { EngineBadge } from '@/lib/ai/badge';
+import { EngineTag } from '@/shell/EngineTag';
 
 const LEDGERS = [
   { accountCode: '5100', accountName: 'Beban Pokok Pendapatan' },
@@ -38,19 +41,22 @@ interface FormState {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-/** Plausible counterparty tax id for AI-extracted demo invoices. */
-function sampleTaxId(country: 'ID' | 'SG' | 'MY' | 'US'): string {
-  const n = String(Date.now());
-  if (country === 'ID') return `0${n.slice(-15).padStart(15, '7')}`;
-  if (country === 'SG') return `${n.slice(-8)}K`;
-  if (country === 'MY') return `C${n.slice(-10)}`;
-  return `${n.slice(-9, -7)}-${n.slice(-7)}`;
+/** Files up to this size are sent to the model; larger ones use the simulation. */
+const MAX_SEND_BYTES = 3 * 1024 * 1024;
+
+function toBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 type ScanState =
   | { state: 'idle' }
   | { state: 'scanning' }
-  | { state: 'done'; filled: number; risk: boolean }
+  | { state: 'done'; filled: number; risk: boolean; reasons: string[]; hidden: string[]; engine: EngineBadge }
   | { state: 'error' };
 
 /** Fields shown for every document type; the rest only apply to invoices. */
@@ -61,7 +67,7 @@ const pick = (src: Partial<FormState>, keys: Iterable<keyof FormState>) =>
 
 function AiTag() {
   return (
-    <span aria-hidden title="Diisi Document AI" className="rounded px-1 py-px text-[10px] font-semibold leading-none tracking-wide bg-brand-50 text-brand-700 ring-1 ring-brand-200">
+    <span aria-hidden title="Diisi ekstraksi AI" className="rounded px-1 py-px text-[10px] font-semibold leading-none tracking-wide bg-brand-50 text-brand-700 ring-1 ring-brand-200">
       AI
     </span>
   );
@@ -75,8 +81,9 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
   const [file, setFile] = useState<File | null>(null);
   const [scan, setScan] = useState<ScanState>({ state: 'idle' });
   const [dragging, setDragging] = useState(false);
-  /** Fields whose current value came from Document AI. */
+  /** Fields whose current value came from extraction, with the model's confidence when it gave one. */
   const [aiKeys, setAiKeys] = useState<Set<keyof FormState>>(new Set());
+  const aiConfidence = useRef<Partial<Record<keyof FormState, number>>>({});
   /** Fields the user typed into; extraction never overwrites them. */
   const manual = useRef(new Set<keyof FormState>());
   /** Only the latest extraction may write to the form. */
@@ -136,44 +143,56 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
     setF((x) => ({ ...x, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }));
   };
 
-  /** Read the file with Document AI and fill every field the user has not typed into. */
+  /** Read the file and fill every field the user has not typed into. */
   async function extract(target: File, entityId = latest.current.entityId) {
     const id = ++request.current;
     const ctry = (ws.entityById(entityId) ?? ws.activeEntity).countryCode;
     const current = latest.current;
     setScan({ state: 'scanning' });
     try {
+      const data64 = target.size <= MAX_SEND_BYTES ? await toBase64(target) : undefined;
       const res = await fetch('/api/scan-document', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fileName: target.name,
           country: ctry,
+          mimeType: data64 ? target.type : undefined,
+          data: data64,
           customVendor: manual.current.has('vendor') ? current.vendor : undefined,
           customDpp: manual.current.has('base') ? Number(current.base) || undefined : undefined,
         }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      const data = await res.json();
+      const data = (await res.json()) as ScanResult;
       if (id !== request.current) return;
-      const risk = data.status === 'RISIKO_FRAUD';
+      const fl = data.fields;
       const extracted: Partial<FormState> = {
-        number: data.docNumber ?? '',
-        vendor: data.vendorName ?? '',
-        vendorTaxId: risk ? '' : sampleTaxId(ctry),
-        base: data.dpp != null ? String(data.dpp) : '',
-        tax: data.taxAmount != null ? String(data.taxAmount) : '',
-        uuid: ctry === 'MY' ? `MYINV-${Date.now().toString(36).toUpperCase()}` : `UUID-${Date.now().toString(36).toUpperCase()}`,
-        validated: !risk,
+        number: fl.number?.value ?? '',
+        date: fl.date?.value ?? '',
+        vendor: fl.vendor?.value ?? '',
+        vendorTaxId: fl.vendorTaxId?.value ?? '',
+        base: fl.base ? String(fl.base.value) : '',
+        tax: fl.tax ? String(fl.tax.value) : '',
+        uuid: fl.uuid?.value ?? '',
+      };
+      const confidence: Partial<Record<keyof FormState, number>> = {
+        number: fl.number?.confidence,
+        date: fl.date?.confidence,
+        vendor: fl.vendor?.confidence,
+        vendorTaxId: fl.vendorTaxId?.confidence,
+        base: fl.base?.confidence,
+        tax: fl.tax?.confidence,
+        uuid: fl.uuid?.confidence,
       };
       const invoice = latest.current.type === 'e_invoice';
       const keys = (Object.keys(extracted) as (keyof FormState)[]).filter(
-        (k) => !manual.current.has(k) && (invoice || COMMON_KEYS.includes(k)),
+        (k) => !manual.current.has(k) && extracted[k] !== '' && (invoice || COMMON_KEYS.includes(k)),
       );
-      setF((x) => ({ ...x, ...pick(extracted, keys) }));
-      const filled = keys.filter((k) => extracted[k] !== '');
-      setAiKeys(new Set(filled));
-      setScan({ state: 'done', filled: filled.filter((k) => k !== 'validated').length, risk });
+      setF((x) => ({ ...x, ...pick(extracted, keys), validated: manual.current.has('validated') ? x.validated : false }));
+      aiConfidence.current = confidence;
+      setAiKeys(new Set(keys));
+      setScan({ state: 'done', filled: keys.length, risk: data.risk, reasons: data.riskReasons, hidden: data.hiddenInstructions, engine: data.engine });
     } catch {
       if (id !== request.current) return;
       setScan({ state: 'error' });
@@ -194,7 +213,7 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
     void extract(next);
   };
 
-  /** Drop the file and everything Document AI filled from it; manual input stays. */
+  /** Drop the file and everything extraction filled from it; manual input stays. */
   const removeFile = () => {
     request.current++;
     setFile(null);
@@ -232,9 +251,13 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
     setTouched(true);
     if (!valid) return;
     const id = `DOC-${country}-${Date.now().toString(36).toUpperCase()}`;
-    // Provenance per field: AI-extracted values keep their confidence, typed values are manual.
-    const fld = <T,>(value: T, ...keys: (keyof FormState)[]) =>
-      keys.some((k) => aiKeys.has(k)) ? { value, source: 'ai' as const, confidence: 0.93 } : { value, source: 'manual' as const, confidence: 1 };
+    // Provenance per field: extracted values keep the model's confidence (none when simulated), typed values are manual.
+    const fld = <T,>(value: T, ...keys: (keyof FormState)[]) => {
+      const fromAi = keys.filter((k) => aiKeys.has(k));
+      if (!fromAi.length) return { value, source: 'manual' as const, confidence: 1 };
+      const scores = fromAi.map((k) => aiConfidence.current[k]).filter((c): c is number => typeof c === 'number');
+      return scores.length ? { value, source: 'ai' as const, confidence: Math.min(...scores) } : { value, source: 'ai' as const };
+    };
     const isInvoice = f.type === 'e_invoice';
     const doc: TaxDocument = {
       id,
@@ -245,7 +268,7 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
       attachmentType: (file?.type as TaxDocument['attachmentType']) ?? 'application/pdf',
       attachmentSize: file?.size ?? 120_000,
       number: fld(f.number.trim(), 'number'),
-      date: fld(f.date),
+      date: fld(f.date, 'date'),
       counterparty: fld(f.vendor.trim(), 'vendor'),
       counterpartyTaxId: fld(f.vendorTaxId.trim(), 'vendorTaxId'),
       taxableBase: fld(isInvoice ? base : 0, 'base'),
@@ -266,7 +289,9 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
     };
     const before = new Set(ws.findings.map((x) => x.id));
     ws.updateCompliance((s) => ({ ...s, documents: [item, ...s.documents] }));
-    ws.logAudit('UPLOAD_DOCUMENT', `${doc.number.value} · ${doc.counterparty.value}`, `${aiFilled ? `Diekstraksi Document AI dari ${file?.name ?? 'berkas'}` : 'Input manual'} untuk ${entity.legalName}.`);
+    const engineNote = scan.state === 'done' ? ` (${scan.engine.label}${scan.engine.model ? ` · ${scan.engine.model}` : ''})` : '';
+    const hiddenNote = scan.state === 'done' && scan.hidden.length ? ` Teks instruksi tersembunyi diabaikan: "${scan.hidden[0]}".` : '';
+    ws.logAudit('UPLOAD_DOCUMENT', `${doc.number.value} · ${doc.counterparty.value}`, `${aiFilled ? `Diekstraksi dari ${file?.name ?? 'berkas'}${engineNote}` : 'Input manual'} untuk ${entity.legalName}.${hiddenNote}`);
     onClose();
     onSaved?.(id);
     // Preview what the engine will find with this document included.
@@ -277,7 +302,7 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
     ui.toast(
       after.length ? `Dokumen disimpan — ${after.length} temuan risiko baru (${after.map((x) => x.ruleName).join(', ')}).` : 'Dokumen disimpan dan lolos analisis risiko.',
       after.length ? 'warning' : 'success',
-      after.length ? { label: 'Lihat', onClick: () => router.push(`/risk?f=${encodeURIComponent(after[0].id)}`) } : undefined,
+      after.length ? { label: 'Buka kasus', onClick: () => router.push(`/cases?f=${encodeURIComponent(after[0].id)}`) } : undefined,
     );
   }
 
@@ -300,7 +325,7 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
       onClose={onClose}
       size="lg"
       title="Unggah dokumen"
-      description="PDF, PNG, atau JPG hingga 10 MB. Document AI langsung membaca berkas dan mengisi field; Anda tetap bisa mengoreksi."
+      description="PDF, PNG, atau JPG hingga 10 MB. Ekstraksi AI membaca berkas dan mengisi field; Anda tetap bisa mengoreksi."
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Batal</Button>
@@ -340,10 +365,13 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
               <>
                 <div className="text-sm font-medium text-ink truncate">{file.name}</div>
                 <div className="text-xs text-ink-3">
-                  {scanning && <span className="text-brand-700">{kb} · Document AI sedang membaca dokumen…</span>}
+                  {scanning && <span className="text-brand-700">{kb} · membaca dokumen…</span>}
                   {scan.state === 'done' && (
-                    <span className={scan.risk ? 'text-warning-700' : 'text-success-700'}>
-                      {kb} · {scan.filled} field terisi otomatis{scan.risk ? ' · indikasi risiko terdeteksi' : ''}
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
+                      <span className={scan.risk ? 'text-warning-700' : 'text-success-700'}>
+                        {kb} · {scan.filled} field terisi otomatis{scan.risk ? ' · perlu dicek' : ''}
+                      </span>
+                      <EngineTag engine={scan.engine} />
                     </span>
                   )}
                   {scan.state === 'error' && <span className="text-danger-700">Dokumen gagal dibaca. Coba lagi atau isi field secara manual.</span>}
@@ -353,7 +381,7 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
             ) : (
               <>
                 <div className="text-sm font-medium text-ink">{dragging ? 'Lepaskan untuk mulai membaca' : 'Seret berkas ke sini'}</div>
-                <div className="text-xs text-ink-3">Document AI langsung membaca dan mengisi field. Tanpa berkas? Isi manual di bawah.</div>
+                <div className="text-xs text-ink-3">Ekstraksi AI membaca dan mengisi field. Tanpa berkas? Isi manual di bawah.</div>
               </>
             )}
           </div>
@@ -369,14 +397,21 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
           <input ref={fileRef} type="file" accept="application/pdf,image/png,image/jpeg" className="hidden" aria-label="Berkas dokumen" onChange={(e) => { pickFile(e.target.files?.[0]); e.target.value = ''; }} />
         </div>
 
+        {scan.state === 'done' && scan.hidden.length > 0 && (
+          <Callout tone="danger" icon={<ShieldAlert />} title="Dokumen berisi instruksi tersembunyi untuk AI">
+            Teks ini diperlakukan sebagai data dan tidak diikuti: “{scan.hidden[0]}”. Kejadian ini dicatat di log audit saat disimpan.
+          </Callout>
+        )}
         {scan.state === 'done' && scan.risk && (
-          <Callout tone="warning" icon={<ShieldAlert />} title="Document AI menandai indikasi risiko">
-            Identitas pajak vendor gagal divalidasi. Lengkapi identitas pajaknya; mesin risiko akan menilai dokumen ini saat disimpan.
+          <Callout tone="warning" icon={<ShieldAlert />} title="Perlu dicek sebelum disimpan">
+            {scan.reasons.filter((r) => !r.includes('instruksi')).join(' ') || 'Periksa field bertanda AI.'} Mesin risiko akan menilai dokumen ini saat disimpan.
           </Callout>
         )}
         {scan.state === 'done' && !scan.risk && aiFilled && (
-          <Callout tone="brand" icon={<ScanText />} title="Field diisi Document AI">
-            Periksa field bertanda AI sebelum menyimpan. Perubahan Anda dicatat sebagai input manual.
+          <Callout tone="brand" icon={<ScanText />} title={scan.engine.mode === 'live' ? 'Field dibaca dari isi berkas' : 'Field diisi simulasi'}>
+            {scan.engine.mode === 'live'
+              ? 'Periksa field bertanda AI sebelum menyimpan. Perubahan Anda dicatat sebagai input manual.'
+              : 'Tanpa model AI aktif, nilai dibuat dari nama berkas, bukan isi dokumen. Periksa setiap field sebelum menyimpan.'}
           </Callout>
         )}
 
@@ -414,6 +449,7 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
                 <Checkbox label="Vendor tervalidasi" checked={f.validated} onChange={set('validated')} />
                 <Checkbox label="Bukti pendukung ada" checked={f.evidence} onChange={set('evidence')} />
                 <Checkbox label="Deductible" checked={f.deductible} onChange={set('deductible')} />
+                <p className="sm:col-span-3 text-xs text-ink-3">Centang “Vendor tervalidasi” hanya setelah identitas pajaknya dicek ke Coretax, IRAS, atau LHDN. Ekstraksi membaca dokumen, tidak memvalidasi identitas.</p>
               </div>
             </>
           ) : (

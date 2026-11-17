@@ -37,6 +37,7 @@ import {
   cn,
 } from '@/ui';
 import { CycleFooter } from '@/shell/CycleFooter';
+import { CycleNext } from '@/shell/CycleNext';
 import { shortMonth } from '../shared';
 
 type Tab = 'recon' | 'vat' | 'wht' | 'whatif';
@@ -205,8 +206,8 @@ function ReconTab() {
                     {linked.length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {linked.map((l) => (
-                          <button key={l.id} type="button" onClick={() => router.push(`/review?f=${encodeURIComponent(l.id)}`)} className="cursor-pointer">
-                            <Badge tone={l.open ? 'warning' : 'brand'}><Link2 className="size-3" />{l.name}{l.open ? ' · belum diputuskan' : ''}</Badge>
+                          <button key={l.id} type="button" onClick={() => router.push(`/cases?f=${encodeURIComponent(l.id)}`)} className="cursor-pointer">
+                            <Badge tone={l.open ? 'warning' : 'brand'} className="!whitespace-normal !h-auto py-0.5 text-left"><Link2 className="size-3 shrink-0" />{l.name}{l.open ? ' · belum diputuskan' : ''}</Badge>
                           </button>
                         ))}
                       </div>
@@ -341,6 +342,7 @@ function VatTab() {
   return (
     <div className="space-y-6">
       <MetricBand
+        variant="light"
         label={`Posisi ${vatName} masa ${shortMonth(last.month)}`}
         lead={
           <BandLead
@@ -372,7 +374,7 @@ function VatTab() {
       {blocked.length > 0 && (
         <Callout tone="danger" title={`${vatName} masukan dari ${blocked.length} faktur tidak dikreditkan`}>
           {blocked.map((b) => `${b.doc!.counterparty.value} (${money(b.doc!.taxAmount.value, country)})`).join(', ')} — menunggu keputusan atau sudah dikonfirmasi berisiko.{' '}
-          <Link href="/risk" className="underline">Lihat temuan</Link>
+          <Link href="/cases" className="underline">Lihat temuan</Link>
         </Callout>
       )}
       <Card>
@@ -567,7 +569,8 @@ export function CalculationPage() {
   return (
     <div>
       <PageHeader
-        eyebrow={<span>Langkah 5 · Siklus kepatuhan</span>}
+        next={<CycleNext current="/calculation" />}
+        eyebrow={<span>Langkah 4 dari 6 · Siklus kepatuhan</span>}
         title="Rekonsiliasi fiskal"
         description={`${ws.activeEntity.flag} ${ws.activeEntity.legalName} · tahun pajak 2026 · ${RETURN_FORM[country].name}`}
       />

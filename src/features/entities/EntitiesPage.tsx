@@ -23,6 +23,7 @@ import {
   cn,
 } from '@/ui';
 import { CycleFooter } from '@/shell/CycleFooter';
+import { CycleNext } from '@/shell/CycleNext';
 import { AddEntityDialog, ConsolidationDialog, RestrictedDialog } from './dialogs';
 import { docStatusTone } from './helpers';
 
@@ -59,7 +60,7 @@ function OrgNode({ entity, onOpen }: { entity: CorporateEntity; onOpen: (e: Corp
         <Badge tone={entity.status === 'ACTIVE' ? 'success' : 'warning'} dot>
           {entity.status === 'ACTIVE' ? 'Aktif' : 'Draf'}
         </Badge>
-        {open > 0 && <Badge tone="danger">{open} temuan</Badge>}
+        {open > 0 && <Badge tone="danger">{open} kasus</Badge>}
       </div>
     </button>
   );
@@ -113,7 +114,8 @@ export function EntitiesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow={<span>Langkah 1 · Siklus kepatuhan</span>}
+        next={<CycleNext current="/entities" />}
+        eyebrow={<span>Langkah 1 dari 6 · Siklus kepatuhan</span>}
         title="Entitas & struktur grup"
         description={`${ws.entities.length} entitas di ${countries} yurisdiksi. Struktur ini menjadi dasar konsolidasi, transfer pricing, dan hak akses.`}
         actions={

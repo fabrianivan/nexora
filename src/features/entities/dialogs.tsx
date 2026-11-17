@@ -364,16 +364,16 @@ export function ConsolidationDialog({ open, onClose }: { open: boolean; onClose:
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
         <div className="rounded-xl border border-line px-4 py-3">
           <div className="text-xs text-ink-3">Omzet konsolidasi (≈)</div>
-          <div className="mt-1 text-xl font-semibold text-ink">{moneyCompact(totalRevenue)}</div>
+          <div className="mt-1 figure text-[26px] text-ink">{moneyCompact(totalRevenue)}</div>
         </div>
         <div className="rounded-xl border border-line px-4 py-3">
           <div className="text-xs text-ink-3">Pajak disetor YTD (≈)</div>
-          <div className="mt-1 text-xl font-semibold text-ink">{moneyCompact(totalTax)}</div>
+          <div className="mt-1 figure text-[26px] text-ink">{moneyCompact(totalTax)}</div>
         </div>
         <div className="rounded-xl border border-line px-4 py-3">
           <div className="text-xs text-ink-3">Pillar Two (ambang €750 jt)</div>
           <div className="mt-1 flex items-center gap-2">
-            <span className="text-xl font-semibold text-ink">€{(eurRevenue / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt</span>
+            <span className="figure text-[26px] text-ink">€{(eurRevenue / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt</span>
             <Badge tone={eurRevenue >= 750e6 ? 'danger' : 'success'}>{eurRevenue >= 750e6 ? 'Wajib GloBE' : 'Di bawah ambang'}</Badge>
           </div>
         </div>
@@ -453,7 +453,7 @@ export function RestrictedDialog({ entity, onClose }: { entity: CorporateEntity 
         </span>
         <p className="text-sm text-ink-2">
           Peran <strong className="text-ink">{ws.persona.title}</strong> hanya dapat membuka entitas dalam yurisdiksinya. Data{' '}
-          <strong className="text-ink">{entity?.legalName}</strong> memerlukan otorisasi Group CEO/CFO induk sesuai segregasi ISO 27001.
+          <strong className="text-ink">{entity?.legalName}</strong> memerlukan otorisasi Group CEO/CFO induk sesuai segregasi tugas.
         </p>
       </div>
     </Dialog>

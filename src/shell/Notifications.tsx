@@ -25,11 +25,11 @@ export function useNotifications(): Note[] {
     const critical = scoped.filter((f) => f.severity === 'critical' && isUnresolved(ws.reviewOf(f.id).status));
     critical.slice(0, 3).forEach((f) => {
       const ent = ws.entityById(f.entityId);
-      notes.push({ id: `crit-${f.id}`, icon: <ShieldAlert />, tone: 'danger', title: `Temuan kritis: ${f.ruleName}`, body: `${ent?.flag ?? ''} ${ent?.legalName ?? f.entityId} · ${f.evidence.split('\n')[0]}`, href: `/risk?f=${encodeURIComponent(f.id)}` });
+      notes.push({ id: `crit-${f.id}`, icon: <ShieldAlert />, tone: 'danger', title: `Temuan kritis: ${f.ruleName}`, body: `${ent?.flag ?? ''} ${ent?.legalName ?? f.entityId} · ${f.evidence.split('\n')[0]}`, href: `/cases?f=${encodeURIComponent(f.id)}` });
     });
     const approvals = scoped.filter((f) => canApprove(ws.reviewOf(f.id), ws.actor).ok);
     if (approvals.length) {
-      notes.push({ id: 'approvals', icon: <ListChecks />, tone: 'warning', title: `${approvals.length} usulan menunggu persetujuan Anda`, body: 'Sebagai checker, tinjau usulan maker sebelum koreksi diterapkan.', href: '/review?tab=proposed' });
+      notes.push({ id: 'approvals', icon: <ListChecks />, tone: 'warning', title: `${approvals.length} usulan menunggu persetujuan Anda`, body: 'Sebagai checker, tinjau usulan maker sebelum koreksi diterapkan.', href: '/cases?tab=proposed' });
     }
     ws.accessibleEntities
       .filter((e) => ws.returnFor(e.id).returnStatus === 'Review')

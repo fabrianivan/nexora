@@ -4,12 +4,12 @@ import { cn } from './cn';
 export type Tone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger' | 'dark';
 
 const TONES: Record<Tone, string> = {
-  neutral: 'bg-muted text-ink-2 ring-line',
-  brand: 'bg-brand-50 text-brand-700 ring-brand-200/70',
-  success: 'bg-success-50 text-success-700 ring-success-100',
-  warning: 'bg-warning-50 text-warning-700 ring-warning-100',
-  danger: 'bg-danger-50 text-danger-700 ring-danger-100',
-  dark: 'bg-ink text-white ring-ink',
+  neutral: 'bg-muted/70 text-ink-2',
+  brand: 'bg-brand-50 text-brand-700',
+  success: 'bg-success-50 text-success-700',
+  warning: 'bg-warning-50 text-warning-700',
+  danger: 'bg-danger-50 text-danger-700',
+  dark: 'bg-ink text-canvas',
 };
 
 const DOTS: Record<Tone, string> = {
@@ -38,7 +38,7 @@ export function Badge({
     <span
       title={title}
       className={cn(
-        'inline-flex items-center gap-1.5 h-[22px] px-2 rounded-md text-xs font-medium ring-1 ring-inset whitespace-nowrap',
+        'inline-flex items-center gap-1.5 h-5 px-1.5 rounded-sm text-[12px] font-medium whitespace-nowrap',
         TONES[tone],
         className,
       )}

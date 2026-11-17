@@ -1,16 +1,19 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import { cn } from './cn';
 
 /* ==========================================================================
-   Metric band — the executive summary surface.
-   One dark, full-width strip at the top of a module that states the few
-   numbers that module is accountable for. Replaces the loose grid of white
-   stat tiles so every page opens with the same gesture.
+   Figures strip — the few numbers a module is accountable for, set like the
+   key-figures line of an annual report: a heavy ink rule on top, hairline
+   columns, serif figures, small-caps labels. No boxes, no dark slabs.
    ========================================================================== */
 
 export type BandTone = 'danger' | 'warning' | 'success' | 'brand';
+/** Kept for compatibility; both variants now render the same editorial strip. */
+export type BandVariant = 'dark' | 'light';
 
 export type BandMetric = {
   label: React.ReactNode;
@@ -23,35 +26,34 @@ export type BandMetric = {
   onClick?: () => void;
   /** Tints the value. Use only when the number itself carries the severity. */
   tone?: BandTone;
-  /** For reference facts (an identifier, a currency) rather than figures: renders the value at text scale. */
+  /** For reference facts (an identifier, a currency) rather than figures. */
   compact?: boolean;
   /** Renders the value in the mono face — for tax IDs and document numbers. */
   mono?: boolean;
 };
 
 const VALUE_TONE: Record<BandTone, string> = {
-  // 2xl/semibold counts as large text, so these clear WCAG AA (3:1) on --color-ink.
-  danger: 'text-danger-500',
-  warning: 'text-warning-500',
-  success: 'text-success-500',
-  brand: 'text-brand-300',
+  danger: 'text-danger-600',
+  warning: 'text-warning-600',
+  success: 'text-success-600',
+  brand: 'text-brand-600',
 };
 
 const DOT_TONE: Record<BandTone, string> = {
   danger: 'bg-danger-500',
   warning: 'bg-warning-500',
   success: 'bg-success-500',
-  brand: 'bg-brand-400',
+  brand: 'bg-brand-500',
 };
 
-/** Circular score gauge. Reads as a dial on the dark band. */
+/** Thin circular gauge with a serif figure. */
 export function ComplianceRing({
   value,
   max = 100,
   tone,
   caption,
   label,
-  size = 92,
+  size = 84,
 }: {
   value: number;
   max?: number;
@@ -62,7 +64,7 @@ export function ComplianceRing({
   label?: string;
   size?: number;
 }) {
-  const radius = 42;
+  const radius = 44;
   const circumference = 2 * Math.PI * radius;
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   const offset = circumference - (pct / 100) * circumference;
@@ -74,14 +76,14 @@ export function ComplianceRing({
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg viewBox="0 0 96 96" className="size-full -rotate-90" role="img" aria-label={label ?? `${value} dari ${max}`}>
-        <circle cx="48" cy="48" r={radius} fill="none" stroke="rgb(255 255 255 / 0.12)" strokeWidth="6" />
+        <circle cx="48" cy="48" r={radius} fill="none" stroke="var(--color-line)" strokeWidth="3" />
         <circle
           cx="48"
           cy="48"
           r={radius}
           fill="none"
           stroke={stroke}
-          strokeWidth="6"
+          strokeWidth="3"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -89,17 +91,14 @@ export function ComplianceRing({
         />
       </svg>
       <span className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[25px] font-semibold leading-none tracking-tight num">{value}</span>
-        <span className="mt-1 text-[10px] uppercase tracking-wider text-white/45">{caption ?? `/ ${max}`}</span>
+        <span className="figure text-[28px] leading-none text-ink">{value}</span>
+        <span className="mt-1 text-[10px] uppercase tracking-wider text-ink-4">{caption ?? `/ ${max}`}</span>
       </span>
     </div>
   );
 }
 
-/**
- * The band's left panel: what this module is looking at right now.
- * Pair a dial or an icon with the headline figure the page is scoped to.
- */
+/** The strip's left panel: what this module is looking at right now. */
 export function BandLead({
   eyebrow,
   title,
@@ -110,21 +109,21 @@ export function BandLead({
   eyebrow: React.ReactNode;
   title: React.ReactNode;
   detail?: React.ReactNode;
-  /** A `ComplianceRing`, a flag, or an icon tile. */
+  /** A `ComplianceRing`, a flag, or an icon. */
   visual?: React.ReactNode;
   /** Shows a status dot before the title. */
   tone?: BandTone;
 }) {
   return (
-    <div className="flex items-center gap-5 border-b border-white/10 p-5 sm:p-6 lg:border-b-0 lg:border-r">
+    <div className="flex items-center gap-5 border-b border-line py-5 pr-6 lg:border-b-0 lg:border-r">
       {visual}
       <div className="min-w-0">
-        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/45">{eyebrow}</p>
-        <p className="mt-1.5 flex items-center gap-2 text-lg font-semibold">
+        <p className="eyebrow">{eyebrow}</p>
+        <p className="mt-1 flex items-center gap-2 font-serif text-[22px] leading-7 text-ink">
           {tone && <span className={cn('size-2 shrink-0 rounded-full', DOT_TONE[tone])} />}
           <span className="min-w-0 truncate">{title}</span>
         </p>
-        {detail && <p className="mt-1 text-[13px] leading-5 text-white/55">{detail}</p>}
+        {detail && <p className="mt-1 text-[13px] leading-5 text-ink-3">{detail}</p>}
       </div>
     </div>
   );
@@ -132,37 +131,34 @@ export function BandLead({
 
 function BandCell({ metric }: { metric: BandMetric }) {
   const interactive = Boolean(metric.href || metric.onClick);
+  // Full Rupiah amounts are long; step the figure down so it never wraps.
+  const text = typeof metric.value === 'string' || typeof metric.value === 'number' ? String(metric.value) : '';
+  const size = text.length > 15 ? 'text-[22px]' : text.length > 11 ? 'text-[27px]' : 'text-[34px]';
   const body = (
     <>
-      <span className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.12em] text-white/45">
-        {metric.icon && <span className="[&_svg]:size-3.5 text-white/60">{metric.icon}</span>}
+      <span className="eyebrow flex items-center gap-1.5 pr-5">
         <span className="min-w-0 truncate">{metric.label}</span>
       </span>
       <span
         className={cn(
-          'mt-2 font-semibold tracking-tight',
-          // Reference values stay on one line so every cell's label sits on the same baseline.
-          metric.compact ? 'text-[15px] leading-6 truncate' : 'text-2xl',
-          metric.mono ? 'font-mono' : 'num',
-          metric.tone ? VALUE_TONE[metric.tone] : 'text-white',
+          'mt-1.5',
+          metric.compact ? 'text-[15px] leading-6 font-medium truncate' : cn('figure leading-[1.15] whitespace-nowrap', size),
+          metric.mono && 'font-mono',
+          metric.tone ? VALUE_TONE[metric.tone] : 'text-ink',
         )}
       >
         {metric.value}
       </span>
-      {metric.detail && (
-        // Two lines are always reserved so a wrapping detail cannot push its
-        // cell's label off the baseline the other cells share.
-        <span className="mt-1 line-clamp-2 min-h-10 text-xs leading-5 text-white/50">{metric.detail}</span>
-      )}
+      {metric.detail && <span className="mt-1 line-clamp-2 text-xs leading-5 text-ink-3">{metric.detail}</span>}
       {interactive && (
-        <ArrowUpRight className="absolute right-5 top-5 size-3.5 text-white/20 transition-colors group-hover:text-white/70" />
+        <ArrowUpRight className="absolute right-4 top-5 size-3.5 text-ink-4 transition-colors group-hover:text-ink" />
       )}
     </>
   );
 
   const shell = cn(
-    'group relative flex min-w-0 flex-col justify-center p-5 sm:p-6',
-    interactive && 'text-left transition-colors hover:bg-white/[0.045]',
+    'group relative flex min-w-0 flex-col justify-start py-5 pr-5 sm:pl-5 sm:first:pl-0',
+    interactive && 'text-left transition-colors hover:bg-subtle',
   );
 
   if (metric.href) {
@@ -196,35 +192,28 @@ export function MetricBand({
   /** Hairline strip under the metrics for provenance or an FX note. */
   footnote?: React.ReactNode;
   className?: string;
+  /** Accepted for compatibility; ignored. */
+  variant?: BandVariant;
 }) {
-  // The band stays a single horizontal strip once it has room, so the hairlines
-  // are always exactly one axis — stacked below the breakpoint, columns above it.
   const cols =
     metrics.length >= 4
-      ? 'md:grid-cols-4 md:divide-x md:divide-y-0'
+      ? 'divide-y md:divide-y-0 md:grid-cols-4 md:divide-x'
       : metrics.length === 3
-        ? 'sm:grid-cols-3 sm:divide-x sm:divide-y-0'
+        ? 'divide-y sm:divide-y-0 sm:grid-cols-3 sm:divide-x'
         : metrics.length === 2
-          ? 'sm:grid-cols-2 sm:divide-x sm:divide-y-0'
+          ? 'divide-y sm:divide-y-0 sm:grid-cols-2 sm:divide-x'
           : '';
   return (
-    <section
-      aria-label={label}
-      className={cn('relative overflow-hidden rounded-2xl border border-ink bg-ink text-white shadow-md', className)}
-    >
-      <div aria-hidden className="nx-grid pointer-events-none absolute inset-0 opacity-20" />
-      <div aria-hidden className="pointer-events-none absolute -right-24 -top-28 size-80 rounded-full bg-brand-500/25 blur-3xl" />
-      <div className={cn('relative grid', lead ? 'lg:grid-cols-[minmax(300px,360px)_1fr]' : undefined)}>
+    <section aria-label={label} className={cn('border-t-2 border-ink border-b border-b-line', className)}>
+      <div className={cn('grid', lead ? 'lg:grid-cols-[minmax(280px,340px)_1fr]' : undefined)}>
         {lead}
-        <div className={cn('grid divide-y divide-white/10', cols)}>
+        <div className={cn('grid divide-line', cols, lead ? 'lg:[&>*:first-child]:pl-5' : undefined)}>
           {metrics.map((m, i) => (
             <BandCell key={i} metric={m} />
           ))}
         </div>
       </div>
-      {footnote && (
-        <div className="relative border-t border-white/10 px-5 py-2.5 text-[11px] text-white/40 sm:px-6">{footnote}</div>
-      )}
+      {footnote && <div className="border-t border-line py-2.5 text-[11px] text-ink-3">{footnote}</div>}
     </section>
   );
 }

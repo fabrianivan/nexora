@@ -10,7 +10,7 @@ export function Table({ className, children }: { className?: string; children: R
 }
 
 export function THead({ children }: { children: React.ReactNode }) {
-  return <thead className="bg-subtle border-y border-line">{children}</thead>;
+  return <thead className="border-b border-line-strong">{children}</thead>;
 }
 
 export function TH({ className, children, align = 'left' }: { className?: string; children?: React.ReactNode; align?: 'left' | 'right' | 'center' }) {
@@ -18,7 +18,7 @@ export function TH({ className, children, align = 'left' }: { className?: string
     <th
       scope="col"
       className={cn(
-        'h-9 px-4 first:pl-5 last:pr-5 text-xs font-medium text-ink-3 whitespace-nowrap',
+        'h-10 px-4 first:pl-5 last:pr-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3 whitespace-nowrap align-bottom pb-2',
         align === 'right' && 'text-right',
         align === 'center' && 'text-center',
         className,
@@ -46,7 +46,7 @@ export function TR({
       className={cn(
         'border-b border-line last:border-0 transition-colors',
         onClick && 'cursor-pointer hover:bg-subtle',
-        selected && 'bg-brand-50/50',
+        selected && 'bg-mark-soft/70',
         className,
       )}
     >
@@ -70,7 +70,7 @@ export function TD({
     <td
       colSpan={colSpan}
       className={cn(
-        'px-4 first:pl-5 last:pr-5 py-3 align-middle text-ink-2',
+        'px-4 first:pl-5 last:pr-5 py-3.5 align-middle text-ink-2',
         align === 'right' && 'text-right num whitespace-nowrap',
         align === 'center' && 'text-center',
         className,

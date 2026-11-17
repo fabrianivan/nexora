@@ -9,15 +9,19 @@ export function money(amount: number, country: CountryCode = 'ID'): string {
   return `${sign}${SYMBOL[country]} ${Math.round(Math.abs(amount)).toLocaleString(LOCALE[country])}`;
 }
 
-/** Compact money, e.g. "Rp 1,2 M" (miliar), "Rp 120 jt", "S$ 84K". */
+/**
+ * Compact money, e.g. "Rp 1,23 miliar", "Rp 120 jt", "S$ 84K".
+ * Indonesian amounts spell out "miliar"/"triliun": a bare "M" reads as million to
+ * English-speaking reviewers and is off by a factor of a thousand.
+ */
 export function moneyCompact(amount: number, country: CountryCode = 'ID'): string {
   const abs = Math.abs(amount);
   const sign = amount < 0 ? '−' : '';
   const sym = SYMBOL[country];
   if (country === 'ID') {
     const fmt = (v: number) => v.toLocaleString('id-ID', { maximumFractionDigits: v < 10 ? 2 : 1 });
-    if (abs >= 1e12) return `${sign}${sym} ${fmt(abs / 1e12)} T`;
-    if (abs >= 1e9) return `${sign}${sym} ${fmt(abs / 1e9)} M`;
+    if (abs >= 1e12) return `${sign}${sym} ${fmt(abs / 1e12)} triliun`;
+    if (abs >= 1e9) return `${sign}${sym} ${fmt(abs / 1e9)} miliar`;
     if (abs >= 1e6) return `${sign}${sym} ${fmt(abs / 1e6)} jt`;
     if (abs >= 1e3) return `${sign}${sym} ${fmt(abs / 1e3)} rb`;
     return `${sign}${sym} ${Math.round(abs)}`;

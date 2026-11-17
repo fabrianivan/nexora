@@ -27,6 +27,7 @@ import { dateShort, dateTime, money } from '@/lib/format';
 import type { ReturnStatus, TaxReturnState } from '@/state/types';
 import { Badge, Button, Callout, Card, CardBody, CardHeader, PageHeader, Table, TD, TH, THead, TR, Tabs, cn, type Tone } from '@/ui';
 import { CycleFooter } from '@/shell/CycleFooter';
+import { CycleNext } from '@/shell/CycleNext';
 
 type Section = 'main' | 'l1' | 'l2' | 'l3';
 
@@ -69,9 +70,9 @@ export function TaxReturnPage() {
     const pendingDocs = ws.compliance.documents.filter((d) => d.doc.entityId === entity.id && d.status !== 'verified');
     const legal = entity.documents.filter((d) => d.status !== 'Verified by Document AI');
     return [
-      { key: 'critical', ok: critical.length === 0, blocking: true, label: 'Tidak ada temuan kritis terbuka', detail: critical.length ? `${critical.length} temuan kritis belum diputuskan` : 'Semua temuan kritis sudah diputuskan', href: '/review' },
-      { key: 'review', ok: unresolved.length === 0, blocking: false, label: 'Semua temuan diputuskan', detail: unresolved.length ? `${unresolved.length} temuan terbuka` : 'Tidak ada temuan terbuka', href: '/review' },
-      { key: 'corr', ok: pendingCorr.length === 0, blocking: true, label: 'Koreksi temuan diterapkan', detail: pendingCorr.length ? `${pendingCorr.length} koreksi belum masuk rekonsiliasi` : 'Rekonsiliasi mutakhir', href: '/review?tab=done' },
+      { key: 'critical', ok: critical.length === 0, blocking: true, label: 'Tidak ada temuan kritis terbuka', detail: critical.length ? `${critical.length} temuan kritis belum diputuskan` : 'Semua temuan kritis sudah diputuskan', href: '/cases' },
+      { key: 'review', ok: unresolved.length === 0, blocking: false, label: 'Semua temuan diputuskan', detail: unresolved.length ? `${unresolved.length} temuan terbuka` : 'Tidak ada temuan terbuka', href: '/cases' },
+      { key: 'corr', ok: pendingCorr.length === 0, blocking: true, label: 'Koreksi temuan diterapkan', detail: pendingCorr.length ? `${pendingCorr.length} koreksi belum masuk rekonsiliasi` : 'Rekonsiliasi mutakhir', href: '/cases?tab=done' },
       { key: 'docs', ok: pendingDocs.length === 0, blocking: false, label: 'Dokumen transaksi terverifikasi', detail: pendingDocs.length ? `${pendingDocs.length} dokumen menunggu verifikasi` : 'Semua terverifikasi', href: '/documents' },
       { key: 'legal', ok: legal.length === 0, blocking: false, label: 'Dokumen legal lengkap', detail: legal.length ? `${legal.length} dokumen legal perlu review` : 'Lengkap', href: `/entities/${entity.id}` },
     ];
@@ -152,9 +153,10 @@ export function TaxReturnPage() {
   return (
     <div>
       <PageHeader
+        next={<CycleNext current="/tax-return" />}
         eyebrow={
           <span className="inline-flex items-center gap-2">
-            Langkah 6 · Siklus kepatuhan
+            Langkah 5 dari 6 · Siklus kepatuhan
             <Badge tone={STATUS_META[ret.returnStatus].tone} dot>{STATUS_META[ret.returnStatus].label}</Badge>
           </span>
         }

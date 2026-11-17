@@ -59,9 +59,9 @@ function TreatySim() {
       </div>
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Tarif domestik</div><div className="text-lg font-semibold text-ink num">{pct(domestic, 0)}</div></div>
-          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Tarif diterapkan</div><div className="text-lg font-semibold text-ink num">{pct(applied, 0)}</div></div>
-          <div className="rounded-xl border border-success-100 bg-success-50 px-3.5 py-3"><div className="text-xs text-success-700">Penghematan</div><div className="text-lg font-semibold text-success-700 num">{money(saving, source)}</div></div>
+          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Tarif domestik</div><div className="figure text-[24px] leading-tight text-ink">{pct(domestic, 0)}</div></div>
+          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Tarif diterapkan</div><div className="figure text-[24px] leading-tight text-ink">{pct(applied, 0)}</div></div>
+          <div className="rounded-xl border border-success-100 bg-success-50 px-3.5 py-3"><div className="text-xs text-success-700">Penghematan</div><div className="figure text-[24px] leading-tight text-success-700">{money(saving, source)}</div></div>
         </div>
         <div className="rounded-xl bg-subtle border border-line px-4 py-3 text-[13px] space-y-1">
           <div className="flex justify-between"><span className="text-ink-3">Pajak dipotong</span><span className="text-ink font-medium num">{money(gross * applied, source)}</span></div>
@@ -99,9 +99,9 @@ function PillarTwoSim() {
           {applies ? 'Minimum ETR 15% per yurisdiksi berlaku (IIR/QDMTT).' : 'Aturan Pillar Two belum mewajibkan top-up tax.'}
         </Callout>
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Kekurangan ETR</div><div className="text-lg font-semibold text-ink num">{topUpPct.toFixed(1)}%</div></div>
-          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Laba lebih</div><div className="text-lg font-semibold text-ink num">€{excess.toFixed(1)} jt</div></div>
-          <div className={cn('rounded-xl border px-3.5 py-3', topUp ? 'border-danger-100 bg-danger-50' : 'border-line')}><div className={cn('text-xs', topUp ? 'text-danger-700' : 'text-ink-3')}>Top-up tax</div><div className={cn('text-lg font-semibold num', topUp ? 'text-danger-700' : 'text-ink')}>€{topUp.toFixed(2)} jt</div></div>
+          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Kekurangan ETR</div><div className="figure text-[24px] leading-tight text-ink">{topUpPct.toFixed(1)}%</div></div>
+          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Laba lebih</div><div className="figure text-[24px] leading-tight text-ink">€{excess.toFixed(1)} jt</div></div>
+          <div className={cn('rounded-xl border px-3.5 py-3', topUp ? 'border-danger-100 bg-danger-50' : 'border-line')}><div className={cn('text-xs', topUp ? 'text-danger-700' : 'text-ink-3')}>Top-up tax</div><div className={cn('figure text-[24px] leading-tight', topUp ? 'text-danger-700' : 'text-ink')}>€{topUp.toFixed(2)} jt</div></div>
         </div>
         <p className="text-xs text-ink-3 font-mono">top-up = max(0; 15% − ETR) × (laba GloBE − SBIE)</p>
       </div>
@@ -165,7 +165,7 @@ export function StudiesPage() {
 
   return (
     <div>
-      <PageHeader title="Studi & simulator" description="Simulasi P3B, Pillar Two, dan transfer pricing, plus perpustakaan kajian dan kasus fraud." />
+      <PageHeader eyebrow={<span>Tata kelola</span>} title="Studi & simulator" description="Simulasi P3B, Pillar Two, dan transfer pricing, plus perpustakaan kajian dan kasus fraud." />
 
       <Card id="simulator" className="mb-6 scroll-mt-20">
         <CardHeader
@@ -211,7 +211,7 @@ export function StudiesPage() {
             <Card key={s.id} as="article" className="flex flex-col">
               <div className="px-5 pt-4 flex-1">
                 <div className="flex items-center gap-2"><Badge tone={s.category === 'Fraud Case Study' ? 'danger' : 'brand'}>{s.category}</Badge><span className="text-xs text-ink-3">{s.applicableJurisdictions.map((j) => j.split(' ')[0]).join(' ')}</span></div>
-                <h3 className="mt-2.5 text-[15px] font-semibold text-ink leading-snug">{s.title}</h3>
+                <h3 className="mt-3 font-serif text-[20px] text-ink leading-snug">{s.title}</h3>
                 <p className="mt-1.5 text-[13px] text-ink-2 leading-relaxed">{s.summary}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">{s.tags.map((t) => <span key={t} className="text-xs text-ink-3 bg-muted rounded px-1.5 py-0.5">#{t}</span>)}</div>
               </div>
@@ -219,7 +219,7 @@ export function StudiesPage() {
                 <span className="text-xs text-ink-4 truncate">{s.source}</span>
                 <div className="flex gap-1.5 shrink-0">
                   {s.simulationType !== 'none' && <Button size="sm" variant="ghost" onClick={() => openSim(s)}>Simulasikan</Button>}
-                  <Button size="sm" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.askCopilot(`Ringkas kajian "${s.title}" dan dampaknya bagi grup kami (${ws.activeEntity.legalName}).`)}>Tanya</Button>
+                  <Button size="sm" variant="ghost" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.askCopilot(`Ringkas kajian "${s.title}" dan dampaknya bagi grup kami (${ws.activeEntity.legalName}).`)}>Tanya</Button>
                 </div>
               </div>
             </Card>

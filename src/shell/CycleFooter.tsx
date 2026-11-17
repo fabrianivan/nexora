@@ -14,20 +14,20 @@ export function CycleFooter({ current }: { current: string }) {
   const prev = CYCLE[idx - 1];
   const next = CYCLE[idx + 1];
   return (
-    <div data-no-print className="mt-10 pt-6 border-t border-line grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <nav data-no-print aria-label="Langkah siklus" className="mt-16 pt-5 border-t-2 border-ink grid grid-cols-1 sm:grid-cols-2 gap-6">
       {prev ? (
-        <Link href={prev.href} className="group rounded-xl border border-line bg-surface px-4 py-3 hover:border-line-strong transition">
-          <span className="flex items-center gap-1.5 text-xs text-ink-3"><ArrowLeft className="size-3.5" /> Langkah {prev.step}</span>
-          <span className="block mt-0.5 text-sm font-medium text-ink">{prev.label}</span>
+        <Link href={prev.href} className="group">
+          <span className="eyebrow inline-flex items-center gap-1.5"><ArrowLeft className="size-3" /> Langkah {prev.step}</span>
+          <span className="block mt-1 font-serif text-[22px] text-ink group-hover:underline underline-offset-4 decoration-1">{prev.label}</span>
         </Link>
       ) : <span />}
       {next && (
-        <Link href={next.href} className="group rounded-xl border border-line bg-surface px-4 py-3 hover:border-line-strong transition sm:text-right">
-          <span className="flex items-center sm:justify-end gap-1.5 text-xs text-ink-3">Langkah {next.step} <ArrowRight className="size-3.5" /></span>
-          <span className="block mt-0.5 text-sm font-medium text-ink">{next.label}</span>
+        <Link href={next.href} className="group sm:text-right">
+          <span className="eyebrow inline-flex items-center gap-1.5">Langkah {next.step} <ArrowRight className="size-3" /></span>
+          <span className="block mt-1 font-serif text-[22px] text-ink group-hover:underline underline-offset-4 decoration-1">{next.label}</span>
           <span className="block text-xs text-ink-3 mt-0.5">{status[next.href]?.hint}</span>
         </Link>
       )}
-    </div>
+    </nav>
   );
 }

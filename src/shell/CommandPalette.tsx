@@ -84,7 +84,7 @@ export function CommandPalette() {
           hint: f.evidence.split('\n')[0],
           icon: <ShieldAlert />,
           keywords: `${f.rule} ${f.explanation} ${f.evidence}`,
-          run: go(`/risk?f=${encodeURIComponent(f.id)}`),
+          run: go(`/cases?f=${encodeURIComponent(f.id)}`),
         }),
       );
     ws.compliance.documents

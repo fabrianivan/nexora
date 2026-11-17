@@ -36,6 +36,7 @@ function ExecutiveSummary() {
   return (
     <div className="space-y-6">
       <MetricBand
+        variant="light"
         label="Ringkasan eksekutif"
         lead={
           <BandLead
@@ -213,6 +214,7 @@ export function ReportsPage() {
   return (
     <div>
       <PageHeader
+        eyebrow={<span>Tata kelola</span>}
         title="Laporan & audit"
         description={`Ringkasan eksekutif ${ws.activeEntity.flag} ${ws.activeEntity.legalName} dan jejak audit seluruh aksi.`}
         actions={

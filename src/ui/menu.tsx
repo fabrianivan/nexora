@@ -37,7 +37,7 @@ export function Popover({
     <div
       ref={ref}
       className={cn(
-        'absolute top-full mt-2 z-50 bg-surface border border-line rounded-xl shadow-lg animate-pop origin-top',
+        'absolute top-full mt-2 z-50 bg-surface border border-line rounded-lg shadow-lg animate-pop origin-top',
         align === 'right' ? 'right-0' : 'left-0',
         className,
       )}
@@ -70,7 +70,7 @@ export function MenuItem({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-[13px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+        'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left text-[13px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
         danger ? 'text-danger-700 hover:bg-danger-50' : 'text-ink-2 hover:bg-muted hover:text-ink',
         active && 'bg-muted text-ink',
       )}

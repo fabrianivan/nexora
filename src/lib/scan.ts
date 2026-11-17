@@ -1,6 +1,8 @@
+import type { EngineBadge } from './ai/badge';
+
 /**
- * Helpers for the simulated Document AI scanner. Without a real OCR backend the scanner
- * reads what it can from the file name, so an upload like `faktur-pt-sinar-abadi-okt.pdf`
+ * Helpers for the document scanner. When Gemini is not configured the scanner cannot
+ * read the file, so the simulation reads what it can from the file name, so an upload like `faktur-pt-sinar-abadi-okt.pdf`
  * fills the counterparty with "PT Sinar Abadi" instead of a generic placeholder.
  */
 
@@ -51,4 +53,30 @@ export function vendorFromFileName(fileName: string): string | null {
     if (name.length) return `${name.join(' ')} ${label}`;
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Scanner response contract (shared by /api/scan-document and the upload dialog)
+// ---------------------------------------------------------------------------
+export interface ScanField<T> {
+  value: T;
+  confidence?: number;
+}
+
+export interface ScanResult {
+  engine: EngineBadge;
+  fields: {
+    number?: ScanField<string>;
+    date?: ScanField<string>;
+    vendor?: ScanField<string>;
+    vendorTaxId?: ScanField<string>;
+    base?: ScanField<number>;
+    tax?: ScanField<number>;
+    uuid?: ScanField<string>;
+  };
+  /** True when a deterministic check on the extracted values needs attention. */
+  risk: boolean;
+  riskReasons: string[];
+  /** Text in the document that reads like instructions to an AI. Ignored, but surfaced. */
+  hiddenInstructions: string[];
 }

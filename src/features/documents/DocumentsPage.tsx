@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, FileText, Inbox, Pencil, Search, ShieldAlert, Trash2, Upload } from 'lucide-react';
+import { CheckCircle2, Inbox, Pencil, Search, ShieldAlert, Trash2, Upload } from 'lucide-react';
 import type { TaxDocument } from '@/lib/domain';
 import type { WorkspaceDocument } from '@/lib/compliance';
 import { useWorkspace } from '@/state/workspace';
@@ -33,6 +33,7 @@ import {
   cn,
 } from '@/ui';
 import { CycleFooter } from '@/shell/CycleFooter';
+import { CycleNext } from '@/shell/CycleNext';
 import { EntityName, ScopeToggle, SeverityBadge, useScopedIds, type Scope } from '../shared';
 import { UploadDialog } from './UploadDialog';
 
@@ -146,7 +147,7 @@ function DocumentSheet({ item, onClose }: { item: WorkspaceDocument | null; onCl
             tone="danger"
             icon={<ShieldAlert />}
             title={`${findings.length} temuan risiko pada dokumen ini`}
-            action={<Button size="sm" onClick={() => router.push(`/risk?f=${encodeURIComponent(findings[0].id)}`)}>Buka</Button>}
+            action={<Button size="sm" onClick={() => router.push(`/cases?f=${encodeURIComponent(findings[0].id)}`)}>Buka</Button>}
           >
             {findings.map((f) => f.ruleName).join(' · ')}
           </Callout>
@@ -292,19 +293,19 @@ export function DocumentsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow={<span>Langkah 2 · Siklus kepatuhan</span>}
+        next={<CycleNext current="/documents" />}
+        eyebrow={<span>Langkah 2 dari 6 · Siklus kepatuhan</span>}
         title="Dokumen"
-        description="Faktur, invoice, dan register yang diekstraksi Document AI. Setiap dokumen otomatis dianalisis mesin risiko."
+        description="Faktur, invoice, dan register pemegang saham. Field hasil ekstraksi AI ditandai dengan keyakinannya; setiap dokumen otomatis dianalisis mesin aturan."
         actions={
           <Button variant="primary" icon={<Upload />} onClick={() => setUpload(true)}>
             Unggah dokumen
           </Button>
         }
-      >
-        <ScopeToggle value={scope} onChange={setScope} />
-      </PageHeader>
+      />
 
       <MetricBand
+        variant="light"
         className="mb-6"
         label="Posisi inbox dokumen"
         lead={
@@ -333,24 +334,25 @@ export function DocumentsPage() {
             onClick: () => setStatus('pending'),
           },
           {
-            label: 'Confidence AI',
+            label: 'Keyakinan ekstraksi',
             value: `${Math.round(conf * 100)}%`,
             detail: 'Field di bawah 90% ditandai untuk ditinjau',
             icon: <CheckCircle2 />,
           },
           {
-            label: 'Bertemuan risiko',
+            label: 'Terkait kasus',
             value: flaggedCount,
-            detail: 'Dokumen yang terkait temuan risiko',
+            detail: 'Dokumen yang membuka kasus risiko',
             icon: <ShieldAlert />,
             tone: flaggedCount ? 'danger' : undefined,
-            href: '/risk',
+            href: '/cases',
           },
         ]}
       />
 
       <Card>
-        <div className="flex flex-wrap items-center gap-3 px-5 py-3.5">
+        <div className="flex flex-wrap items-center gap-3 px-5 py-3.5 border-b border-line">
+          <ScopeToggle value={scope} onChange={setScope} />
           <Segmented<StatusFilter>
             value={status}
             onChange={setStatus}
@@ -380,9 +382,8 @@ export function DocumentsPage() {
                 <TH>Dokumen</TH>
                 {scope === 'group' && <TH>Entitas</TH>}
                 <TH>Tanggal</TH>
-                <TH align="right">DPP</TH>
-                <TH align="right">Pajak</TH>
-                <TH align="right">Confidence</TH>
+                <TH align="right">Nilai</TH>
+                <TH align="right">Keyakinan</TH>
                 <TH>Status</TH>
               </tr>
             </THead>
@@ -394,20 +395,25 @@ export function DocumentsPage() {
                 return (
                   <TR key={d.id} onClick={() => setOpen(d.id)} selected={openId === d.id}>
                     <TD>
-                      <div className="flex items-center gap-3">
-                        <span className="size-8 rounded-lg bg-muted text-ink-3 flex items-center justify-center shrink-0"><FileText className="size-4" /></span>
-                        <div className="min-w-0">
-                          <div className="text-ink font-medium truncate max-w-[280px]">{d.counterparty.value}</div>
-                          <div className="text-xs text-ink-3 font-mono truncate">{d.number.value} · {DOC_TYPE_LABEL[d.type]}</div>
-                        </div>
+                      <div className="min-w-0">
+                        <div className="text-ink font-medium truncate max-w-[300px]">{d.counterparty.value}</div>
+                        <div className="text-xs text-ink-3 truncate"><span className="font-mono">{d.number.value}</span> · {DOC_TYPE_LABEL[d.type]}</div>
                       </div>
                     </TD>
                     {scope === 'group' && (
                       <TD className="max-w-[200px]"><EntityName id={d.entityId} short /></TD>
                     )}
                     <TD className="whitespace-nowrap">{dateShort(d.date.value)}</TD>
-                    <TD align="right" className="text-ink">{d.type === 'e_invoice' ? money(d.taxableBase.value, d.country) : <span className="text-ink-4">{d.ownershipPercentage.value}% saham</span>}</TD>
-                    <TD align="right">{d.type === 'e_invoice' ? money(d.taxAmount.value, d.country) : '—'}</TD>
+                    <TD align="right">
+                      {d.type === 'e_invoice' ? (
+                        <>
+                          <div className="text-ink">{money(d.totalAmount.value, d.country)}</div>
+                          <div className="text-xs text-ink-3">pajak {money(d.taxAmount.value, d.country)}</div>
+                        </>
+                      ) : (
+                        <span className="text-ink-3">{d.ownershipPercentage.value}% saham</span>
+                      )}
+                    </TD>
                     <TD align="right"><ConfidenceCell value={d.counterparty.confidence} /></TD>
                     <TD>
                       <div className="flex items-center gap-1.5">

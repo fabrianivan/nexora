@@ -19,7 +19,7 @@ export function AccountMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 h-9 pl-1 pr-2 rounded-lg hover:bg-muted cursor-pointer"
+        className="flex items-center gap-2 h-9 pl-1 pr-2 rounded-md hover:bg-muted cursor-pointer"
         aria-label="Akun & peran"
       >
         <Avatar initials={p.avatarInitials} className={p.avatarBg} />

@@ -59,7 +59,7 @@ describe('schedule & formatting', () => {
   it('formats money per jurisdiction', () => {
     expect(money(120_000_000, 'ID')).toBe('Rp 120.000.000');
     expect(money(84_000, 'SG')).toBe('S$ 84,000');
-    expect(moneyCompact(1_230_000_000, 'ID')).toBe('Rp 1,23 M');
+    expect(moneyCompact(1_230_000_000, 'ID')).toBe('Rp 1,23 miliar');
     expect(moneyCompact(290_400_000, 'ID')).toBe('Rp 290,4 jt');
   });
 });

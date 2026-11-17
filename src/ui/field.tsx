@@ -4,7 +4,7 @@ import React, { useId } from 'react';
 import { cn } from './cn';
 
 const control =
-  'w-full bg-surface border border-line-strong rounded-lg text-sm text-ink placeholder:text-ink-4 shadow-xs transition focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 disabled:bg-muted disabled:text-ink-3';
+  'w-full bg-surface border border-line-strong rounded-md text-sm text-ink placeholder:text-ink-4 transition focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/15 disabled:bg-muted disabled:text-ink-3';
 
 export function Field({
   label,
@@ -23,7 +23,7 @@ export function Field({
 }) {
   return (
     <div className={cn('space-y-1.5', className)}>
-      <label htmlFor={htmlFor} className="block text-[13px] font-medium text-ink-2">
+      <label htmlFor={htmlFor} className="block text-[13px] font-medium text-ink">
         {label}
       </label>
       {children}

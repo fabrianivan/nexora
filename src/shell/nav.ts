@@ -3,7 +3,6 @@ import {
   Building2,
   Inbox,
   ShieldAlert,
-  ListChecks,
   Calculator,
   FileCheck2,
   Landmark,
@@ -19,7 +18,7 @@ export interface NavItem {
   label: string;
   description: string;
   icon: LucideIcon;
-  /** Position in the 7-step compliance cycle. */
+  /** Position in the 6-step compliance cycle. */
   step?: number;
 }
 
@@ -36,12 +35,11 @@ export const NAV: NavGroup[] = [
     label: 'Siklus kepatuhan',
     items: [
       { href: '/entities', label: 'Entitas & struktur', description: 'Direktori, profil legal, struktur kepemilikan', icon: Building2, step: 1 },
-      { href: '/documents', label: 'Dokumen', description: 'Inbox faktur & dokumen, ekstraksi Document AI', icon: Inbox, step: 2 },
-      { href: '/risk', label: 'Risiko & fraud', description: 'Temuan TBTS, MTF, anomali & validasi silang', icon: ShieldAlert, step: 3 },
-      { href: '/review', label: 'Review temuan', description: 'Keputusan maker-checker & koreksi fiskal', icon: ListChecks, step: 4 },
-      { href: '/calculation', label: 'Rekonsiliasi fiskal', description: 'Koreksi fiskal, PPN, PPh potput, what-if', icon: Calculator, step: 5 },
-      { href: '/tax-return', label: 'SPT tahunan', description: 'Draf SPT 1771, lampiran & persetujuan', icon: FileCheck2, step: 6 },
-      { href: '/payments', label: 'Pembayaran', description: 'Kode billing, NTPN & kewajiban setor', icon: Landmark, step: 7 },
+      { href: '/documents', label: 'Dokumen', description: 'Inbox faktur & dokumen, ekstraksi AI', icon: Inbox, step: 2 },
+      { href: '/cases', label: 'Kasus', description: 'Temuan risiko, bukti, investigasi AI & keputusan maker-checker', icon: ShieldAlert, step: 3 },
+      { href: '/calculation', label: 'Rekonsiliasi fiskal', description: 'Koreksi fiskal, PPN, PPh potput, what-if', icon: Calculator, step: 4 },
+      { href: '/tax-return', label: 'SPT tahunan', description: 'Draf SPT 1771, lampiran & persetujuan', icon: FileCheck2, step: 5 },
+      { href: '/payments', label: 'Pembayaran', description: 'Kode billing, NTPN & kewajiban setor', icon: Landmark, step: 6 },
     ],
   },
   {

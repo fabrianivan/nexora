@@ -19,29 +19,29 @@ function Topbar() {
   const { item, group } = navFor(pathname);
 
   return (
-    <header data-shell className="sticky top-0 z-20 h-14 bg-canvas/85 backdrop-blur-md border-b border-line">
-      <div className="h-full max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8 flex items-center gap-2 sm:gap-3">
+    <header data-shell className="sticky top-0 z-20 h-14 bg-canvas/90 backdrop-blur-sm border-b border-line">
+      <div className="h-full max-w-[1320px] mx-auto px-3 sm:px-6 lg:px-10 flex items-center gap-2 sm:gap-3">
         <IconButton label="Buka navigasi" className="lg:hidden -ml-1" onClick={() => ui.setMobileNavOpen(true)}>
           <Menu />
         </IconButton>
         <span className="lg:hidden">
           <Logo compact />
         </span>
-        <nav aria-label="Breadcrumb" className="hidden lg:flex items-center gap-2 text-[13px] min-w-0">
+        <nav aria-label="Breadcrumb" className="hidden lg:flex items-center gap-2 min-w-0 eyebrow !text-[10.5px]">
           {group?.label && (
             <>
-              <span className="text-ink-3 truncate">{group.label}</span>
+              <span className="truncate">{group.label}</span>
               <span className="text-ink-4">/</span>
             </>
           )}
-          <span className="text-ink font-medium truncate">{item?.label ?? 'Nexora'}</span>
+          <span className="text-ink truncate">{item?.step ? `${item.step} · ` : ''}{item?.label ?? 'Nexora'}</span>
         </nav>
 
         <div className="ml-auto flex items-center gap-0.5 sm:gap-1.5">
           <button
             type="button"
             onClick={() => ui.setPaletteOpen(true)}
-            className="hidden md:flex items-center gap-2 h-9 w-64 px-3 rounded-lg border border-line bg-surface text-[13px] text-ink-4 hover:border-line-strong shadow-xs cursor-pointer"
+            className="hidden md:flex items-center gap-2 h-9 w-60 px-3 rounded-md border border-line bg-surface/70 text-[13px] text-ink-4 hover:border-line-strong cursor-pointer"
           >
             <Search className="size-4" />
             <span className="flex-1 text-left">Cari apa saja…</span>
@@ -51,7 +51,7 @@ function Topbar() {
             <Search />
           </IconButton>
           <span className="hidden sm:block">
-            <Button variant="secondary" size="sm" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.setCopilotOpen(true)} className="h-9">
+            <Button variant="ghost" size="sm" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.setCopilotOpen(true)} className="h-9">
               Copilot
             </Button>
           </span>
@@ -75,10 +75,10 @@ function PageSkeleton() {
       </div>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-[104px] rounded-xl" />
+          <Skeleton key={i} className="h-[104px] rounded-md" />
         ))}
       </div>
-      <Skeleton className="h-72 rounded-xl" />
+      <Skeleton className="h-72 rounded-md" />
     </div>
   );
 }
@@ -95,7 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </a>
       <Sidebar />
       <Topbar />
-      <main id="main" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main id="main" className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-10">
         {mounted ? children : <PageSkeleton />}
       </main>
       <Sheet open={ui.mobileNavOpen} onClose={() => ui.setMobileNavOpen(false)} side="left" width="max-w-[288px]">

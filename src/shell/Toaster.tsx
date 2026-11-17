@@ -19,7 +19,7 @@ export function Toaster() {
           <div
             key={t.id}
             role="status"
-            className="pointer-events-auto w-full sm:w-auto sm:max-w-sm flex items-start gap-2.5 rounded-xl bg-ink text-white shadow-lg pl-3.5 pr-2 py-2.5 animate-in"
+            className="pointer-events-auto w-full sm:w-auto sm:max-w-sm flex items-start gap-2.5 rounded-md bg-ink text-canvas shadow-lg pl-3.5 pr-2 py-2.5 animate-in"
           >
             <Icon className={cn('size-4 mt-0.5 shrink-0', color)} />
             <span className="text-[13px] leading-snug flex-1">{t.message}</span>
@@ -30,7 +30,7 @@ export function Toaster() {
                   t.action?.onClick();
                   dismissToast(t.id);
                 }}
-                className="text-[13px] font-medium text-brand-300 hover:text-white px-1.5 cursor-pointer"
+                className="text-[13px] font-medium text-mark hover:text-white underline underline-offset-2 px-1.5 cursor-pointer"
               >
                 {t.action.label}
               </button>

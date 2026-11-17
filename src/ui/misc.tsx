@@ -11,7 +11,7 @@ export function Avatar({ initials, className, size = 'md' }: { initials: string;
 }
 
 export function Kbd({ children }: { children: React.ReactNode }) {
-  return <kbd className="inline-flex items-center h-5 px-1.5 rounded border border-line bg-subtle text-[11px] font-sans text-ink-3">{children}</kbd>;
+  return <kbd className="inline-flex items-center h-5 px-1.5 rounded-sm border border-line bg-surface text-[11px] font-sans text-ink-3">{children}</kbd>;
 }
 
 export function Divider({ className }: { className?: string }) {
@@ -28,7 +28,7 @@ export function Meter({ value, max = 100, tone = 'brand', className, label }: { 
   const fill = { brand: 'bg-brand-500', success: 'bg-success-500', warning: 'bg-warning-500', danger: 'bg-danger-500' }[tone];
   const track = { brand: 'bg-brand-100', success: 'bg-success-100', warning: 'bg-warning-100', danger: 'bg-danger-100' }[tone];
   return (
-    <div className={cn('h-1.5 w-full rounded-full overflow-hidden', track, className)} role="meter" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max} aria-label={label}>
+    <div className={cn('h-1 w-full rounded-full overflow-hidden', track, className)} role="meter" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max} aria-label={label}>
       <div className={cn('h-full rounded-full transition-[width] duration-500', fill)} style={{ width: `${pct}%` }} />
     </div>
   );

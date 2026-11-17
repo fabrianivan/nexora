@@ -13,14 +13,11 @@ import { StatusDot, cn, useMounted } from '@/ui';
 
 export function Logo({ className, compact }: { className?: string; compact?: boolean }) {
   return (
-    <span className={cn('inline-flex items-center gap-2', className)}>
-      <span className="size-7 rounded-lg bg-ink flex items-center justify-center">
-        <svg viewBox="0 0 24 24" className="size-4" fill="none" aria-hidden>
-          <path d="M6 18V6l12 12V6" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="18" cy="6" r="2" fill="var(--color-brand-400)" />
-        </svg>
+    <span className={cn('inline-flex items-baseline gap-1.5', className)}>
+      <span className={cn('font-serif text-[24px] leading-none tracking-[-0.02em] text-ink', compact && 'text-[21px]')}>
+        Nexora<span className="text-brand-600">.</span>
       </span>
-      <span className={cn('text-[15px] font-semibold tracking-tight text-ink', compact && 'hidden sm:inline')}>Nexora</span>
+      {!compact && <span className="eyebrow !text-[9.5px] !tracking-[0.14em] translate-y-[-2px]">Tax</span>}
     </span>
   );
 }
@@ -42,20 +39,20 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="h-14 px-4 flex items-center shrink-0">
+      <div className="h-16 px-5 flex items-center shrink-0">
         <Link href="/overview" onClick={onNavigate} className="rounded-md">
           <Logo />
         </Link>
       </div>
 
-      <div className="px-2.5 pb-2">
+      <div className="px-3 pb-3">
         <EntitySwitcher />
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2.5 pb-4 space-y-5" aria-label="Navigasi utama">
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-6" aria-label="Navigasi utama">
         {NAV.map((group, gi) => (
           <div key={gi}>
-            {group.label && <div className="px-2.5 pb-1.5 text-[11px] font-medium text-ink-4 uppercase tracking-wider">{group.label}</div>}
+            {group.label && <div className="eyebrow px-2 pb-2 !text-[10.5px] text-ink-4">{group.label}</div>}
             <ul className="space-y-px">
               {group.items.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -69,30 +66,28 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                       aria-current={active ? 'page' : undefined}
                       title={st?.hint ?? item.description}
                       className={cn(
-                        'group relative flex items-center gap-2.5 h-8 px-2.5 rounded-lg text-[13px] transition-colors',
-                        active
-                          ? 'bg-brand-50 text-brand-900 font-medium before:absolute before:inset-y-1.5 before:-left-0.5 before:w-0.5 before:rounded-full before:bg-brand-600'
-                          : 'text-ink-2 hover:bg-muted/70 hover:text-ink',
+                        'group relative flex items-center gap-2.5 h-8 px-2 rounded-md text-[13.5px] transition-colors',
+                        active ? 'bg-surface text-ink font-medium shadow-[inset_2px_0_0_var(--color-ink)]' : 'text-ink-2 hover:text-ink hover:bg-muted/60',
                       )}
                     >
                       {item.step ? (
                         <span
                           className={cn(
-                            'size-[18px] rounded-full text-[10px] font-semibold flex items-center justify-center shrink-0 num',
-                            st?.done ? 'bg-success-100 text-success-700' : active ? 'bg-brand-600 text-white' : 'bg-surface ring-1 ring-line-strong text-ink-3',
+                            'w-5 shrink-0 text-center font-serif text-[14px] leading-none num',
+                            st?.done ? 'text-success-600' : active ? 'text-ink' : 'text-ink-4',
                           )}
                         >
-                          {st?.done ? <Check className="size-3" strokeWidth={3} /> : item.step}
+                          {st?.done ? <Check className="size-3.5 inline" strokeWidth={2.5} aria-label="Selesai" /> : item.step}
                         </span>
                       ) : (
-                        <Icon className={cn('size-4 shrink-0', active ? 'text-brand-700' : 'text-ink-3 group-hover:text-ink-2')} />
+                        <Icon className={cn('size-4 w-5 shrink-0', active ? 'text-ink' : 'text-ink-4 group-hover:text-ink-3')} />
                       )}
                       <span className="flex-1 truncate">{item.label}</span>
                       {st?.count ? (
                         <span
                           className={cn(
-                            'min-w-5 h-5 px-1.5 rounded-full text-[11px] font-medium inline-flex items-center justify-center num',
-                            st.tone === 'danger' ? 'bg-danger-50 text-danger-700' : st.tone === 'warning' ? 'bg-warning-50 text-warning-700' : 'bg-muted text-ink-3',
+                            'text-[12px] font-medium num',
+                            st.tone === 'danger' ? 'text-danger-600' : st.tone === 'warning' ? 'text-warning-700' : 'text-ink-4',
                           )}
                         >
                           {st.count}
@@ -107,16 +102,14 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-      <div className="p-2.5 border-t border-line">
-        <div className="rounded-lg px-2.5 py-2 flex items-center gap-2.5">
-          <Database className="size-4 text-ink-3 shrink-0" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 text-xs text-ink-2">
-              <StatusDot tone={ws.hydrated ? 'success' : 'warning'} />
-              <span className="uppercase font-medium tracking-wide">{ws.dbEngine}</span>
-              <span className="text-ink-4">·</span>
-              <span className="text-ink-3 truncate">{mounted ? timeAgo(ws.lastSyncedAt) : '…'}</span>
-            </div>
+      <div className="px-3 py-3 border-t border-line">
+        <div className="px-2 flex items-center gap-2.5">
+          <Database className="size-3.5 text-ink-4 shrink-0" />
+          <div className="min-w-0 flex-1 flex items-center gap-1.5 text-[11px] text-ink-3">
+            <StatusDot tone={ws.hydrated ? 'success' : 'warning'} />
+            <span className="uppercase font-semibold tracking-wider">{ws.dbEngine}</span>
+            <span className="text-ink-4">·</span>
+            <span className="truncate">{mounted ? timeAgo(ws.lastSyncedAt) : '…'}</span>
           </div>
           <button
             type="button"
@@ -126,7 +119,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               const ok = await ws.resetSampleData();
               ui.toast(ok ? 'Data contoh dimuat ulang ke kondisi awal.' : 'Gagal mereset database.', ok ? 'success' : 'danger');
             }}
-            className="size-7 inline-flex items-center justify-center rounded-md text-ink-3 hover:bg-muted hover:text-ink cursor-pointer"
+            className="size-7 inline-flex items-center justify-center rounded-md text-ink-4 hover:bg-muted hover:text-ink cursor-pointer"
           >
             <RotateCcw className="size-3.5" />
           </button>
@@ -138,7 +131,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden lg:block fixed inset-y-0 left-0 z-30 w-[var(--sidebar-w)] bg-surface border-r border-line">
+    <aside className="hidden lg:block fixed inset-y-0 left-0 z-30 w-[var(--sidebar-w)] bg-canvas border-r border-line">
       <SidebarContent />
     </aside>
   );

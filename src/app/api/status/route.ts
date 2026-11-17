@@ -1,3 +1,13 @@
+import { geminiKey, geminiModel } from '@/lib/ai/gemini';
+
+/** Which engines are live. Never returns secrets. */
 export async function GET() {
-  return Response.json({ mode: process.env.GEMINI_API_KEY?.trim() ? 'live' : 'manual', gemini: Boolean(process.env.GEMINI_API_KEY?.trim()), documentAi: Boolean(process.env.GOOGLE_CLOUD_PROJECT && process.env.DOCUMENT_AI_PROCESSOR_ID), bigQuery: Boolean(process.env.BIGQUERY_DATASET), mysqlConfigured: Boolean(process.env.MYSQL_URL?.trim()) });
+  const live = Boolean(geminiKey());
+  return Response.json({
+    mode: live ? 'live' : 'offline',
+    gemini: live,
+    model: live ? geminiModel() : null,
+    label: live ? 'Gemini · live' : 'Simulasi lokal · offline',
+    mysqlConfigured: Boolean(process.env.MYSQL_URL?.trim()),
+  });
 }

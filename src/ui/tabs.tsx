@@ -23,7 +23,7 @@ export function Tabs<T extends string>({
   className?: string;
 }) {
   return (
-    <div role="tablist" className={cn('flex items-center gap-1 border-b border-line overflow-x-auto scrollbar-none', className)}>
+    <div role="tablist" className={cn('flex items-center gap-5 border-b border-line overflow-x-auto scrollbar-none', className)}>
       {items.map((t) => {
         const active = t.id === value;
         return (
@@ -34,18 +34,18 @@ export function Tabs<T extends string>({
             aria-selected={active}
             onClick={() => onChange(t.id)}
             className={cn(
-              'relative inline-flex items-center gap-2 h-10 px-3 text-sm whitespace-nowrap transition-colors cursor-pointer [&_svg]:size-4',
+              'relative inline-flex items-center gap-2 h-10 px-0.5 text-sm whitespace-nowrap transition-colors cursor-pointer [&_svg]:size-4',
               active ? 'text-ink font-medium' : 'text-ink-3 hover:text-ink',
             )}
           >
             {t.icon}
             {t.label}
             {t.count !== undefined && (
-              <span className={cn('min-w-5 h-5 px-1.5 rounded-full text-[11px] font-medium inline-flex items-center justify-center num', active ? 'bg-ink text-white' : 'bg-muted text-ink-3')}>
+              <span className={cn('min-w-4 text-[12px] font-medium inline-flex items-center justify-center num', active ? 'text-ink' : 'text-ink-4')}>
                 {t.count}
               </span>
             )}
-            {active && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-ink" />}
+            {active && <span className="absolute inset-x-0 -bottom-px h-[2px] bg-ink" />}
           </button>
         );
       })}
@@ -68,7 +68,7 @@ export function Segmented<T extends string>({
   size?: 'sm' | 'md';
 }) {
   return (
-    <div role="radiogroup" className={cn('inline-flex items-center p-0.5 rounded-lg bg-muted border border-line', className)}>
+    <div role="radiogroup" className={cn('inline-flex items-center p-0.5 rounded-md bg-muted/80', className)}>
       {items.map((t) => {
         const active = t.id === value;
         return (
@@ -79,9 +79,9 @@ export function Segmented<T extends string>({
             aria-checked={active}
             onClick={() => onChange(t.id)}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md whitespace-nowrap transition cursor-pointer [&_svg]:size-3.5',
+              'inline-flex items-center gap-1.5 rounded-[5px] whitespace-nowrap transition cursor-pointer [&_svg]:size-3.5',
               size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-[13px]',
-              active ? 'bg-surface text-ink font-medium shadow-sm ring-1 ring-line' : 'text-ink-3 hover:text-ink',
+              active ? 'bg-surface text-ink font-medium shadow-sm' : 'text-ink-3 hover:text-ink',
             )}
           >
             {t.icon}

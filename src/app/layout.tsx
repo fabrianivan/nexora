@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 // Self-hosted variable fonts (bundled at build time — no network needed in Docker/CI)
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/newsreader/opsz.css';
 import './globals.css';
 import { Providers } from './providers';
 
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#f6f7f9',
+  themeColor: '#f6f3ec',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

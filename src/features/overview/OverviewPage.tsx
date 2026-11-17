@@ -3,16 +3,7 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowRight,
-  CalendarClock,
-  Check,
-  FileCheck2,
-  ListChecks,
-  ShieldAlert,
-  Sparkles,
-  Wallet,
-} from 'lucide-react';
+import { ArrowRight, Check, Sparkles } from 'lucide-react';
 import { useWorkspace } from '@/state/workspace';
 import { useUi } from '@/state/ui';
 import { MULTI_COUNTRY_DATA } from '@/data/multiCountryTaxData';
@@ -20,21 +11,18 @@ import { canApprove, entityRiskScore, groupRiskScore, isUnresolved, riskBand } f
 import { daysUntil, dateShort, money, moneyCompact, relativeDays } from '@/lib/format';
 import { FX_NOTE, toIdr } from '@/lib/fx';
 import { paymentStatus } from '@/lib/schedule';
-import { CYCLE } from '@/shell/nav';
-import { useCycleStatus } from '@/shell/cycle';
+import { CycleRibbon } from '@/shell/CycleRibbon';
 import {
   Badge,
   BandLead,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
   ColumnChart,
   ComplianceRing,
   Meter,
   MetricBand,
   PageHeader,
   SERIES,
+  Section,
   Table,
   TD,
   TH,
@@ -53,7 +41,6 @@ export function OverviewPage() {
   const ws = useWorkspace();
   const ui = useUi();
   const router = useRouter();
-  const cycle = useCycleStatus();
   const ids = useMemo(() => new Set(ws.accessibleEntities.map((e) => e.id)), [ws.accessibleEntities]);
   const entityCountry = (id: string) => ws.entityById(id)?.countryCode ?? 'ID';
 
@@ -80,42 +67,68 @@ export function OverviewPage() {
   const cfg = MULTI_COUNTRY_DATA[ws.country];
   const metrics = cfg.monthlyMetrics;
 
-  // Action centre — the few things that need this person today.
-  const actions: { key: string; icon: React.ReactNode; tone: string; title: string; body: string; cta: string; href: string }[] = [];
-  if (approvals.length)
-    actions.push({ key: 'approve', icon: <ListChecks />, tone: 'bg-warning-50 text-warning-600', title: `${approvals.length} usulan menunggu persetujuan Anda`, body: 'Anda checker untuk temuan ini. Setujui atau kembalikan ke maker.', cta: 'Tinjau', href: '/review?tab=proposed' });
+  // The few things that need this person today, most consequential first.
+  const actions: { key: string; kind: string; title: string; body: string; cta: string; href: string; tone: 'danger' | 'warning' | 'brand' }[] = [];
   critical.slice(0, 2).forEach((f) =>
-    actions.push({ key: f.id, icon: <ShieldAlert />, tone: 'bg-danger-50 text-danger-600', title: `${f.ruleName} — ${ws.entityById(f.entityId)?.legalName ?? ''}`, body: f.explanation, cta: 'Buka temuan', href: `/risk?f=${encodeURIComponent(f.id)}` }),
+    actions.push({ key: f.id, kind: 'Kasus kritis', tone: 'danger', title: `${f.ruleName} · ${ws.entityById(f.entityId)?.legalName ?? ''}`, body: f.explanation, cta: 'Buka kasus', href: `/cases?f=${encodeURIComponent(f.id)}` }),
   );
+  if (approvals.length)
+    actions.push({ key: 'approve', kind: 'Persetujuan', tone: 'warning', title: `${approvals.length} usulan menunggu persetujuan Anda`, body: 'Anda checker untuk usulan ini. Setujui atau kembalikan ke maker.', cta: 'Tinjau', href: '/cases?tab=proposed' });
   overduePayments.slice(0, 2).forEach((p) =>
-    actions.push({ key: p.id, icon: <Wallet />, tone: 'bg-danger-50 text-danger-600', title: `${p.taxType} terlambat`, body: `${ws.entityById(p.entityId)?.legalName} · ${money(p.amount, entityCountry(p.entityId))} · jatuh tempo ${dateShort(p.dueDate)}`, cta: 'Bayar', href: '/payments' }),
+    actions.push({ key: p.id, kind: 'Terlambat', tone: 'danger', title: `${p.taxType}`, body: `${ws.entityById(p.entityId)?.legalName} · ${money(p.amount, entityCountry(p.entityId))} · jatuh tempo ${dateShort(p.dueDate)}`, cta: 'Bayar', href: '/payments' }),
   );
   const reviewReturns = ws.accessibleEntities.filter((e) => ws.returnFor(e.id).returnStatus === 'Review');
   if (reviewReturns.length)
-    actions.push({ key: 'spt', icon: <FileCheck2 />, tone: 'bg-brand-50 text-brand-600', title: `${reviewReturns.length} SPT tahunan menunggu persetujuan`, body: `${reviewReturns.map((e) => e.legalName).join(', ')} — perlu sign-off Group CFO/CEO sebelum dilaporkan.`, cta: 'Buka SPT', href: '/tax-return' });
+    actions.push({ key: 'spt', kind: 'SPT', tone: 'brand', title: `${reviewReturns.length} SPT tahunan menunggu persetujuan`, body: `${reviewReturns.map((e) => e.legalName).join(', ')} perlu sign-off Group CFO/CEO.`, cta: 'Buka SPT', href: '/tax-return' });
 
   const firstName = ws.persona.name.replace(/^(Ir\.|Dr\.)\s*/, '').split(/[ ,]/)[0];
+  const overdueIdr = overduePayments.reduce((s, p) => s + toIdr(p.amount, entityCountry(p.entityId)), 0);
+
+  // The front-page headline: the single most consequential fact, with its next move.
+  const headline = critical.length
+    ? { mark: `${critical.length} kasus kritis`, rest: ' perlu diputuskan sebelum SPT grup bisa disetujui.', cta: 'Buka kasus kritis', href: `/cases?f=${encodeURIComponent(critical[0].id)}` }
+    : approvals.length
+      ? { mark: `${approvals.length} usulan`, rest: ' menunggu persetujuan Anda sebagai checker.', cta: 'Tinjau usulan', href: '/cases?tab=proposed' }
+      : overduePayments.length
+        ? { mark: `${overduePayments.length} kewajiban pajak`, rest: ' sudah lewat tenggat.', cta: 'Buka pembayaran', href: '/payments' }
+        : reviewReturns.length
+          ? { mark: `${reviewReturns.length} SPT tahunan`, rest: ' menunggu persetujuan.', cta: 'Buka SPT', href: '/tax-return' }
+          : unresolved.length
+            ? { mark: `${unresolved.length} kasus`, rest: ' masih terbuka, tanpa yang kritis.', cta: 'Buka Kasus', href: '/cases' }
+            : { mark: 'Semua siklus', rest: ' berjalan sesuai jadwal.', cta: 'Lihat laporan', href: '/reports' };
+
+  const lede = [
+    `${unresolved.length} kasus terbuka dengan nilai dokumen ${moneyCompact(exposure)}`,
+    overduePayments.length ? `${overduePayments.length} kewajiban terlambat senilai ${moneyCompact(overdueIdr)}` : `${due30.length} kewajiban jatuh tempo dalam 30 hari`,
+  ].join(', dan ');
+  const startWith = critical[0] ? ` Mulai dari ${critical[0].ruleName} di ${(ws.entityById(critical[0].entityId)?.legalName ?? '').replace(/\.$/, '')}.` : '';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
       <PageHeader
-        eyebrow={<span>{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>}
-        title={`${greeting()}, ${firstName}`}
-        description={
-          ws.isParentExec
-            ? `Posisi pajak & risiko ${ws.entities.length} entitas Nusantara Group di 4 yurisdiksi.`
-            : `Ringkasan untuk entitas dalam cakupan akses Anda.`
+        eyebrow={
+          <span>
+            {greeting()}, {firstName} · {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </span>
         }
+        title={
+          <span className="block text-[44px] sm:text-[52px] leading-[1.04]">
+            <span className="mark mark-sweep">{headline.mark}</span>
+            {headline.rest}
+          </span>
+        }
+        description={ws.isParentExec ? `${lede}.${startWith}` : `Ringkasan untuk entitas dalam cakupan akses Anda: ${lede}.`}
         actions={
           <>
-            <Button icon={<Sparkles className="text-brand-600" />} onClick={() => ui.askCopilot('Ringkas risiko pajak terbesar grup kami minggu ini dan langkah yang harus diprioritaskan.')}>
+            <Button variant="ghost" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.askCopilot('Ringkas risiko pajak terbesar grup kami minggu ini dan langkah yang harus diprioritaskan.')}>
               Ringkas dengan Copilot
             </Button>
-            <Button variant="primary" iconRight={<ArrowRight />} onClick={() => router.push('/risk')}>
-              Lihat temuan risiko
+            <Button variant="primary" size="lg" iconRight={<ArrowRight />} onClick={() => router.push(headline.href)}>
+              {headline.cta}
             </Button>
           </>
         }
+        className="mb-0"
       />
 
       <MetricBand
@@ -130,107 +143,73 @@ export function OverviewPage() {
           />
         }
         metrics={[
-          {
-            label: 'Temuan terbuka',
-            value: unresolved.length,
-            detail: `${critical.length} kritis · ${approvals.length} menunggu checker`,
-            icon: <ShieldAlert />,
-            href: '/risk',
-            tone: critical.length ? 'danger' : undefined,
-          },
-          {
-            label: 'Eksposur berisiko',
-            value: moneyCompact(exposure),
-            detail: 'Nilai dokumen dengan temuan terbuka',
-            icon: <Wallet />,
-            href: '/risk',
-          },
-          {
-            label: 'Jatuh tempo ≤ 30 hari',
-            value: moneyCompact(due30Idr),
-            detail: `${due30.length} kewajiban${overduePayments.length ? ` · ${overduePayments.length} terlambat` : ''}`,
-            icon: <CalendarClock />,
-            href: '/payments',
-            tone: overduePayments.length ? 'warning' : undefined,
-          },
+          { label: 'Kasus terbuka', value: unresolved.length, detail: `${critical.length} kritis · ${approvals.length} menunggu checker`, href: '/cases', tone: critical.length ? 'danger' : undefined },
+          { label: 'Nilai dokumen berisiko', value: moneyCompact(exposure), detail: 'Dokumen dengan kasus terbuka (≈ IDR)', href: '/cases' },
+          { label: 'Jatuh tempo ≤ 30 hari', value: moneyCompact(due30Idr), detail: `${due30.length} kewajiban${overduePayments.length ? ` · ${overduePayments.length} terlambat` : ''}`, href: '/payments', tone: overduePayments.length ? 'warning' : undefined },
         ]}
       />
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
-        <Card className="xl:col-span-2">
-          <CardHeader title="Perlu perhatian" description="Diurutkan berdasarkan dampak & tenggat" />
+      <Section title="Siklus kepatuhan" description={`${ws.activeEntity.flag} ${ws.activeEntity.legalName}: enam langkah dari dokumen sampai setoran.`}>
+        <CycleRibbon />
+      </Section>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-x-12 gap-y-12">
+        <Section title="Perlu keputusan Anda" description="Diurutkan dari dampak terbesar.">
           {actions.length === 0 ? (
-            <CardBody>
-              <div className="flex items-center gap-3 rounded-xl bg-success-50 px-4 py-3 text-[13px] text-success-700">
-                <Check className="size-4" /> Tidak ada tindakan mendesak. Siklus kepatuhan berjalan lancar.
-              </div>
-            </CardBody>
+            <p className="flex items-center gap-2 text-[14px] text-success-700">
+              <Check className="size-4" /> Tidak ada tindakan mendesak. Siklus berjalan lancar.
+            </p>
           ) : (
-            <ul className="divide-y divide-line border-t border-line">
-              {actions.slice(0, 5).map((a) => (
-                <li key={a.key} className="flex items-start gap-3 px-5 py-3.5">
-                  <span className={cn('mt-0.5 size-8 rounded-lg flex items-center justify-center shrink-0 [&_svg]:size-4', a.tone)}>{a.icon}</span>
+            <ol className="divide-y divide-line">
+              {actions.slice(0, 4).map((a, i) => (
+                <li key={a.key} className="flex items-start gap-4 py-4 first:pt-1">
+                  <span className="figure text-[22px] leading-7 text-ink-4 w-6 shrink-0">{i + 1}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-ink">{a.title}</div>
-                    <div className="text-[13px] text-ink-3 line-clamp-1">{a.body}</div>
+                    <div className={cn('eyebrow !text-[10.5px]', a.tone === 'danger' ? '!text-danger-600' : a.tone === 'warning' ? '!text-warning-700' : '!text-brand-600')}>{a.kind}</div>
+                    <div className="mt-0.5 text-[15px] font-medium text-ink">{a.title}</div>
+                    <div className="mt-0.5 text-[13px] text-ink-3 line-clamp-2">{a.body}</div>
                   </div>
-                  <Button size="sm" onClick={() => router.push(a.href)}>
-                    {a.cta}
-                  </Button>
+                  <Link href={a.href} className="mt-5 inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-900 shrink-0">
+                    {a.cta} <ArrowRight className="size-3.5" />
+                  </Link>
                 </li>
               ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card>
-          <CardHeader
-            title="Siklus kepatuhan"
-            description={
-              <span>
-                {ws.activeEntity.flag} {ws.activeEntity.legalName}
-              </span>
-            }
-          />
-          <CardBody className="pt-1">
-            <ol className="relative space-y-0.5">
-              {CYCLE.map((step, i) => {
-                const st = cycle[step.href];
-                return (
-                  <li key={step.href}>
-                    <Link href={step.href} className="flex items-start gap-3 rounded-lg px-2 py-1.5 -mx-2 hover:bg-subtle">
-                      <span className="relative flex flex-col items-center">
-                        <span
-                          className={cn(
-                            'size-5 rounded-full text-[10px] font-semibold flex items-center justify-center num z-10',
-                            st?.done ? 'bg-success-500 text-white' : 'bg-surface ring-1 ring-line-strong text-ink-3',
-                          )}
-                        >
-                          {st?.done ? <Check className="size-3" strokeWidth={3} /> : step.step}
-                        </span>
-                        {i < CYCLE.length - 1 && <span className={cn('absolute top-5 h-[22px] w-px', st?.done ? 'bg-success-100' : 'bg-line')} />}
-                      </span>
-                      <span className="min-w-0 flex-1 -mt-px">
-                        <span className="block text-[13px] font-medium text-ink">{step.label}</span>
-                        <span className={cn('block text-xs truncate', st?.done ? 'text-ink-3' : st?.tone === 'danger' ? 'text-danger-600' : 'text-warning-700')}>{st?.hint}</span>
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
             </ol>
-          </CardBody>
-        </Card>
+          )}
+        </Section>
+
+        <Section title="Tenggat terdekat" actions={<Link href="/calendar" className="text-[13px] text-brand-700 hover:text-brand-900 font-medium">Kalender</Link>}>
+          <ul className="divide-y divide-line">
+            {upcoming.map((e) => {
+              const d = daysUntil(e.dueDate);
+              const late = d < 0;
+              const [day, month] = dateShort(e.dueDate).split(' ');
+              return (
+                <li key={e.id} className="flex items-center gap-4 py-3 first:pt-1">
+                  <div className="w-10 shrink-0 text-center">
+                    <div className={cn('figure text-[24px] leading-none', late ? 'text-danger-600' : 'text-ink')}>{day}</div>
+                    <div className={cn('eyebrow !text-[9.5px] mt-0.5', late && '!text-danger-600')}>{month}</div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13.5px] text-ink truncate">{e.title}</div>
+                    <div className={cn('text-xs', late ? 'text-danger-600' : 'text-ink-3')}>
+                      {ws.entityById(e.entityId)?.flag} {relativeDays(e.dueDate)}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Section>
       </div>
 
-      <Card>
-        <CardHeader title="Entitas grup" description="Skor kepatuhan dihitung dari temuan yang belum diputuskan" actions={<Link href="/entities" className="text-[13px] text-brand-600 hover:text-brand-700 font-medium">Semua entitas</Link>} />
-        <Table>
+      <Section title="Entitas grup" description="Skor kepatuhan: 100 berarti tidak ada kasus terbuka." actions={<Link href="/entities" className="text-[13px] text-brand-700 hover:text-brand-900 font-medium">Semua entitas</Link>}>
+        <Table className="-mx-5">
           <THead>
             <tr>
               <TH>Entitas</TH>
               <TH>Skor kepatuhan</TH>
-              <TH align="right">Temuan terbuka</TH>
+              <TH align="right">Kasus terbuka</TH>
               <TH align="right">Belum disetor</TH>
               <TH>Tenggat berikutnya</TH>
             </tr>
@@ -264,8 +243,8 @@ export function OverviewPage() {
                   </TD>
                   <TD className="min-w-[160px]">
                     <div className="flex items-center gap-3">
-                      <span className="w-8 text-ink font-medium num">{score}</span>
-                      <Meter value={score} tone={b.tone === 'rose' ? 'danger' : b.tone === 'amber' ? 'warning' : 'success'} className="w-24" label={`Skor ${score}`} />
+                      <span className="figure w-8 text-[20px] text-ink">{score}</span>
+                      <Meter value={score} tone={b.tone === 'rose' ? 'danger' : b.tone === 'amber' ? 'warning' : 'success'} className="w-20" label={`Skor ${score}`} />
                     </div>
                   </TD>
                   <TD align="right">
@@ -292,56 +271,51 @@ export function OverviewPage() {
             })}
           </tbody>
         </Table>
-      </Card>
+      </Section>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
-        <Card className="xl:col-span-2">
-          <CardHeader
-            title={`${cfg.indirectTaxName.split(' ')[0]} keluaran vs masukan`}
-            description={`${ws.activeEntity.flag} ${ws.activeEntity.legalName} · 6 bulan terakhir`}
-            actions={
-              metrics.some((m) => m.anomalyCount > 2) ? (
-                <Badge tone="warning">Lonjakan masukan {shortMonth(metrics.reduce((a, b) => (b.anomalyCount > a.anomalyCount ? b : a)).month)}</Badge>
-              ) : undefined
-            }
+      <Section
+        title={`${cfg.indirectTaxName.split(' ')[0]} keluaran vs masukan`}
+        description={`${ws.activeEntity.flag} ${ws.activeEntity.legalName} · 6 bulan terakhir`}
+        actions={
+          metrics.some((m) => m.anomalyCount > 2) ? (
+            <Badge tone="warning">Lonjakan masukan {shortMonth(metrics.reduce((a, b) => (b.anomalyCount > a.anomalyCount ? b : a)).month)}</Badge>
+          ) : undefined
+        }
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] gap-x-12 gap-y-8 items-start">
+          <ColumnChart
+            title={`${cfg.indirectTaxName} keluaran dan masukan per bulan`}
+            categories={metrics.map((m) => shortMonth(m.month))}
+            series={[
+              { name: 'Keluaran', color: SERIES[0], values: metrics.map((m) => m.ppnKeluaran) },
+              { name: 'Masukan', color: SERIES[1], values: metrics.map((m) => m.ppnMasukan) },
+            ]}
+            format={(v) => moneyCompact(v, ws.country)}
           />
-          <CardBody>
-            <ColumnChart
-              title={`${cfg.indirectTaxName} keluaran dan masukan per bulan`}
-              categories={metrics.map((m) => shortMonth(m.month))}
-              series={[
-                { name: 'Keluaran', color: SERIES[0], values: metrics.map((m) => m.ppnKeluaran) },
-                { name: 'Masukan', color: SERIES[1], values: metrics.map((m) => m.ppnMasukan) },
-              ]}
-              format={(v) => moneyCompact(v, ws.country)}
-            />
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader title="Tenggat terdekat" actions={<Link href="/calendar" className="text-[13px] text-brand-600 hover:text-brand-700 font-medium">Kalender</Link>} />
-          <ul className="divide-y divide-line border-t border-line">
-            {upcoming.map((e) => {
-              const d = daysUntil(e.dueDate);
-              const late = d < 0;
-              return (
-                <li key={e.id} className="flex items-center gap-3 px-5 py-3">
-                  <div className={cn('w-11 shrink-0 rounded-lg border text-center py-1', late ? 'border-danger-100 bg-danger-50' : 'border-line bg-subtle')}>
-                    <div className={cn('text-[10px] uppercase', late ? 'text-danger-600' : 'text-ink-3')}>{dateShort(e.dueDate).split(' ')[1]}</div>
-                    <div className={cn('text-sm font-semibold num leading-tight', late ? 'text-danger-700' : 'text-ink')}>{dateShort(e.dueDate).split(' ')[0]}</div>
+          {(() => {
+            const last = metrics[metrics.length - 1];
+            const net = last.ppnKeluaran - last.ppnMasukan;
+            return (
+              <dl className="divide-y divide-line border-t border-line">
+                {[
+                  { label: `Keluaran ${shortMonth(last.month)}`, value: moneyCompact(last.ppnKeluaran, ws.country) },
+                  { label: `Masukan ${shortMonth(last.month)}`, value: moneyCompact(last.ppnMasukan, ws.country) },
+                  { label: net >= 0 ? 'Kurang bayar (sebelum blokir)' : 'Lebih bayar', value: moneyCompact(Math.abs(net), ws.country) },
+                ].map((x) => (
+                  <div key={x.label} className="flex items-baseline justify-between gap-4 py-3">
+                    <dt className="text-[13px] text-ink-3">{x.label}</dt>
+                    <dd className="figure text-[24px] text-ink">{x.value}</dd>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] text-ink truncate">{e.title}</div>
-                    <div className={cn('text-xs', late ? 'text-danger-600' : 'text-ink-3')}>
-                      {ws.entityById(e.entityId)?.flag} {relativeDays(e.dueDate)}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
-      </div>
+                ))}
+                <div className="py-3 text-[13px] text-ink-2">
+                  Masukan yang terkait kasus terbuka diblokir di halaman Rekonsiliasi sampai kasusnya diputuskan.{' '}
+                  <Link href="/calculation" className="text-brand-700 hover:text-brand-900 font-medium">Buka rekap PPN</Link>
+                </div>
+              </dl>
+            );
+          })()}
+        </div>
+      </Section>
 
       <p className="text-xs text-ink-4">{FX_NOTE}. Total grup dikonversi ke Rupiah hanya untuk agregasi.</p>
     </div>

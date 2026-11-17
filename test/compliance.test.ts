@@ -12,7 +12,7 @@ const ENTITIES = [
   { id: 'ENT-US-004', legalName: 'Nusantara AI Technologies, Inc.', countryCode: 'US' as const, taxId: '88-4920193' },
 ];
 const maker: Actor = { id: 'md_sg', name: 'Marcus Tan', role: 'Managing Director SG', isParentExecutive: false };
-const cfo: Actor = { id: 'cfo_parent', name: 'Sri Mulyani Dewi', role: 'Group CFO', isParentExecutive: true };
+const cfo: Actor = { id: 'cfo_parent', name: 'Dewi Anggraini', role: 'Group CFO', isParentExecutive: true };
 
 describe('sample documents', () => {
   it('are schema-valid except for the intentionally wrong TBTS PPN', () => {

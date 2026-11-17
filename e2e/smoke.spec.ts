@@ -8,12 +8,12 @@ test.beforeEach(async ({ page, request }) => {
 
 test('every module renders from the sidebar', async ({ page }) => {
   await page.goto('/overview');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(/Selamat/);
+  await expect(page.getByText(/Selamat (pagi|siang|sore|malam)/).first()).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   const pages: [string, RegExp][] = [
     ['Entitas & struktur', /Entitas & struktur grup/],
     ['Dokumen', /^Dokumen$/],
-    ['Risiko & fraud', /Risiko & fraud/],
-    ['Review temuan', /Review temuan/],
+    ['Kasus', /^Kasus$/],
     ['Rekonsiliasi fiskal', /Rekonsiliasi fiskal/],
     ['SPT tahunan', /SPT Tahunan PPh Badan 1771/],
     ['Pembayaran', /Pembayaran/],
@@ -29,7 +29,7 @@ test('every module renders from the sidebar', async ({ page }) => {
 });
 
 test('maker-checker: a maker cannot approve their own proposal', async ({ page }) => {
-  await page.goto('/review');
+  await page.goto('/cases');
   await page.getByRole('option').filter({ hasText: '13.875.000' }).click();
   await page.getByLabel('Catatan maker').fill('Tidak ada kontrak & laporan jasa konsultan.');
   await page.getByRole('button', { name: 'Ajukan ke checker' }).click();
@@ -57,11 +57,44 @@ test('uploading a document runs the risk engine', async ({ page }) => {
   await page.getByLabel(/^DPP/).fill('50000000');
   await page.getByRole('button', { name: 'Simpan & analisis' }).click();
   await expect(page.getByText(/temuan risiko baru/)).toBeVisible();
-  await page.goto('/risk');
+  await page.goto('/cases');
   await expect(page.getByText('CV Bayangan Fiktif').first()).toBeVisible();
 });
 
-test('choosing a file runs Document AI immediately, without an extra click', async ({ page }) => {
+test('old risk and review links land on the merged Kasus screen', async ({ page }) => {
+  await page.goto('/review?tab=done');
+  await expect(page).toHaveURL(/\/cases\?tab=done/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^Kasus$/);
+  await page.goto('/risk');
+  await expect(page).toHaveURL(/\/cases/);
+});
+
+test('a case shows field-level evidence and an offline investigation with cited steps', async ({ page }) => {
+  await page.goto('/cases?tab=todo');
+  await page.getByRole('option').filter({ hasText: 'PT Sinar Logistik' }).first().click();
+  await expect(page.getByText('Invoice pada tanggal yang sama')).toBeVisible();
+  await page.getByRole('tab', { name: /Investigasi AI/ }).click();
+  await page.getByRole('button', { name: 'Jalankan investigasi' }).click();
+  await expect(page.getByText(/Saran:/)).toBeVisible();
+  await expect(page.getByText('Simulasi lokal · offline').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Langkah 1' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Pakai draf catatan' }).click();
+  await expect(page.getByLabel('Catatan maker')).not.toHaveValue('');
+});
+
+test('copilot cites its sources and refuses off-topic questions', async ({ page }) => {
+  await page.goto('/cases?tab=done');
+  await page.getByRole('option').filter({ hasText: 'CV Mega Suplai' }).first().click();
+  await page.getByRole('button', { name: 'Tanya Copilot' }).click();
+  const panel = page.getByRole('dialog');
+  await expect(panel.getByRole('list', { name: 'Sumber' }).first()).toBeVisible();
+  await expect(panel.getByText(/Pasal 39A UU KUP/).first()).toBeVisible();
+  await panel.getByLabel('Pertanyaan untuk copilot').fill('Berapa harga saham BBCA besok?');
+  await panel.getByRole('button', { name: 'Kirim' }).click();
+  await expect(panel.getByText(/di luar cakupan Nexora/)).toBeVisible();
+});
+
+test('choosing a file runs extraction immediately, without an extra click', async ({ page }) => {
   await page.goto('/documents');
   await page.getByRole('button', { name: 'Unggah dokumen' }).click();
   const dialog = page.getByRole('dialog');

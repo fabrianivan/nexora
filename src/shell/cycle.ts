@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useWorkspace } from '@/state/workspace';
 import { isUnresolved } from '@/lib/compliance';
 import { paymentStatus } from '@/lib/schedule';
+import { CYCLE } from './nav';
 
 export interface StepStatus {
   done: boolean;
@@ -40,17 +41,13 @@ export function useCycleStatus(): Record<string, StepStatus> {
         tone: 'neutral',
         hint: pendingDocs ? `${pendingDocs} dokumen menunggu verifikasi` : 'Semua dokumen terverifikasi',
       },
-      '/risk': {
-        done: critical === 0,
+      '/cases': {
+        done: unresolved.length === 0,
         count: unresolved.length || undefined,
         tone: critical ? 'danger' : 'warning',
-        hint: unresolved.length ? `${unresolved.length} temuan terbuka (${critical} kritis)` : 'Tidak ada temuan terbuka',
-      },
-      '/review': {
-        done: unresolved.length === 0,
-        count: proposed || undefined,
-        tone: 'warning',
-        hint: proposed ? `${proposed} usulan menunggu checker` : unresolved.length ? `${unresolved.length} temuan belum diputuskan` : 'Semua temuan sudah diputuskan',
+        hint: unresolved.length
+          ? `${unresolved.length} kasus terbuka${critical ? ` (${critical} kritis)` : ''}${proposed ? `, ${proposed} menunggu checker` : ''}`
+          : 'Semua kasus sudah diputuskan',
       },
       '/calculation': {
         done: pendingCorrections === 0,
@@ -70,4 +67,22 @@ export function useCycleStatus(): Record<string, StepStatus> {
       },
     };
   }, [ws]);
+}
+
+export interface NextStepInfo {
+  /** The current step still has open work. */
+  pending: boolean;
+  label: string;
+  next?: { href: string; label: string; step?: number; hint?: string };
+}
+
+/** What the user should do next on a cycle page: finish this step, or move on. */
+export function useNextStep(current: string): NextStepInfo {
+  const status = useCycleStatus();
+  const idx = CYCLE.findIndex((c) => c.href === current);
+  const st = status[current];
+  const nextItem = idx >= 0 ? CYCLE[idx + 1] : undefined;
+  const next = nextItem ? { href: nextItem.href, label: nextItem.label, step: nextItem.step, hint: status[nextItem.href]?.hint } : undefined;
+  if (st && !st.done) return { pending: true, label: st.hint, next };
+  return { pending: false, label: next ? `Langkah ini beres. Lanjut ke ${next.label}` : 'Siklus selesai untuk entitas ini', next };
 }

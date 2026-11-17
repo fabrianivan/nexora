@@ -2,6 +2,7 @@ import type { AIEngine, EngineMode } from './contracts';
 import { DemoEngine } from './demoEngine';
 import { LiveEngine } from './liveEngine';
 import { ResilientEngine } from './resilientEngine';
+import { geminiModel } from './gemini';
 
 export * from './contracts';
 export { DemoEngine } from './demoEngine';
@@ -48,7 +49,7 @@ export function getEngineStatus() {
     configuredMode,
     activeMode,
     provider: activeMode === 'live' ? 'google-generative-language' : 'deterministic',
-    model: activeMode === 'live' ? 'gemini-2.5-flash' : 'nexora-demo-v1',
+    model: activeMode === 'live' ? geminiModel() : 'nexora-demo-v1',
     liveConfigured: configuredMode === 'live',
     hasApiKey,
     fallbackEnabled: configuredMode === 'live' && hasApiKey,

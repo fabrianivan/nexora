@@ -22,8 +22,8 @@ import {
 } from './contracts';
 import { retrieveChunks } from './retrieval';
 import { withTimeout } from './timeout';
+import { geminiModel } from './gemini';
 
-const MODEL = 'gemini-2.5-flash';
 const SYSTEM_INSTRUCTION = [
   'You are Nexora, a document-analysis engine for corporate tax review.',
   'Return JSON only, matching the requested shape. Do not invent laws, rates, citations, or document content.',
@@ -101,7 +101,7 @@ export class LiveEngine implements AIEngine {
 
   constructor(options: LiveEngineOptions) {
     this.apiKey = options.apiKey;
-    this.model = options.model ?? MODEL;
+    this.model = options.model ?? geminiModel();
     this.timeoutMs = options.timeoutMs ?? 12_000;
     this.fetchImpl = options.fetchImpl ?? fetch;
   }

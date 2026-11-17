@@ -149,11 +149,11 @@ function DocumentsTab({ entity }: { entity: CorporateEntity }) {
     setScanning('all');
     window.setTimeout(() => {
       const docs = entity.documents.map((d) =>
-        d.fileName ? { ...d, status: 'Verified by Document AI' as const, confidenceScore: d.confidenceScore || 96.5 } : d,
+        d.fileName ? { ...d, status: 'Verified by Document AI' as const } : d,
       );
       const allOk = docs.every((d) => d.status === 'Verified by Document AI');
-      update(docs, { status: allOk ? 'ACTIVE' : entity.status, aiComplianceScore: Math.min(99, entity.aiComplianceScore + 4) });
-      ws.logAudit('VERIFY_LEGAL_DOCUMENTS', entity.legalName, `Document AI memverifikasi ${docs.filter((d) => d.fileName).length} dokumen legal.`);
+      update(docs, { status: allOk ? 'ACTIVE' : entity.status });
+      ws.logAudit('VERIFY_LEGAL_DOCUMENTS', entity.legalName, `${ws.persona.name} menandai ${docs.filter((d) => d.fileName).length} dokumen legal sudah diperiksa.`);
       ui.toast(allOk ? 'Semua dokumen legal terverifikasi. Entitas aktif.' : 'Dokumen yang tersedia sudah diverifikasi. Lengkapi yang belum diunggah.');
       setScanning(null);
     }, 900);
@@ -180,9 +180,9 @@ function DocumentsTab({ entity }: { entity: CorporateEntity }) {
               fileName: file.name,
               fileSize: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
               uploadedAt: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
-              status: 'Verified by Document AI' as const,
-              confidenceScore: 94 + (file.name.length % 6),
-              extractedNote: `Diekstraksi otomatis dari ${file.name}. Periksa kembali field kunci sebelum dipakai.`,
+              status: 'Pending Review' as const,
+              confidenceScore: 0,
+              extractedNote: `${file.name} diunggah. Field di bawah diisi dari master entitas, bukan dibaca dari isi berkas; cocokkan lalu tandai sudah diperiksa.`,
               extractedFields: [
                 { key: 'Nama entitas', val: entity.legalName },
                 { key: 'Identitas pajak', val: entity.taxId.split('(')[0].trim() },
@@ -192,8 +192,8 @@ function DocumentsTab({ entity }: { entity: CorporateEntity }) {
           : d,
       );
       update(docs);
-      ws.logAudit('UPLOAD_LEGAL_DOCUMENT', `${entity.legalName} · ${file.name}`, 'Dokumen diunggah & diekstraksi Document AI.');
-      ui.toast(`${file.name} diunggah dan diekstraksi.`);
+      ws.logAudit('UPLOAD_LEGAL_DOCUMENT', `${entity.legalName} · ${file.name}`, 'Dokumen legal diunggah, menunggu pemeriksaan.');
+      ui.toast(`${file.name} diunggah. Periksa isinya lalu tandai sudah diperiksa.`);
       setScanning(null);
       setUploadFor(null);
     }, 1000);
@@ -203,10 +203,10 @@ function DocumentsTab({ entity }: { entity: CorporateEntity }) {
     <Card>
       <CardHeader
         title="Dokumen legal wajib"
-        description={`${verified} dari ${entity.documents.length} terverifikasi Document AI`}
+        description={`${verified} dari ${entity.documents.length} sudah diperiksa`}
         actions={
           <Button size="sm" icon={<ScanText />} loading={scanning === 'all'} onClick={verifyAll}>
-            Verifikasi ulang semua
+            Tandai sudah diperiksa
           </Button>
         }
       />
@@ -265,7 +265,7 @@ function DocumentsTab({ entity }: { entity: CorporateEntity }) {
           <div className="p-6 space-y-5">
             <div className="flex items-center gap-2">
               <Badge tone={docStatusTone(viewing.status)} dot>{docStatusLabel(viewing.status)}</Badge>
-              <span className="text-xs text-ink-3">Confidence {viewing.confidenceScore.toFixed(1)}%</span>
+              {viewing.confidenceScore > 0 && <span className="text-xs text-ink-3">Keyakinan {viewing.confidenceScore.toFixed(1)}%</span>}
             </div>
             <Callout tone="neutral">{viewing.extractedNote}</Callout>
             <div>
@@ -500,7 +500,7 @@ function RiskTab({ entity }: { entity: CorporateEntity }) {
   if (!findings.length) return <Card><EmptyState icon={<ShieldAlert />} title="Tidak ada temuan" description="Mesin risiko tidak menemukan indikasi pada dokumen entitas ini." /></Card>;
   return (
     <Card>
-      <CardHeader title="Temuan risiko entitas" actions={<Link href="/risk" className="text-[13px] font-medium text-brand-600">Buka pusat risiko</Link>} />
+      <CardHeader title="Kasus entitas ini" actions={<Link href="/cases" className="text-[13px] font-medium text-brand-600">Buka Kasus</Link>} />
       <Table>
         <THead>
           <tr>
@@ -512,7 +512,7 @@ function RiskTab({ entity }: { entity: CorporateEntity }) {
         </THead>
         <tbody>
           {findings.map((f) => (
-            <TR key={f.id} onClick={() => router.push(`/risk?f=${encodeURIComponent(f.id)}`)}>
+            <TR key={f.id} onClick={() => router.push(`/cases?f=${encodeURIComponent(f.id)}`)}>
               <TD>
                 <div className="text-ink font-medium">{f.ruleName}</div>
                 <div className="text-xs text-ink-3 truncate max-w-[420px]">{f.evidence.split('\n')[0]}</div>
@@ -554,7 +554,7 @@ export function EntityDetailPage({ id }: { id: string }) {
   if (!ws.canAccess(entity.id)) {
     return (
       <Card>
-        <EmptyState icon={<Lock />} title="Di luar cakupan akses Anda" description={`Data ${entity.legalName} memerlukan otorisasi Group CEO/CFO induk (segregasi ISO 27001).`} action={<Button onClick={() => router.push('/entities')}>Kembali</Button>} />
+        <EmptyState icon={<Lock />} title="Di luar cakupan akses Anda" description={`Data ${entity.legalName} memerlukan otorisasi Group CEO/CFO induk (segregasi tugas).`} action={<Button onClick={() => router.push('/entities')}>Kembali</Button>} />
       </Card>
     );
   }
@@ -586,7 +586,7 @@ export function EntityDetailPage({ id }: { id: string }) {
         description={`${entity.taxAuthority} · ${meta.indirectTaxName} · PPh badan ${(meta.corporateTaxNormalRate * 100).toFixed(0)}%`}
         actions={
           <>
-            <Button icon={<ShieldAlert />} onClick={() => router.push('/risk')}>Temuan ({open.length})</Button>
+            <Button icon={<ShieldAlert />} onClick={() => router.push('/cases')}>Kasus ({open.length})</Button>
             {entity.parentCompanyId && ws.isParentExec && (
               <Button variant="ghost" icon={<Trash2 />} onClick={() => setConfirmDelete(true)} disabled={children.length > 0} title={children.length ? 'Pindahkan anak usaha terlebih dahulu' : undefined}>
                 Hapus
@@ -597,6 +597,7 @@ export function EntityDetailPage({ id }: { id: string }) {
       />
 
       <MetricBand
+        variant="light"
         className="mb-6"
         label="Profil kepatuhan entitas"
         lead={
@@ -612,7 +613,7 @@ export function EntityDetailPage({ id }: { id: string }) {
           {
             label: 'Dokumen legal',
             value: `${entity.documents.filter((d) => d.status === 'Verified by Document AI').length}/${entity.documents.length}`,
-            detail: 'Terverifikasi Document AI',
+            detail: 'Sudah diperiksa tim pajak',
             icon: <FileText />,
           },
           {
@@ -641,7 +642,7 @@ export function EntityDetailPage({ id }: { id: string }) {
           { id: 'documents', label: 'Dokumen legal', count: entity.documents.length },
           { id: 'structure', label: 'Struktur' },
           { id: 'shareholders', label: 'Pemegang saham', count: entity.intermediateShareholders.length + entity.individualShareholders.length },
-          { id: 'risk', label: 'Risiko', count: open.length },
+          { id: 'risk', label: 'Kasus', count: open.length },
         ]}
       />
       {tab === 'profile' && <ProfileTab entity={entity} />}

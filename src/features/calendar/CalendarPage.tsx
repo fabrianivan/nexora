@@ -8,20 +8,7 @@ import { dateShort, daysUntil, relativeDays } from '@/lib/format';
 import { eventStatus } from '@/lib/schedule';
 import { downloadFile } from '@/lib/download';
 import type { CalendarEvent } from '@/state/types';
-import {
-  Badge,
-  Button,
-  Card,
-  Dialog,
-  EmptyState,
-  IconButton,
-  PageHeader,
-  Segmented,
-  Select,
-  SelectField,
-  TextField,
-  cn,
-} from '@/ui';
+import { Badge, Button, Card, Dialog, EmptyState, IconButton, PageHeader, Segmented, Select, SelectField, TextField, cn, Section } from '@/ui';
 import { ScopeToggle, useScopedIds, type Scope } from '../shared';
 
 type View = 'list' | 'month';
@@ -72,14 +59,14 @@ function EventRow({ e }: { e: CalendarEvent }) {
   };
   const [d, m] = dateShort(e.dueDate).split(' ');
   return (
-    <li className="flex items-start gap-4 px-5 py-4">
-      <div className={cn('w-12 shrink-0 rounded-lg border text-center py-1.5', st === 'Overdue' ? 'border-danger-100 bg-danger-50' : st === 'Completed' ? 'border-line bg-subtle opacity-60' : 'border-line bg-subtle')}>
-        <div className={cn('text-[10px] uppercase', st === 'Overdue' ? 'text-danger-600' : 'text-ink-3')}>{m}</div>
-        <div className={cn('text-base font-semibold num leading-tight', st === 'Overdue' ? 'text-danger-700' : 'text-ink')}>{d}</div>
+    <li className="group flex items-start gap-5 py-4">
+      <div className={cn('w-10 shrink-0 text-center', st === 'Completed' && 'opacity-50')}>
+        <div className={cn('figure text-[28px] leading-none', st === 'Overdue' ? 'text-danger-600' : 'text-ink')}>{d}</div>
+        <div className={cn('eyebrow !text-[9.5px] mt-1', st === 'Overdue' && '!text-danger-600')}>{m}</div>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={cn('text-sm font-medium', st === 'Completed' ? 'text-ink-3 line-through' : 'text-ink')}>{e.title}</span>
+          <span className={cn('text-[15px] font-medium', st === 'Completed' ? 'text-ink-3 line-through' : 'text-ink')}>{e.title}</span>
           <Badge tone={STATUS_META[st].tone} dot>{st === 'Completed' ? 'Selesai' : st === 'Upcoming' ? relativeDays(e.dueDate) : STATUS_META[st].label}</Badge>
         </div>
         <div className="text-[13px] text-ink-3 mt-0.5">{e.description}</div>
@@ -90,7 +77,7 @@ function EventRow({ e }: { e: CalendarEvent }) {
           <span>{e.regulationBasis}</span>
         </div>
       </div>
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
         <IconButton label={e.reminder ? 'Matikan pengingat' : 'Aktifkan pengingat (H-3)'} size="sm" onClick={() => update({ reminder: !e.reminder }, e.reminder ? 'Pengingat dimatikan.' : 'Pengingat H-3 diaktifkan.')}>
           {e.reminder ? <Bell className="text-brand-600" /> : <BellOff />}
         </IconButton>
@@ -99,7 +86,7 @@ function EventRow({ e }: { e: CalendarEvent }) {
             <RotateCcw />
           </IconButton>
         ) : (
-          <Button size="sm" icon={<Check />} onClick={() => update({ status: 'Completed' }, 'Tenggat ditandai selesai.', 'COMPLETE_DEADLINE')}>
+          <Button size="sm" variant="ghost" icon={<Check />} onClick={() => update({ status: 'Completed' }, 'Tenggat ditandai selesai.', 'COMPLETE_DEADLINE')}>
             Selesai
           </Button>
         )}
@@ -228,6 +215,7 @@ export function CalendarPage() {
   return (
     <div>
       <PageHeader
+        eyebrow={<span>Tata kelola</span>}
         title="Kalender pajak"
         description={`${next30} tenggat dalam 30 hari${overdue ? ` · ${overdue} terlambat` : ''}. Status dihitung otomatis dari tanggal jatuh tempo.`}
         actions={
@@ -267,16 +255,15 @@ export function CalendarPage() {
         Object.keys(groups).length === 0 ? (
           <Card><EmptyState icon={<CalendarDays />} title="Tidak ada tenggat" description="Ubah filter atau tambahkan tenggat baru." /></Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-10">
             {Object.entries(groups).map(([k, evs]) => {
               const [y, m] = k.split('-').map(Number);
               return (
-                <Card key={k}>
-                  <div className="px-5 pt-4 pb-2 text-sm font-semibold text-ink">{MONTHS[m - 1]} {y}</div>
-                  <ul className="divide-y divide-line border-t border-line">
+                <Section key={k} title={`${MONTHS[m - 1]} ${y}`} description={`${evs.length} tenggat`}>
+                  <ul className="divide-y divide-line -mt-2">
                     {evs.map((e) => <EventRow key={e.id} e={e} />)}
                   </ul>
-                </Card>
+                </Section>
               );
             })}
           </div>
