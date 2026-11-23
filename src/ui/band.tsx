@@ -129,16 +129,16 @@ export function BandLead({
   );
 }
 
-function BandCell({ metric }: { metric: BandMetric }) {
+function BandCell({ metric, cellClassName }: { metric: BandMetric; cellClassName?: string }) {
   const interactive = Boolean(metric.href || metric.onClick);
   // Full Rupiah amounts are long; step the figure down so it never wraps.
   const text = typeof metric.value === 'string' || typeof metric.value === 'number' ? String(metric.value) : '';
   const size = text.length > 15 ? 'text-[22px]' : text.length > 11 ? 'text-[27px]' : 'text-[34px]';
   const body = (
     <>
-      <span className="eyebrow flex items-center gap-1.5 pr-5">
-        <span className="min-w-0 truncate">{metric.label}</span>
-      </span>
+      {/* Labels wrap rather than truncate; the subgrid keeps the figures on a
+          shared baseline even when one column needs a second line. */}
+      <span className={cn('eyebrow block text-pretty', interactive && 'pr-5')}>{metric.label}</span>
       <span
         className={cn(
           'mt-1.5',
@@ -159,6 +159,7 @@ function BandCell({ metric }: { metric: BandMetric }) {
   const shell = cn(
     'group relative flex min-w-0 flex-col justify-start py-5 pr-5 sm:pl-5 sm:first:pl-0',
     interactive && 'text-left transition-colors hover:bg-subtle',
+    cellClassName,
   );
 
   if (metric.href) {
@@ -195,21 +196,32 @@ export function MetricBand({
   /** Accepted for compatibility; ignored. */
   variant?: BandVariant;
 }) {
-  const cols =
+  // Each cell spans three subgrid rows — label, figure, detail — so a label
+  // that needs two lines never knocks its neighbours' figures out of line.
+  const layout =
     metrics.length >= 4
-      ? 'divide-y md:divide-y-0 md:grid-cols-4 md:divide-x'
+      ? {
+          cols: 'divide-y md:divide-y-0 md:grid-cols-4 md:divide-x md:grid-rows-[auto_auto_auto]',
+          cell: 'md:grid md:grid-rows-subgrid md:row-span-3 md:content-start',
+        }
       : metrics.length === 3
-        ? 'divide-y sm:divide-y-0 sm:grid-cols-3 sm:divide-x'
+        ? {
+            cols: 'divide-y sm:divide-y-0 sm:grid-cols-3 sm:divide-x sm:grid-rows-[auto_auto_auto]',
+            cell: 'sm:grid sm:grid-rows-subgrid sm:row-span-3 sm:content-start',
+          }
         : metrics.length === 2
-          ? 'divide-y sm:divide-y-0 sm:grid-cols-2 sm:divide-x'
-          : '';
+          ? {
+              cols: 'divide-y sm:divide-y-0 sm:grid-cols-2 sm:divide-x sm:grid-rows-[auto_auto_auto]',
+              cell: 'sm:grid sm:grid-rows-subgrid sm:row-span-3 sm:content-start',
+            }
+          : { cols: '', cell: '' };
   return (
     <section aria-label={label} className={cn('border-t-2 border-ink border-b border-b-line', className)}>
       <div className={cn('grid', lead ? 'lg:grid-cols-[minmax(280px,340px)_1fr]' : undefined)}>
         {lead}
-        <div className={cn('grid divide-line', cols, lead ? 'lg:[&>*:first-child]:pl-5' : undefined)}>
+        <div className={cn('grid divide-line', layout.cols, lead ? 'lg:[&>*:first-child]:pl-5' : undefined)}>
           {metrics.map((m, i) => (
-            <BandCell key={i} metric={m} />
+            <BandCell key={i} metric={m} cellClassName={layout.cell} />
           ))}
         </div>
       </div>

@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { NextStep } from '@/ui';
+import { ActionLink, NextStep } from '@/ui';
 import { useWorkspace } from '@/state/workspace';
 import { useNextStep } from './cycle';
 
@@ -19,9 +18,9 @@ export function CycleNext({ current }: { current: string }) {
       detail={`${entity.flag} ${entity.legalName}`}
       action={
         info.next && (
-          <Link href={info.next.href} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-brand-700 hover:text-brand-900">
-            Langkah {info.next.step} · {info.next.label} <ArrowRight className="size-3.5" />
-          </Link>
+          <ActionLink href={info.next.href} iconRight={<ArrowRight />}>
+            Langkah {info.next.step} · {info.next.label}
+          </ActionLink>
         )
       }
     />

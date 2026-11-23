@@ -457,11 +457,11 @@ export function riskBand(score: number): { label: string; tone: 'emerald' | 'amb
 
 type ReconItem = { accountCode: string; commercialAmount: number; positiveCorrection: number; negativeCorrection: number; fiscalAmount: number; correctionReason: string };
 
-/** True when the reconciliation already carries this correction (by marker or by amount). */
+/** True when the reconciliation already carries this correction marker. */
 export function isCorrectionReflected(items: ReconItem[], correction: SuggestedCorrection, marker: string): boolean {
   const item = items.find((i) => i.accountCode === correction.accountCode);
   if (!item) return false;
-  return item.correctionReason.includes(marker) || item.positiveCorrection >= correction.amount;
+  return item.correctionReason.includes(marker);
 }
 
 /** Apply a confirmed finding's correction to fiscal reconciliation lines (idempotent via marker). */

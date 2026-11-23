@@ -9,6 +9,8 @@ const nextConfig = {
   outputFileTracingRoot: path.join(__dirname),
   reactStrictMode: true,
   devIndicators: false,
+  // Enables `forbidden()` / app/forbidden.tsx for role-gated pages (403).
+  experimental: { authInterrupts: true },
   webpack(config, { dev }) {
     if (dev) {
       // The local SQLite database lives in sql/. Without this, every write triggers a

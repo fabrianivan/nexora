@@ -35,7 +35,7 @@ import { CycleFooter } from '@/shell/CycleFooter';
 import { CycleNext } from '@/shell/CycleNext';
 import { EntityName, ScopeToggle, useScopedIds, type Scope } from '../shared';
 
-type Filter = 'open' | 'paid' | 'all';
+type Filter = 'open' | 'due14' | 'late' | 'paid' | 'all';
 
 const CHANNELS: Record<CountryCode, string[]> = {
   ID: ['Bank/Pos persepsi (teller)', 'ATM & mobile banking (menu pajak)', 'Internet banking korporasi (MPN G3)', 'Coretax DJP — deposit pajak'],
@@ -118,7 +118,7 @@ function PayDialog({ p, onClose }: { p: PaymentLiability | null; onClose: () => 
           ]}
         />
         {p.billingCode && (
-          <div className="rounded-xl bg-ink text-white px-4 py-3 flex items-center justify-between gap-3">
+          <div className="rounded-lg bg-ink text-white px-4 py-3 flex items-center justify-between gap-3">
             <div>
               <div className="text-xs text-white/60">{country === 'ID' ? 'Kode billing (15 digit)' : 'Payment reference'}</div>
               <div className="font-mono text-lg tracking-wider">{p.billingCode}</div>
@@ -212,6 +212,7 @@ function AddLiabilityDialog({ open, onClose }: { open: boolean; onClose: () => v
 
 export function PaymentsPage() {
   const ws = useWorkspace();
+  const ui = useUi();
   const [scope, setScope] = useState<Scope>(ws.isParentExec ? 'group' : 'entity');
   const ids = useScopedIds(scope);
   const [filter, setFilter] = useState<Filter>('open');
@@ -220,11 +221,22 @@ export function PaymentsPage() {
   const country = (id: string) => ws.entityById(id)?.countryCode ?? 'ID';
 
   const list = useMemo(() => ws.payments.filter((p) => ids.includes(p.entityId)), [ws.payments, ids]);
-  const rows = list
-    .filter((p) => (filter === 'all' ? true : filter === 'paid' ? p.status === 'Dibayar' : p.status !== 'Dibayar'))
-    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const open = list.filter((p) => p.status !== 'Dibayar');
   const late = open.filter((p) => paymentStatus(p) === 'Terlambat');
+  const due14 = open.filter((p) => daysUntil(p.dueDate) >= 0 && daysUntil(p.dueDate) <= 14);
+  const rows = list
+    .filter((p) =>
+      filter === 'all'
+        ? true
+        : filter === 'paid'
+          ? p.status === 'Dibayar'
+          : filter === 'late'
+            ? p.status !== 'Dibayar' && paymentStatus(p) === 'Terlambat'
+            : filter === 'due14'
+              ? p.status !== 'Dibayar' && daysUntil(p.dueDate) >= 0 && daysUntil(p.dueDate) <= 14
+              : p.status !== 'Dibayar',
+    )
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const week = open.filter((p) => daysUntil(p.dueDate) >= 0 && daysUntil(p.dueDate) <= 7);
   const openIdr = open.reduce((s, p) => s + toIdr(p.amount, country(p.entityId)), 0);
   const paidIdr = list.filter((p) => p.status === 'Dibayar').reduce((s, p) => s + toIdr(p.amount, country(p.entityId)), 0);
@@ -245,7 +257,6 @@ export function PaymentsPage() {
       />
 
       <MetricBand
-        variant="light"
         className="mb-6"
         label="Posisi setoran pajak"
         lead={
@@ -283,6 +294,40 @@ export function PaymentsPage() {
         ]}
       />
 
+      {late.length > 0 && (() => {
+        const firstLate = late[0];
+        const lateDays = Math.max(1, -daysUntil(firstLate.dueDate));
+        const latePen = penaltyFor(firstLate, country(firstLate.entityId));
+        return (
+          <Callout
+            tone="danger"
+            className="mb-6"
+            icon={<AlertTriangle />}
+            title={`${firstLate.taxType} terlambat ${lateDays} hari`}
+            action={
+              <div className="flex flex-wrap gap-2">
+                {firstLate.billingCode && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(firstLate.billingCode ?? '');
+                      ui.toast('Kode billing disalin.', 'info');
+                    }}
+                  >
+                    Salin kode billing
+                  </Button>
+                )}
+                <Button size="sm" variant="primary" onClick={() => setSelected(firstLate.id)}>
+                  Catat pembayaran
+                </Button>
+              </div>
+            }
+          >
+            Estimasi sanksi keterlambatan sejauh ini sekitar {money(latePen, country(firstLate.entityId))} dan bertambah setiap bulan hingga disetor.
+          </Callout>
+        );
+      })()}
+
       <Card>
         <div className="flex flex-wrap items-center gap-3 px-5 py-3.5 border-b border-line">
           <ScopeToggle value={scope} onChange={setScope} />
@@ -291,6 +336,8 @@ export function PaymentsPage() {
             onChange={setFilter}
             items={[
               { id: 'open', label: 'Belum disetor', count: open.length },
+              { id: 'due14', label: '≤ 14 hari', count: due14.length },
+              { id: 'late', label: 'Terlambat', count: late.length },
               { id: 'paid', label: 'Lunas', count: list.length - open.length },
               { id: 'all', label: 'Semua' },
             ]}

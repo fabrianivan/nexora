@@ -29,6 +29,8 @@ import {
 import { nowWib } from '@/lib/format';
 import { MULTI_COUNTRY_DATA, type CountryCode } from '@/data/multiCountryTaxData';
 import { DEFAULT_CREDITS } from '@/lib/cit';
+import { createInitialAccountState, normalizeAccountState, type AccountState, type TeamMember } from '@/lib/account';
+import { createInitialOwnershipState, normalizeOwnershipState, type OwnershipState } from '@/lib/ownershipChain';
 import type {
   AuditLogRecord,
   CalculationState,
@@ -82,6 +84,15 @@ export interface Workspace {
   zScoreReady: boolean;
   reviewOf: (findingId: string) => FindingReview;
 
+  account: AccountState;
+  updateAccount: (fn: (s: AccountState) => AccountState) => void;
+  activeMember: TeamMember;
+  isViewOnly: boolean;
+  setActiveMemberId: (memberId: string) => void;
+
+  ownership: OwnershipState;
+  updateOwnership: (fn: (s: OwnershipState) => OwnershipState) => void;
+
   resetSampleData: () => Promise<boolean>;
   refresh: () => Promise<void>;
 }
@@ -89,9 +100,10 @@ export interface Workspace {
 const WorkspaceContext = createContext<Workspace | null>(null);
 
 const PERSONA_KEY = 'nexora.persona';
+const MEMBER_KEY = 'nexora.member';
 /** Writes flushed while a page unloads; the next page may read the server before they land. */
 const HANDOFF_KEY = 'nexora.pending-writes';
-type AppStateKey = 'compliance' | 'ledger';
+type AppStateKey = 'compliance' | 'ledger' | 'account' | 'ownership';
 type PendingWrites = Partial<Record<AppStateKey, unknown>>;
 
 function takeHandoff(): PendingWrites {
@@ -158,8 +170,16 @@ interface BootstrapPayload {
   calendarEvents?: CalendarEvent[];
   auditLogs?: AuditLogRecord[];
   studies?: StudyItem[];
-  appState?: { compliance?: unknown; ledger?: unknown };
+  appState?: { compliance?: unknown; ledger?: unknown; account?: unknown; ownership?: unknown };
   databaseStatus?: { engine?: DbEngine };
+}
+
+function readMemberId(): string | null {
+  try {
+    return window.localStorage.getItem(MEMBER_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
@@ -170,12 +190,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [entities, setEntities] = useState<CorporateEntity[]>(SEED_COMPANIES);
   const [activeEntityId, setActiveEntityId] = useState('ENT-ID-001');
   const [personaId, setPersonaIdState] = useState('ceo_parent');
+  const [activeMemberOverrideId, setActiveMemberOverrideId] = useState<string | null>(null);
   const [ledger, setLedger] = useState<LedgerState>({ calculations: {}, returns: {} });
   const [payments, setPaymentsState] = useState<PaymentLiability[]>(SEED_PAYMENTS);
   const [calendar, setCalendarState] = useState<CalendarEvent[]>(SEED_CALENDAR_EVENTS);
   const [studies, setStudies] = useState<StudyItem[]>(SEED_STUDIES);
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>(SEED_AUDIT_LOGS);
   const [compliance, setCompliance] = useState<ComplianceState>(() => createInitialComplianceState());
+  const [account, setAccount] = useState<AccountState>(() => createInitialAccountState());
+  const [ownership, setOwnership] = useState<OwnershipState>(() => createInitialOwnershipState(SEED_COMPANIES));
 
   // ── persistence ────────────────────────────────────────────────────────
   const sync = useCallback(async (payload: Record<string, unknown>) => {
@@ -230,6 +253,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [sync]);
 
   const applyBootstrap = useCallback((data: BootstrapPayload) => {
+    const nextEntities = Array.isArray(data.companies) && data.companies.length ? data.companies : SEED_COMPANIES;
     if (Array.isArray(data.companies) && data.companies.length) setEntities(data.companies);
     setLedger(normalizeLedger(data.appState?.ledger, data.calculations, data.taxReturns));
     if (Array.isArray(data.payments) && data.payments.length) setPaymentsState(data.payments.map((p) => ({ ...p, entityId: p.entityId || 'ENT-ID-001' })));
@@ -237,6 +261,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     if (Array.isArray(data.auditLogs) && data.auditLogs.length) setAuditLogs(data.auditLogs);
     if (Array.isArray(data.studies) && data.studies.length) setStudies(normalizeStudies(data.studies));
     setCompliance(normalizeComplianceState(data.appState?.compliance));
+    setAccount(normalizeAccountState(data.appState?.account));
+    setOwnership(normalizeOwnershipState(data.appState?.ownership, nextEntities));
     if (data.databaseStatus?.engine) setDbEngine(data.databaseStatus.engine);
     setLastSyncedAt(new Date().toISOString());
   }, []);
@@ -272,15 +298,51 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setPersonaIdState(readPersona());
+    setActiveMemberOverrideId(readMemberId());
     void refresh();
   }, [refresh]);
 
   // ── RBAC ───────────────────────────────────────────────────────────────
-  const persona = useMemo(() => PERSONAS.find((p) => p.id === personaId) ?? PERSONAS[0], [personaId]);
-  const isParentExec = persona.canViewAll && persona.entityRole === 'PARENT';
+  const activeMember: TeamMember = useMemo(() => {
+    if (activeMemberOverrideId) {
+      const found = account.members.find((m) => m.id === activeMemberOverrideId);
+      if (found) return found;
+    }
+    return (
+      account.members.find((m) => m.personaId === personaId) ??
+      account.members[0]
+    );
+  }, [activeMemberOverrideId, account.members, personaId]);
+
+  const isViewOnly = activeMember.roleId === 'view_only' || activeMember.status === 'waiting';
+
+  const persona = useMemo(() => {
+    const matched = PERSONAS.find((p) => p.id === (activeMember.personaId ?? personaId));
+    if (isViewOnly) {
+      return {
+        ...(matched ?? PERSONAS[0]),
+        id: activeMember.id,
+        name: activeMember.name,
+        title: 'Menunggu peran (Lihat saja)',
+        entityRole: 'SUBSIDIARY' as const,
+        email: activeMember.email,
+        avatarInitials: activeMember.avatarInitials,
+        avatarBg: activeMember.avatarBg,
+        badge: 'Menunggu peran',
+        canViewAll: false,
+        accessibleEntityIds: [],
+      };
+    }
+    return matched ?? PERSONAS[0];
+  }, [activeMember, isViewOnly, personaId]);
+
+  const isParentExec = !isViewOnly && persona.canViewAll && persona.entityRole === 'PARENT';
   const canAccess = useCallback(
-    (entityId: string) => isParentExec || persona.accessibleEntityIds.includes(entityId),
-    [isParentExec, persona],
+    (entityId: string) => {
+      if (isViewOnly) return false;
+      return isParentExec || persona.accessibleEntityIds.includes(entityId);
+    },
+    [isParentExec, isViewOnly, persona],
   );
   const accessibleEntities = useMemo(() => entities.filter((e) => canAccess(e.id)), [entities, canAccess]);
   const actor: Actor = useMemo(
@@ -290,8 +352,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const setPersonaId = useCallback(
     (id: string) => {
+      setActiveMemberOverrideId(null);
       setPersonaIdState(id);
       try {
+        window.localStorage.removeItem(MEMBER_KEY);
         window.localStorage.setItem(PERSONA_KEY, id);
       } catch {
         /* ignore */
@@ -302,6 +366,24 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       }
     },
     [],
+  );
+
+  const setActiveMemberId = useCallback(
+    (memberId: string) => {
+      const member = account.members.find((m) => m.id === memberId);
+      if (!member) return;
+      if (member.personaId && member.roleId !== 'view_only' && member.status !== 'waiting') {
+        setPersonaId(member.personaId);
+        return;
+      }
+      setActiveMemberOverrideId(member.id);
+      try {
+        window.localStorage.setItem(MEMBER_KEY, member.id);
+      } catch {
+        /* ignore */
+      }
+    },
+    [account.members, setPersonaId],
   );
 
   // Keep the active entity inside the persona's scope.
@@ -402,12 +484,34 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     void sync({ calendarEvents: next });
   }, [sync]);
 
-  // ── compliance (debounced persistence) ─────────────────────────────────
+  // ── compliance / account / ownership (debounced persistence) ──────────
   const updateCompliance = useCallback(
     (fn: (s: ComplianceState) => ComplianceState) => {
       setCompliance((prev) => {
         const next = fn(prev);
         persistKey('compliance', next);
+        return next;
+      });
+    },
+    [persistKey],
+  );
+
+  const updateAccount = useCallback(
+    (fn: (s: AccountState) => AccountState) => {
+      setAccount((prev) => {
+        const next = fn(prev);
+        persistKey('account', next);
+        return next;
+      });
+    },
+    [persistKey],
+  );
+
+  const updateOwnership = useCallback(
+    (fn: (s: OwnershipState) => OwnershipState) => {
+      setOwnership((prev) => {
+        const next = fn(prev);
+        persistKey('ownership', next);
         return next;
       });
     },
@@ -432,6 +536,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       const json = await res.json();
       if (json.data) applyBootstrap(json.data);
       setCompliance(createInitialComplianceState());
+      setAccount(createInitialAccountState());
+      setOwnership(createInitialOwnershipState(SEED_COMPANIES));
       setLedger({ calculations: {}, returns: {} });
       return true;
     } catch {
@@ -474,6 +580,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     findings,
     zScoreReady,
     reviewOf,
+    account,
+    updateAccount,
+    activeMember,
+    isViewOnly,
+    setActiveMemberId,
+    ownership,
+    updateOwnership,
     resetSampleData,
     refresh,
   };

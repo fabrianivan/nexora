@@ -4,10 +4,11 @@ import { buildCaseContext, caseChecks, flaggedFields } from '../src/lib/cases';
 import { rupiahTrail } from '../src/lib/rupiahTrail';
 import { DEFAULT_CREDITS } from '../src/lib/cit';
 import { fiscalReconciliationData } from '../src/data/indonesiaTaxData';
-import { composeBrief, offlinePlan, runOffline, validateBrief, type InvestigationStep } from '../src/lib/investigation';
+import { composeBrief, offlinePlan, runOffline, runTool, validateBrief, type InvestigationStep } from '../src/lib/investigation';
 import { investigate } from '../src/lib/ai/investigator';
 import { offlineBadge } from '../src/lib/ai/badge';
 import { composeOffline, confidenceFor, guard, selectChunks } from '../src/lib/ai/copilot';
+import { retrieveChunks } from '../src/lib/ai/retrieval';
 import { TAX_CORPUS, RULE_SOURCES, corpusChunk } from '../src/data/taxCorpus';
 import { sourceDocumentSchema } from '../src/lib/domain';
 
@@ -112,6 +113,11 @@ describe('investigation (offline)', () => {
     expect(first.summary).toContain('2 NPWP berbeda');
     expect(composeBrief(split, inv.steps).length).toBeGreaterThan(0);
   });
+  it('matches formatted NPWPs in vendor_master lookup', () => {
+    const res = runTool('vendor_master', { taxId: '071.829.304.5-123.000' }, ctx, 1);
+    expect(res.step.signal).toBe('risk');
+    expect(res.step.title).toContain('CV Mega Suplai Abadi');
+  });
 });
 
 describe('investigation (live loop, mocked Gemini)', () => {
@@ -198,5 +204,19 @@ describe('copilot grounding', () => {
     const out = composeOffline(req, selectChunks(req));
     expect(out.used[0].id).toBe('WS-b');
     expect(confidenceFor(out.grounded, out.used).confidence).toBe('Tinggi');
+  });
+
+  it('includes proposed fiscal correction when asking "Berapa dampak koreksinya?"', () => {
+    const req = { question: 'Berapa dampak koreksinya?', country: 'ID' as const, case: caseCtx };
+    const chunks = selectChunks(req);
+    expect(chunks.some((c) => c.id === 'CASE-CORR')).toBe(true);
+    const out = composeOffline(req, chunks);
+    expect(out.grounded).toBe(true);
+    expect(out.reply).toContain('Rp 120.000.000');
+  });
+
+  it('matches Indonesian enclitic inflections in retrieval', () => {
+    const hits = retrieveChunks(TAX_CORPUS, 'Apa aturannya untuk dividennya?');
+    expect(hits.length).toBeGreaterThan(0);
   });
 });

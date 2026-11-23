@@ -15,6 +15,7 @@ interface Note {
   title: string;
   body: string;
   href: string;
+  entityId?: string;
 }
 
 export function useNotifications(): Note[] {
@@ -25,7 +26,7 @@ export function useNotifications(): Note[] {
     const critical = scoped.filter((f) => f.severity === 'critical' && isUnresolved(ws.reviewOf(f.id).status));
     critical.slice(0, 3).forEach((f) => {
       const ent = ws.entityById(f.entityId);
-      notes.push({ id: `crit-${f.id}`, icon: <ShieldAlert />, tone: 'danger', title: `Temuan kritis: ${f.ruleName}`, body: `${ent?.flag ?? ''} ${ent?.legalName ?? f.entityId} · ${f.evidence.split('\n')[0]}`, href: `/cases?f=${encodeURIComponent(f.id)}` });
+      notes.push({ id: `crit-${f.id}`, icon: <ShieldAlert />, tone: 'danger', title: `Kasus kritis: ${f.ruleName}`, body: `${ent?.flag ?? ''} ${ent?.legalName ?? f.entityId} · ${f.evidence.split('\n')[0]}`, href: `/cases?f=${encodeURIComponent(f.id)}`, entityId: f.entityId });
     });
     const approvals = scoped.filter((f) => canApprove(ws.reviewOf(f.id), ws.actor).ok);
     if (approvals.length) {
@@ -34,7 +35,7 @@ export function useNotifications(): Note[] {
     ws.accessibleEntities
       .filter((e) => ws.returnFor(e.id).returnStatus === 'Review')
       .forEach((e) =>
-        notes.push({ id: `spt-${e.id}`, icon: <FileCheck2 />, tone: 'brand', title: `SPT tahunan ${e.legalName} menunggu checker`, body: 'Draf sudah diajukan maker dan menunggu persetujuan Group CFO/CEO.', href: '/tax-return' }),
+        notes.push({ id: `spt-${e.id}`, icon: <FileCheck2 />, tone: 'brand', title: `SPT tahunan ${e.legalName} menunggu checker`, body: 'Draf sudah diajukan maker dan menunggu persetujuan Group CFO/CEO.', href: '/tax-return', entityId: e.id }),
       );
     ws.calendar
       .filter((e) => ws.canAccess(e.entityId) && e.status !== 'Completed')
@@ -43,13 +44,14 @@ export function useNotifications(): Note[] {
       .sort((a, b) => a.d - b.d)
       .slice(0, 3)
       .forEach(({ e, d }) => {
-        notes.push({ id: `cal-${e.id}`, icon: <CalendarClock />, tone: d < 0 ? 'danger' : 'warning', title: e.title, body: `${e.jurisdiction} · ${dateShort(e.dueDate)} (${relativeDays(e.dueDate)})`, href: '/calendar' });
+        notes.push({ id: `cal-${e.id}`, icon: <CalendarClock />, tone: d < 0 ? 'danger' : 'warning', title: e.title, body: `${e.jurisdiction} · ${dateShort(e.dueDate)} (${relativeDays(e.dueDate)})`, href: '/calendar', entityId: e.entityId });
       });
     return notes;
   }, [ws]);
 }
 
 export function Notifications() {
+  const ws = useWorkspace();
   const [open, setOpen] = useState(false);
   const [seen, setSeen] = useState<Set<string>>(new Set());
   const notes = useNotifications();
@@ -70,7 +72,7 @@ export function Notifications() {
           </button>
         </div>
         {notes.length === 0 ? (
-          <EmptyState icon={<Bell />} title="Semua beres" description="Tidak ada temuan kritis, persetujuan, atau tenggat dekat." />
+          <EmptyState icon={<Bell />} title="Semua beres" description="Tidak ada kasus kritis, persetujuan, atau tenggat dekat." />
         ) : (
           <ul className="max-h-[420px] overflow-y-auto p-1.5">
             {notes.map((n) => (
@@ -80,6 +82,7 @@ export function Notifications() {
                   onClick={() => {
                     setSeen((s) => new Set(s).add(n.id));
                     setOpen(false);
+                    if (n.entityId) ws.selectEntity(n.entityId);
                     router.push(n.href);
                   }}
                   className="w-full flex items-start gap-3 rounded-lg px-2.5 py-2.5 text-left hover:bg-muted cursor-pointer"

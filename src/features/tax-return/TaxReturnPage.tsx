@@ -70,9 +70,9 @@ export function TaxReturnPage() {
     const pendingDocs = ws.compliance.documents.filter((d) => d.doc.entityId === entity.id && d.status !== 'verified');
     const legal = entity.documents.filter((d) => d.status !== 'Verified by Document AI');
     return [
-      { key: 'critical', ok: critical.length === 0, blocking: true, label: 'Tidak ada temuan kritis terbuka', detail: critical.length ? `${critical.length} temuan kritis belum diputuskan` : 'Semua temuan kritis sudah diputuskan', href: '/cases' },
-      { key: 'review', ok: unresolved.length === 0, blocking: false, label: 'Semua temuan diputuskan', detail: unresolved.length ? `${unresolved.length} temuan terbuka` : 'Tidak ada temuan terbuka', href: '/cases' },
-      { key: 'corr', ok: pendingCorr.length === 0, blocking: true, label: 'Koreksi temuan diterapkan', detail: pendingCorr.length ? `${pendingCorr.length} koreksi belum masuk rekonsiliasi` : 'Rekonsiliasi mutakhir', href: '/cases?tab=done' },
+      { key: 'critical', ok: critical.length === 0, blocking: true, label: 'Tidak ada kasus kritis terbuka', detail: critical.length ? `${critical.length} kasus kritis belum diputuskan` : 'Semua kasus kritis sudah diputuskan', href: '/cases' },
+      { key: 'review', ok: unresolved.length === 0, blocking: false, label: 'Semua kasus diputuskan', detail: unresolved.length ? `${unresolved.length} kasus terbuka` : 'Tidak ada kasus terbuka', href: '/cases' },
+      { key: 'corr', ok: pendingCorr.length === 0, blocking: true, label: 'Koreksi kasus diterapkan', detail: pendingCorr.length ? `${pendingCorr.length} koreksi belum masuk rekonsiliasi` : 'Rekonsiliasi mutakhir', href: '/cases?tab=done' },
       { key: 'docs', ok: pendingDocs.length === 0, blocking: false, label: 'Dokumen transaksi terverifikasi', detail: pendingDocs.length ? `${pendingDocs.length} dokumen menunggu verifikasi` : 'Semua terverifikasi', href: '/documents' },
       { key: 'legal', ok: legal.length === 0, blocking: false, label: 'Dokumen legal lengkap', detail: legal.length ? `${legal.length} dokumen legal perlu review` : 'Lengkap', href: `/entities/${entity.id}` },
     ];
@@ -182,7 +182,7 @@ export function TaxReturnPage() {
           <Card className="relative overflow-hidden">
             {!locked && (
               <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <span className="text-[120px] font-bold text-ink/[0.03] -rotate-12 select-none">DRAF</span>
+                <span className="font-serif text-[120px] font-medium text-ink/[0.035] -rotate-12 select-none">DRAF</span>
               </div>
             )}
             <Tabs<Section>
@@ -279,7 +279,7 @@ export function TaxReturnPage() {
             )}
             <div className="px-5 py-3 border-t border-line text-xs text-ink-3 flex flex-wrap items-center justify-between gap-2">
               <span>Angka {locked ? 'dikunci saat persetujuan' : 'mengikuti rekonsiliasi fiskal secara langsung'}.</span>
-              <Link href="/calculation" className="text-brand-600 font-medium">Buka rekonsiliasi</Link>
+              <Link href="/calculation" className="text-brand-700 hover:text-brand-900 font-medium">Buka rekonsiliasi</Link>
             </div>
           </Card>
         </div>
@@ -338,7 +338,26 @@ export function TaxReturnPage() {
                       tone="warning"
                       icon={<UserCog />}
                       title={isCreator ? 'Maker tidak boleh menyetujui draf sendiri' : 'Perlu Group CEO/CFO sebagai checker'}
-                      action={checker && <Button size="sm" onClick={() => { ws.setPersonaId(checker.id); ui.toast(`Masuk sebagai ${checker.name}`, 'info'); }}>Masuk sebagai checker</Button>}
+                      action={
+                        <div className="flex flex-wrap gap-2">
+                          {checker && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                ws.logAudit('REMIND_CHECKER', `${form.short} ${entity.legalName}`, `Pengingat tinjauan dikirim ke ${checker.name}.`);
+                                ui.toast(`Pengingat dikirim ke ${checker.name}.`, 'info');
+                              }}
+                            >
+                              Ingatkan checker
+                            </Button>
+                          )}
+                          {checker && (
+                            <Button size="sm" onClick={() => { ws.setPersonaId(checker.id); ui.toast(`Masuk sebagai ${checker.name}`, 'info'); }}>
+                              Masuk sebagai checker
+                            </Button>
+                          )}
+                        </div>
+                      }
                     />
                   )}
                 </>
@@ -369,6 +388,29 @@ export function TaxReturnPage() {
               {locked && ws.isParentExec && (
                 <Button variant="ghost" size="sm" icon={<RotateCcw />} onClick={reopen}>Buka kembali sebagai draf</Button>
               )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader title="Lampiran SPT" description="Kelengkapan bagian pelaporan tahunan" />
+            <CardBody className="space-y-2.5 text-[13px]">
+              {[
+                { label: country === 'ID' ? 'Lampiran I · Rekonsiliasi fiskal' : 'Schedule · Fiscal reconciliation', ready: true },
+                { label: country === 'ID' ? 'Lampiran II · HPP & beban usaha' : 'Schedule · Operating expenses', ready: true },
+                { label: country === 'ID' ? 'Lampiran III · Kredit pajak' : 'Schedule · Tax credits', ready: true },
+                { label: country === 'ID' ? 'Lampiran IV · Penghasilan final' : 'Schedule · Final-taxed items', ready: true },
+                {
+                  label: 'Ikhtisar Transfer Pricing (PMK 172/2023)',
+                  ready: entity.documents.some((d) => d.category === 'Transfer Pricing Local File' && d.status === 'Verified by Document AI') || entity.documents.some((d) => d.fileName.includes('tp')),
+                },
+              ].map((att) => (
+                <div key={att.label} className="flex items-center justify-between gap-2 py-1 border-b border-line last:border-b-0">
+                  <span className="text-ink-2">{att.label}</span>
+                  <Badge tone={att.ready ? 'success' : 'warning'} dot>
+                    {att.ready ? 'Siap' : 'Lampirkan'}
+                  </Badge>
+                </div>
+              ))}
             </CardBody>
           </Card>
 

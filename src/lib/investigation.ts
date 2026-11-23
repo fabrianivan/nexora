@@ -8,7 +8,7 @@
  */
 import type { CountryCode } from '@/data/multiCountryTaxData';
 import { RULES, type RiskFinding, type WorkspaceDocument } from './compliance';
-import { FIELD_LABEL, expectedTax, lowestConfidence, type DocField } from './cases';
+import { FIELD_LABEL, expectedTax, hasAiFields, lowestConfidence, type DocField } from './cases';
 import { zScores } from './fraud';
 import { money } from './format';
 import type { EngineBadge } from './ai/badge';
@@ -78,6 +78,7 @@ interface ToolSpec {
 }
 
 const norm = (s: string) => s.trim().toLowerCase();
+const normTaxId = (s: string) => s.replace(/\W/g, '').toUpperCase();
 
 function findDoc(ctx: ToolContext, id: string) {
   return ctx.documents.find((d) => d.doc.id === id)?.doc;
@@ -94,21 +95,23 @@ const TOOLS: Record<ToolName, ToolSpec> = {
     required: [],
     run(args, ctx) {
       const name = args.name ? norm(args.name) : '';
-      const taxId = args.taxId?.trim() ?? '';
+      const taxId = args.taxId ? normTaxId(args.taxId) : '';
       if (!name && !taxId) return notFound('Vendor tanpa nama/NPWP');
-      const docs = ctx.documents.map((d) => d.doc).filter((d) => d.type === 'e_invoice' && ((name && norm(d.counterparty.value) === name) || (taxId && d.counterpartyTaxId.value === taxId)));
-      if (!docs.length) return notFound(`Vendor ${args.name ?? taxId}`);
+      const docs = ctx.documents
+        .map((d) => d.doc)
+        .filter((d) => (d.type === 'e_invoice' || d.type === 'shareholder') && ((name && norm(d.counterparty.value) === name) || (taxId && normTaxId(d.counterpartyTaxId.value) === taxId)));
+      if (!docs.length) return notFound(`Vendor ${args.name ?? args.taxId}`);
       const names = [...new Set(docs.map((d) => d.counterparty.value))];
       const ids = [...new Set(docs.map((d) => d.counterpartyTaxId.value))];
-      const unvalidated = docs.filter((d) => !d.taxIdValidated).length;
+      const unvalidated = docs.filter((d) => d.type === 'e_invoice' && !d.taxIdValidated).length;
       const label = args.name ?? names[0];
       const issues: string[] = [];
-      if (unvalidated) issues.push(`${unvalidated} dari ${docs.length} invoice memakai identitas yang belum tervalidasi`);
+      if (unvalidated) issues.push(`${unvalidated} dari ${docs.length} dokumen memakai identitas yang belum tervalidasi`);
       if (names.length > 1) issues.push(`satu NPWP dipakai ${names.length} nama (${names.join(' · ')})`);
       if (ids.length > 1) issues.push(`${ids.length} NPWP berbeda (${ids.join(', ')})`);
       return {
         title: `Master vendor · ${label}`,
-        summary: issues.length ? `${label}: ${issues.join('; ')}.` : `${label}: ${docs.length} invoice, identitas konsisten dan tervalidasi.`,
+        summary: issues.length ? `${label}: ${issues.join('; ')}.` : `${label}: ${docs.length} dokumen, identitas konsisten dan tervalidasi.`,
         signal: issues.length ? 'risk' : 'clear',
         data: { names, taxIds: ids, invoices: docs.length, unvalidated, entities: [...new Set(docs.map((d) => d.entityId))] },
       };
@@ -230,7 +233,17 @@ const TOOLS: Record<ToolName, ToolSpec> = {
       const doc = findDoc(ctx, args.documentId ?? '');
       if (!doc) return notFound(`Dokumen ${args.documentId}`);
       const low = lowestConfidence(doc);
-      if (!low) return { title: `Ekstraksi · ${doc.number.value}`, summary: `${doc.number.value}: semua field diisi manual.`, signal: 'clear', data: {} };
+      if (!low) {
+        if (hasAiFields(doc)) {
+          return {
+            title: `Ekstraksi · ${doc.number.value}`,
+            summary: `${doc.number.value}: field diisi simulasi tanpa skor keyakinan model, cocokkan dengan dokumen asli.`,
+            signal: 'risk',
+            data: { simulated: true },
+          };
+        }
+        return { title: `Ekstraksi · ${doc.number.value}`, summary: `${doc.number.value}: semua field diisi manual.`, signal: 'clear', data: {} };
+      }
       const weak = low.confidence < 0.9;
       return {
         title: `Ekstraksi · ${doc.number.value}`,

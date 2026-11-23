@@ -10,6 +10,7 @@ import { CommandPalette } from './CommandPalette';
 import { Copilot } from './Copilot';
 import { Toaster } from './Toaster';
 import { navFor } from './nav';
+import { isPublicRoute } from './publicRoutes';
 import { useUi } from '@/state/ui';
 import { Button, IconButton, Kbd, Sheet, Skeleton, useMounted } from '@/ui';
 
@@ -85,9 +86,12 @@ function PageSkeleton() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const ui = useUi();
+  const pathname = usePathname();
   // Pages depend on the viewer's clock/time zone and on client-hydrated data,
   // so they render after mount; the shell itself is server-rendered.
   const mounted = useMounted();
+  // The welcome page and account pages stand on their own, without the workspace chrome.
+  if (isPublicRoute(pathname)) return <>{children}</>;
   return (
     <div className="min-h-screen lg:pl-[var(--sidebar-w)]">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[90] focus:bg-surface focus:px-3 focus:py-2 focus:rounded-lg focus:shadow-lg">

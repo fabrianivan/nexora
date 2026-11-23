@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, Inbox, Pencil, Search, ShieldAlert, Trash2, Upload } from 'lucide-react';
 import type { TaxDocument } from '@/lib/domain';
+import { hasAiFields, lowestConfidence } from '@/lib/cases';
 import type { WorkspaceDocument } from '@/lib/compliance';
 import { useWorkspace } from '@/state/workspace';
 import { useUi } from '@/state/ui';
@@ -37,7 +38,7 @@ import { CycleNext } from '@/shell/CycleNext';
 import { EntityName, ScopeToggle, SeverityBadge, useScopedIds, type Scope } from '../shared';
 import { UploadDialog } from './UploadDialog';
 
-type StatusFilter = 'all' | 'pending' | 'verified';
+type StatusFilter = 'all' | 'pending' | 'flagged' | 'verified';
 type TypeFilter = 'all' | 'e_invoice' | 'shareholder';
 
 export const DOC_TYPE_LABEL: Record<TaxDocument['type'], string> = {
@@ -49,9 +50,10 @@ export const DOC_TYPE_LABEL: Record<TaxDocument['type'], string> = {
   tax_payment_slip: 'Bukti setor',
 };
 
-function ConfidenceCell({ value }: { value?: number }) {
-  if (value === undefined) return <span className="text-ink-4">—</span>;
-  const pct = Math.round(value * 100);
+function ConfidenceCell({ doc }: { doc: TaxDocument }) {
+  const low = lowestConfidence(doc);
+  if (!low) return <span className="text-ink-3 text-xs">{hasAiFields(doc) ? 'Simulasi' : 'Manual'}</span>;
+  const pct = Math.round(low.confidence * 100);
   return (
     <span className={cn('num', pct < 90 ? 'text-warning-700 font-medium' : 'text-ink-2')} title={pct < 90 ? 'Confidence rendah — periksa manual' : undefined}>
       {pct}%
@@ -76,28 +78,39 @@ function DocumentSheet({ item, onClose }: { item: WorkspaceDocument | null; onCl
   const findings = ws.findings.filter((f) => f.documentIds.includes(item.doc.id));
   const country = d.country;
 
-  const setField = <K extends 'number' | 'date' | 'counterparty' | 'counterpartyTaxId' | 'taxableBase' | 'taxAmount' | 'invoiceUuid'>(k: K, value: TaxDocument[K]['value']) =>
+  const setField = <K extends 'number' | 'date' | 'counterparty' | 'counterpartyTaxId' | 'taxableBase' | 'taxAmount' | 'invoiceUuid' | 'ownershipPercentage'>(k: K, value: TaxDocument[K]['value']) =>
     setDraft((x) => {
       if (!x) return x;
       const doc = { ...x.doc, [k]: { ...x.doc[k], value, source: 'manual' as const, confidence: 1 } } as TaxDocument;
-      if (k === 'taxableBase' || k === 'taxAmount') doc.totalAmount = { ...doc.totalAmount, value: doc.taxableBase.value + doc.taxAmount.value, source: 'manual' };
+      if (k === 'taxableBase' || k === 'taxAmount') doc.totalAmount = { ...doc.totalAmount, value: doc.taxableBase.value + doc.taxAmount.value, source: 'manual', confidence: 1 };
       return { ...x, doc };
     });
 
+  const stripInvestigations = (invs: typeof ws.compliance.investigations) => {
+    if (!invs) return undefined;
+    const stale = new Set(findings.map((f) => f.id));
+    return Object.fromEntries(Object.entries(invs).filter(([k]) => !stale.has(k)));
+  };
+
   const save = (verify = false) => {
     const next: WorkspaceDocument = { ...draft, status: verify ? 'verified' : draft.status === 'extracting' ? 'extracted' : draft.status };
-    ws.updateCompliance((s) => ({ ...s, documents: s.documents.map((x) => (x.doc.id === next.doc.id ? next : x)) }));
+    ws.updateCompliance((s) => ({
+      ...s,
+      documents: s.documents.map((x) => (x.doc.id === next.doc.id ? next : x)),
+      investigations: verify ? s.investigations : stripInvestigations(s.investigations),
+    }));
     ws.logAudit(verify ? 'VERIFY_DOCUMENT' : 'EDIT_DOCUMENT', `${d.number.value} · ${d.counterparty.value}`, verify ? 'Dokumen diverifikasi manual; masuk analisis risiko.' : 'Field dokumen dikoreksi manual (override AI).');
     ui.toast(verify ? 'Dokumen diverifikasi.' : 'Perubahan disimpan. Mesin risiko menghitung ulang.');
     setEditing(false);
     if (verify) onClose();
   };
 
-  const fields: { k: 'number' | 'date' | 'counterparty' | 'counterpartyTaxId' | 'taxableBase' | 'taxAmount' | 'invoiceUuid'; label: string; money?: boolean; mono?: boolean }[] = [
+  const fields: { k: 'number' | 'date' | 'counterparty' | 'counterpartyTaxId' | 'taxableBase' | 'taxAmount' | 'invoiceUuid' | 'ownershipPercentage'; label: string; money?: boolean; pct?: boolean; mono?: boolean }[] = [
     { k: 'number', label: 'Nomor dokumen', mono: true },
     { k: 'date', label: 'Tanggal' },
     { k: 'counterparty', label: d.type === 'shareholder' ? 'Pemegang saham' : 'Vendor' },
     { k: 'counterpartyTaxId', label: 'Identitas pajak pihak lawan', mono: true },
+    ...(d.type === 'shareholder' ? ([{ k: 'ownershipPercentage', label: 'Persentase saham (%)', pct: true }] as const) : []),
     ...(d.type === 'e_invoice'
       ? ([
           { k: 'taxableBase', label: 'DPP', money: true },
@@ -129,6 +142,11 @@ function DocumentSheet({ item, onClose }: { item: WorkspaceDocument | null; onCl
         ) : (
           <>
             <Button variant="ghost" icon={<Trash2 />} onClick={() => setConfirmDelete(true)} className="mr-auto">Hapus</Button>
+            {findings.length > 0 && (
+              <Button variant="secondary" icon={<ShieldAlert />} onClick={() => router.push(`/cases?f=${encodeURIComponent(findings[0].id)}`)}>
+                Buka kasus
+              </Button>
+            )}
             <Button icon={<Pencil />} onClick={() => setEditing(true)}>Koreksi field</Button>
             {item.status !== 'verified' && <Button variant="primary" icon={<CheckCircle2 />} onClick={() => save(true)}>Verifikasi</Button>}
           </>
@@ -146,18 +164,27 @@ function DocumentSheet({ item, onClose }: { item: WorkspaceDocument | null; onCl
           <Callout
             tone="danger"
             icon={<ShieldAlert />}
-            title={`${findings.length} temuan risiko pada dokumen ini`}
+            title={`${findings.length} kasus risiko pada dokumen ini`}
             action={<Button size="sm" onClick={() => router.push(`/cases?f=${encodeURIComponent(findings[0].id)}`)}>Buka</Button>}
           >
-            {findings.map((f) => f.ruleName).join(' · ')}
+            <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+              {findings.map((f, i) => (
+                <React.Fragment key={f.id}>
+                  {i > 0 && <span aria-hidden>·</span>}
+                  <button type="button" onClick={() => router.push(`/cases?f=${encodeURIComponent(f.id)}`)} className="underline hover:text-danger-700 cursor-pointer text-left">
+                    {f.ruleName}
+                  </button>
+                </React.Fragment>
+              ))}
+            </span>
           </Callout>
         )}
 
         <div>
-          <h3 className="text-sm font-semibold text-ink mb-3">Field hasil ekstraksi</h3>
-          <div className="rounded-xl border border-line divide-y divide-line">
+          <h3 className="font-serif text-[18px] text-ink mb-3">Field hasil ekstraksi</h3>
+          <div className="rounded-lg border border-line divide-y divide-line">
             {fields.map((f) => {
-              const field = d[f.k] as { value: string | number; source: 'ai' | 'manual'; confidence?: number };
+              const field = d[f.k] as { value: string | number | null; source: 'ai' | 'manual'; confidence?: number };
               return (
                 <div key={f.k} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] items-center gap-3 px-4 py-2.5">
                   <span className="text-[13px] text-ink-3">{f.label}</span>
@@ -165,17 +192,30 @@ function DocumentSheet({ item, onClose }: { item: WorkspaceDocument | null; onCl
                     <Input
                       aria-label={f.label}
                       className={cn('h-8', f.mono && 'font-mono')}
-                      type={f.money ? 'number' : f.k === 'date' ? 'date' : 'text'}
-                      value={String(field.value)}
-                      onChange={(e) => setField(f.k, (f.money ? Number(e.target.value) : e.target.value) as never)}
+                      type={f.money || f.pct ? 'number' : f.k === 'date' ? 'date' : 'text'}
+                      min={f.money || f.pct ? 0 : undefined}
+                      max={f.pct ? 100 : undefined}
+                      step={f.pct ? '0.1' : undefined}
+                      value={field.value === null ? '' : String(field.value)}
+                      onChange={(e) => {
+                        if (f.money) setField(f.k, Math.max(0, Number(e.target.value) || 0) as never);
+                        else if (f.pct) setField(f.k, Math.min(100, Math.max(0, Number(e.target.value) || 0)) as never);
+                        else setField(f.k, e.target.value as never);
+                      }}
                     />
                   ) : (
                     <span className={cn('text-[13px] text-ink break-words', f.mono && 'font-mono')}>
-                      {f.money ? money(Number(field.value), country) : f.k === 'date' ? dateShort(String(field.value)) : String(field.value) || <span className="text-danger-600">kosong</span>}
+                      {f.money ? money(Number(field.value ?? 0), country) : f.pct ? `${field.value ?? '—'}%` : f.k === 'date' ? dateShort(String(field.value ?? '')) : String(field.value ?? '') || <span className="text-danger-600">kosong</span>}
                     </span>
                   )}
                   <span className="justify-self-end">
-                    {field.source === 'manual' ? <Badge tone="brand">Manual</Badge> : <span className={cn('text-xs num', (field.confidence ?? 1) < 0.9 ? 'text-warning-700' : 'text-ink-3')}>AI {Math.round((field.confidence ?? 1) * 100)}%</span>}
+                    {field.source === 'manual' ? (
+                      <Badge tone="brand">Manual</Badge>
+                    ) : typeof field.confidence === 'number' ? (
+                      <span className={cn('text-xs num', field.confidence < 0.9 ? 'text-warning-700' : 'text-ink-3')}>AI {Math.round(field.confidence * 100)}%</span>
+                    ) : (
+                      <span className="text-xs text-ink-3">AI</span>
+                    )}
                   </span>
                 </div>
               );
@@ -187,19 +227,12 @@ function DocumentSheet({ item, onClose }: { item: WorkspaceDocument | null; onCl
                 <span />
               </div>
             )}
-            {d.type === 'shareholder' && (
-              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] items-center gap-3 px-4 py-2.5">
-                <span className="text-[13px] text-ink-3">Persentase saham</span>
-                <span className="text-[13px] text-ink num">{d.ownershipPercentage.value ?? '—'}%</span>
-                <span />
-              </div>
-            )}
           </div>
         </div>
 
         {d.type === 'e_invoice' && (
           <div>
-            <h3 className="text-sm font-semibold text-ink mb-3">Verifikasi kepatuhan</h3>
+            <h3 className="font-serif text-[18px] text-ink mb-3">Verifikasi kepatuhan</h3>
             <div className="space-y-3">
               <Checkbox
                 label="Identitas vendor tervalidasi di registri otoritas"
@@ -241,9 +274,13 @@ function DocumentSheet({ item, onClose }: { item: WorkspaceDocument | null; onCl
         danger
         confirmLabel="Hapus dokumen"
         title="Hapus dokumen ini?"
-        description="Temuan yang hanya bersumber dari dokumen ini ikut hilang dari analisis."
+        description="Kasus yang hanya bersumber dari dokumen ini ikut hilang dari analisis."
         onConfirm={() => {
-          ws.updateCompliance((s) => ({ ...s, documents: s.documents.filter((x) => x.doc.id !== item.doc.id) }));
+          ws.updateCompliance((s) => ({
+            ...s,
+            documents: s.documents.filter((x) => x.doc.id !== item.doc.id),
+            investigations: stripInvestigations(s.investigations),
+          }));
           ws.logAudit('DELETE_DOCUMENT', `${d.number.value} · ${d.counterparty.value}`, 'Dokumen dihapus dari inbox.');
           ui.toast('Dokumen dihapus.');
           onClose();
@@ -266,20 +303,28 @@ export function DocumentsPage() {
   const openId = params.get('d');
 
   const docs = useMemo(() => ws.compliance.documents.filter((d) => ids.includes(d.doc.entityId)), [ws.compliance.documents, ids]);
+  const flagged = useMemo(() => new Set(ws.findings.flatMap((f) => f.documentIds)), [ws.findings]);
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();
     return docs
-      .filter((d) => (status === 'all' ? true : status === 'verified' ? d.status === 'verified' : d.status !== 'verified'))
+      .filter((d) =>
+        status === 'all'
+          ? true
+          : status === 'verified'
+            ? d.status === 'verified'
+            : status === 'flagged'
+              ? flagged.has(d.doc.id)
+              : d.status !== 'verified',
+      )
       .filter((d) => (type === 'all' ? true : d.doc.type === type))
       .filter((d) => !term || `${d.doc.number.value} ${d.doc.counterparty.value} ${d.doc.counterpartyTaxId.value}`.toLowerCase().includes(term))
       .sort((a, b) => (a.status === 'verified' ? 1 : 0) - (b.status === 'verified' ? 1 : 0) || b.doc.date.value.localeCompare(a.doc.date.value));
-  }, [docs, status, type, q]);
+  }, [docs, status, type, q, flagged]);
 
   const pending = docs.filter((d) => d.status !== 'verified').length;
   const verifiedPct = docs.length ? Math.round(((docs.length - pending) / docs.length) * 100) : 100;
   const verifiedTone = verifiedPct >= 90 ? 'emerald' : verifiedPct >= 60 ? 'amber' : 'rose';
-  const conf = docs.length ? docs.reduce((s, d) => s + (d.doc.counterparty.confidence ?? 1), 0) / docs.length : 1;
-  const flagged = new Set(ws.findings.flatMap((f) => f.documentIds));
+  const conf = docs.length ? docs.reduce((s, d) => s + (lowestConfidence(d.doc)?.confidence ?? 1), 0) / docs.length : 1;
   const flaggedCount = docs.filter((d) => flagged.has(d.doc.id)).length;
   const openItem = openId ? ws.compliance.documents.find((d) => d.doc.id === openId) ?? null : null;
 
@@ -305,7 +350,6 @@ export function DocumentsPage() {
       />
 
       <MetricBand
-        variant="light"
         className="mb-6"
         label="Posisi inbox dokumen"
         lead={
@@ -359,6 +403,7 @@ export function DocumentsPage() {
             items={[
               { id: 'all', label: 'Semua' },
               { id: 'pending', label: 'Perlu verifikasi', count: pending },
+              { id: 'flagged', label: 'Terkait kasus', count: flaggedCount },
               { id: 'verified', label: 'Terverifikasi' },
             ]}
           />
@@ -414,7 +459,7 @@ export function DocumentsPage() {
                         <span className="text-ink-3">{d.ownershipPercentage.value}% saham</span>
                       )}
                     </TD>
-                    <TD align="right"><ConfidenceCell value={d.counterparty.confidence} /></TD>
+                    <TD align="right"><ConfidenceCell doc={d} /></TD>
                     <TD>
                       <div className="flex items-center gap-1.5">
                         {worst ? <SeverityBadge severity={worst.severity} /> : null}

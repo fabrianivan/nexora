@@ -4,12 +4,12 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Check, Database, RotateCcw } from 'lucide-react';
-import { NAV } from './nav';
+import { NAV, CYCLE } from './nav';
 import { useCycleStatus } from './cycle';
 import { EntitySwitcher } from './EntitySwitcher';
 import { useWorkspace } from '@/state/workspace';
 import { useUi } from '@/state/ui';
-import { StatusDot, cn, useMounted } from '@/ui';
+import { Meter, StatusDot, cn, useMounted } from '@/ui';
 
 export function Logo({ className, compact }: { className?: string; compact?: boolean }) {
   return (
@@ -101,6 +101,30 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         ))}
       </nav>
+
+      <div className="px-3 pb-2">
+        {(() => {
+          const doneCount = CYCLE.filter((c) => status[c.href]?.done).length;
+          const current = CYCLE.find((c) => !status[c.href]?.done) ?? CYCLE[CYCLE.length - 1];
+          const pct = Math.round((doneCount / CYCLE.length) * 100);
+          return (
+            <Link
+              href={current.href}
+              onClick={onNavigate}
+              className="block rounded-md border border-line bg-surface/80 px-3 py-2.5 hover:border-line-strong transition-colors"
+            >
+              <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+                <span>Siklus TB 2026</span>
+                <span className="num">{doneCount}/{CYCLE.length}</span>
+              </div>
+              <div className="mt-1 text-[12px] font-medium text-ink truncate">
+                {doneCount === CYCLE.length ? 'Semua langkah selesai' : `Langkah ${current.step} dari ${CYCLE.length} · ${current.label}`}
+              </div>
+              <Meter value={pct} tone={doneCount === CYCLE.length ? 'success' : 'brand'} className="mt-2" label="Progres siklus kepatuhan" />
+            </Link>
+          );
+        })()}
+      </div>
 
       <div className="px-3 py-3 border-t border-line">
         <div className="px-2 flex items-center gap-2.5">

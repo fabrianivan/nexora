@@ -121,7 +121,10 @@ export function Copilot() {
     endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
   }, [messages, loading]);
 
-  const presets = scopedCase ? CASE_QUESTIONS.map((p) => ({ id: p, title: p, prompt: p })) : cfg.copilotPresets;
+  const asked = new Set(messages.filter((m) => m.role === 'user').map((m) => m.text.trim()));
+  const presets = scopedCase
+    ? CASE_QUESTIONS.filter((p) => !asked.has(p)).map((p) => ({ id: p, title: p, prompt: p }))
+    : cfg.copilotPresets;
 
   return (
     <Sheet
@@ -202,7 +205,7 @@ export function Copilot() {
               <span className="mt-0.5 size-6 rounded-md bg-muted text-ink-3 flex items-center justify-center shrink-0">
                 <ShieldOff className="size-3.5" />
               </span>
-              <div className="min-w-0 flex-1 rounded-xl border border-line bg-subtle px-3 py-2.5">
+              <div className="min-w-0 flex-1 rounded-lg border border-line bg-subtle px-3 py-2.5">
                 <div className="text-[11px] font-medium text-ink-3 mb-1">Ditolak · {m.answer.engine.label}</div>
                 <p className="text-[13px] text-ink-2 leading-relaxed">{m.text}</p>
               </div>

@@ -25,7 +25,9 @@ export function PageHeader({
       {eyebrow && <div className="eyebrow mb-3 flex items-center gap-2">{eyebrow}</div>}
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div className="min-w-0 max-w-3xl">
-          <h1 className="font-serif text-[40px] leading-[1.05] font-normal text-ink text-balance tracking-[-0.02em]">{title}</h1>
+          {/* Steps down on a phone: a fixed 40px headline ate most of the
+              first screen before any content. */}
+          <h1 className="font-serif text-[30px] sm:text-[35px] lg:text-[40px] leading-[1.05] font-normal text-ink text-balance tracking-[-0.02em]">{title}</h1>
           {description && <p className="mt-3 text-[15px] leading-relaxed text-ink-2 text-pretty max-w-2xl">{description}</p>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

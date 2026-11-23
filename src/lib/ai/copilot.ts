@@ -76,8 +76,10 @@ const TAX_TERMS = [
   'pajak', 'tax', 'ppn', 'pph', 'faktur', 'invoice', 'spt', 'koreksi', 'fiskal', 'tbts', 'vendor', 'npwp', 'iras', 'gst', 'lhdn',
   'myinvois', 'irs', 'w-9', 'w-8', '1042', 'treaty', 'p3b', 'dta', 'risiko', 'fraud', 'temuan', 'audit', 'rekonsiliasi', 'z-score',
   'split', 'ubo', 'pemegang saham', 'register saham', 'ownership', 'deductible', 'nominatif', 'natura', 'entitas', 'pasal', 'pmk',
-  'akun', 'beban', 'pendapatan', '31e', '1771', 'coretax', 'bukti', 'mitigasi', 'dividen', 'royalti', 'withholding', 'sst',
-  'kasus', 'prioritas', 'kepatuhan', 'sp2dk', 'pembetulan', 'ter', 'umkm', 'form c', 'schedule m', 'checker', 'maker',
+  'akun', 'beban', 'pendapatan', '31e', '1771', 'coretax', 'bukti', 'mitigasi', 'dividen', 'royalti', 'withholding', 'wht', 'sst',
+  'kasus', 'prioritas', 'kepatuhan', 'sp2dk', 'pembetulan', 'ter', 'umkm', 'form c', 'schedule m', 'checker', 'maker', 'seksyen',
+  '109', '109b', 'cp37', 'faedah', 'perkhidmatan', 'pillar', 'globe', 'qdmtt', 'iir', 'pemotongan', 'potong', 'pengkreditan',
+  'kredit', 'masukan', 'keluaran', 'restitusi', 'billing', 'ntpn', 'sanksi', 'denda', 'bunga', 'setor', 'lapor', '1120',
 ];
 
 export type GuardResult = { refused: true; reason: 'injection' | 'off_topic'; reply: string } | null;
@@ -141,7 +143,7 @@ export function workspaceChunks(findings: FindingSummary[]): PoolChunk[] {
     .slice(0, 8)
     .map((f) => ({
       id: `WS-${f.id}`,
-      label: `Temuan · ${f.ruleName}`,
+      label: `Kasus · ${f.ruleName}`,
       kind: 'workspace' as const,
       verified: true,
       text: `${f.ruleName} (${SEVERITY_LABEL[f.severity]}) pada ${f.entityName}, nilai dokumen ${f.amountAtRisk ? money(f.amountAtRisk, f.country) : '—'}, status ${f.status}.`,
@@ -170,7 +172,11 @@ function firstSentence(text: string): string {
 }
 
 function words(text: string): string[] {
-  return text.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2);
+  return text
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .map((w) => (w.length > 5 && /(?:nya|kah|lah)$/.test(w) ? w.slice(0, -3) : w))
+    .filter((w) => w.length > 2);
 }
 
 /** Pick the chunks an answer may use, most relevant first. */
@@ -183,11 +189,15 @@ export function selectChunks(req: CopilotRequest, limit = 6): PoolChunk[] {
 
   if (req.case) {
     const cc = caseChunks(req.case);
-    // Always ground in the case itself, then rank the rest of its chunks by the question.
+    // Always ground in the case itself, its failing checks, any proposed correction,
+    // investigation brief, and next step, then rank remaining document chunks by question.
     add(cc[0]);
     const caseSource: SourceDocument = { id: 'CASE', title: req.case.ruleName, publisher: 'workspace', sourceType: 'internal_demo', accessedAt: '2026-01-01T00:00:00.000Z', sourceVersion: '1', verified: true, chunks: cc.map((c) => ({ id: c.id, article: c.label, text: c.text })) };
     for (const hit of retrieveChunks([caseSource], req.question, 3)) add(cc.find((c) => c.id === hit.chunk.id) ?? null);
     add(cc.find((c) => c.id === 'CASE-CHECKS') ?? null);
+    add(cc.find((c) => c.id === 'CASE-CORR') ?? null);
+    add(cc.find((c) => c.id === 'CASE-BRIEF') ?? null);
+    add(cc.find((c) => c.id === 'CASE-NEXT') ?? null);
     for (const id of RULE_SOURCES[req.case.rule] ?? []) add(ruleChunk(id));
   }
   const priority = Boolean(req.findings?.length) && PRIORITY_RE.test(q);
@@ -201,7 +211,8 @@ export function selectChunks(req: CopilotRequest, limit = 6): PoolChunk[] {
     return distinctive.some((w) => text.has(w));
   });
   for (const hit of ranked.slice(0, 4)) add(ruleChunk(hit.chunk.id));
-  return picked.slice(0, priority ? limit + 3 : limit);
+  const cap = req.case ? Math.max(limit + 2, 8) : limit;
+  return picked.slice(0, priority ? cap + 3 : cap);
 }
 
 // ---------------------------------------------------------------------------
@@ -235,7 +246,7 @@ export function composeOffline(req: CopilotRequest, chunks: PoolChunk[]): { repl
     const ws = chunks.filter((c) => c.kind === 'workspace');
     lines.push('Urutan penanganan yang saya sarankan, dari tingkat tertinggi lalu nilai terbesar:');
     ws.forEach((c, i) => lines.push(`${i + 1}. ${c.text}${cite(c)}`));
-    lines.push('', 'Mulai dari temuan kritis: kumpulkan bukti, lalu ajukan keputusan ke checker di halaman Kasus.');
+    lines.push('', 'Mulai dari kasus kritis: kumpulkan bukti, lalu ajukan keputusan ke checker di halaman Kasus.');
     return { reply: lines.join('\n'), used, grounded: true };
   }
 
@@ -269,7 +280,7 @@ export function composeOffline(req: CopilotRequest, chunks: PoolChunk[]): { repl
   if (rules.length) {
     lines.push('Dari pustaka aturan Nexora (ringkasan internal, cek teks resmi sebelum bertindak):');
     rules.slice(0, 3).forEach((r) => lines.push(`- **${r.label}**: ${r.text}${cite(r)}`));
-    if (/\d{2,}/.test(req.question)) lines.push('', 'Untuk angka entitas Anda, hitungan resmi ada di halaman Perhitungan; saya tidak mengulang hitungan di sini tanpa data rekonsiliasi.');
+    if (/\d{2,}/.test(req.question)) lines.push('', 'Untuk angka entitas Anda, hitungan resmi ada di halaman Rekonsiliasi; saya tidak mengulang hitungan di sini tanpa data rekonsiliasi.');
     return { reply: lines.join('\n'), used, grounded: true };
   }
 

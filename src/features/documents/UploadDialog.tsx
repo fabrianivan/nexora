@@ -345,9 +345,9 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
             setDragging(false);
             pickFile(e.dataTransfer.files?.[0]);
           }}
-          className={cn('rounded-xl border-2 border-dashed px-4 py-4 flex flex-col sm:flex-row items-center gap-4 transition-colors', zoneTone)}
+          className={cn('rounded-lg border-2 border-dashed px-4 py-4 flex flex-col sm:flex-row items-center gap-4 transition-colors', zoneTone)}
         >
-          <span className="size-10 rounded-xl bg-surface border border-line flex items-center justify-center text-ink-3 shrink-0">
+          <span className="size-10 rounded-lg bg-surface border border-line flex items-center justify-center text-ink-3 shrink-0">
             {scanning ? (
               <Spinner className="size-5 text-brand-600" />
             ) : scan.state === 'done' ? (
@@ -439,7 +439,7 @@ export function UploadDialog({ open, onClose, onSaved }: { open: boolean; onClos
                 value={f.tax}
                 placeholder={String(Math.round(base * rate))}
                 onChange={set('tax')}
-                hint={`Kosongkan untuk tarif standar ${(rate * 100).toFixed(rate * 100 % 1 ? 2 : 0)}% · total ${money(base + tax, country)}`}
+                hint={`Kosongkan untuk tarif standar ${Number((rate * 100).toFixed(2))}% · total ${money(base + tax, country)}`}
               />
               <SelectField label="Akun buku besar" value={f.ledger} onChange={set('ledger')}>
                 {LEDGERS.map((l) => <option key={l.accountCode} value={l.accountCode}>{l.accountCode} · {l.accountName}</option>)}

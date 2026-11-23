@@ -760,8 +760,8 @@ export async function dbSaveStudies(studies: { id: string; title: string; catego
 // ---------------------------------------------------------------------------
 // APP STATE (key/value JSON — compliance workspace, preferences)
 // ---------------------------------------------------------------------------
-const APP_STATE_KEYS = new Set(['compliance', 'ledger', 'seedVersion']);
-const CLIENT_WRITABLE_KEYS = new Set(['compliance', 'ledger']);
+const APP_STATE_KEYS = new Set(['compliance', 'ledger', 'account', 'ownership', 'seedVersion']);
+const CLIENT_WRITABLE_KEYS = new Set(['compliance', 'ledger', 'account', 'ownership']);
 
 /** Keys the browser may write through /api/db/sync. */
 export function isAllowedAppStateKey(key: string): boolean {
@@ -816,7 +816,7 @@ export async function dbGetAllUnifiedData(): Promise<{
   calendarEvents: DbGenericRecord[];
   auditLogs: DbGenericRecord[];
   studies: DbGenericRecord[];
-  appState: { compliance: unknown; ledger: unknown };
+  appState: { compliance: unknown; ledger: unknown; account: unknown; ownership: unknown };
   databaseStatus: {
     connected: boolean;
     engine: 'mysql' | 'sqlite' | 'memory';
@@ -824,7 +824,7 @@ export async function dbGetAllUnifiedData(): Promise<{
   };
 }> {
   await initDatabase();
-  const [companies, calculations, taxReturns, payments, calendarEvents, auditLogs, studies, compliance, ledger, status] = await Promise.all([
+  const [companies, calculations, taxReturns, payments, calendarEvents, auditLogs, studies, compliance, ledger, account, ownership, status] = await Promise.all([
     dbGetCompanies(),
     dbGetCalculations(),
     dbGetTaxReturn('ENT-ID-001'),
@@ -834,6 +834,8 @@ export async function dbGetAllUnifiedData(): Promise<{
     dbGetStudies(),
     dbGetAppState('compliance'),
     dbGetAppState('ledger'),
+    dbGetAppState('account'),
+    dbGetAppState('ownership'),
     getDatabaseStatus(),
   ]);
 
@@ -845,7 +847,7 @@ export async function dbGetAllUnifiedData(): Promise<{
     calendarEvents,
     auditLogs,
     studies,
-    appState: { compliance, ledger },
+    appState: { compliance, ledger, account, ownership },
     databaseStatus: {
       connected: status.connected,
       engine: status.engine,

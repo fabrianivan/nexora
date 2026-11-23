@@ -1,9 +1,57 @@
+'use client';
+
 import React from 'react';
 import { cn } from './cn';
 
-export function Table({ className, children }: { className?: string; children: React.ReactNode }) {
+/**
+ * On a narrow screen these tables are far wider than the viewport, so the
+ * container scrolls sideways. A scroll region has to be reachable by keyboard
+ * (WCAG 2.1.1) and has to show that there is more to the right — but only when
+ * it actually overflows, otherwise every table on a desktop page becomes a
+ * pointless tab stop.
+ */
+function useOverflowX<T extends HTMLElement>() {
+  const ref = React.useRef<T>(null);
+  const [overflowing, setOverflowing] = React.useState(false);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setOverflowing(el.scrollWidth > el.clientWidth + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => ro.disconnect();
+  }, []);
+  return { ref, overflowing };
+}
+
+export function Table({
+  className,
+  flush,
+  label,
+  children,
+}: {
+  className?: string;
+  flush?: boolean;
+  /** Names the scroll region for screen readers, e.g. "Kewajiban pembayaran". */
+  label?: string;
+  children: React.ReactNode;
+}) {
+  const { ref, overflowing } = useOverflowX<HTMLDivElement>();
   return (
-    <div className={cn('overflow-x-auto', className)}>
+    <div
+      ref={ref}
+      {...(overflowing
+        ? { tabIndex: 0, role: 'region', 'aria-label': `${label ?? 'Tabel'} — dapat digeser mendatar` }
+        : {})}
+      className={cn(
+        'overflow-x-auto',
+        overflowing && 'nx-scroll-x focus-visible:outline-2 focus-visible:outline-brand-500 focus-visible:outline-offset-2',
+        flush && '[&_th:first-child]:pl-0 [&_td:first-child]:pl-0 [&_th:last-child]:pr-0 [&_td:last-child]:pr-0',
+        className,
+      )}
+    >
       <table className="w-full text-left border-collapse text-[13px]">{children}</table>
     </div>
   );

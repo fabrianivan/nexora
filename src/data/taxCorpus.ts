@@ -117,13 +117,18 @@ export const TAX_CORPUS: SourceDocument[] = [
     },
     {
       id: 'LIB-SG-S45',
-      article: 'Singapore ITA s.45 (withholding tax)',
-      text: 'Pembayar di Singapura wajib memotong withholding tax atas pembayaran tertentu ke non-residen, termasuk royalti (umumnya 10%, dapat lebih rendah berdasarkan tax treaty), dan menyetorkannya paling lambat tanggal 15 bulan kedua setelah pembayaran.',
+      article: 'Singapore ITA s.12(6), s.12(7) & s.45 (withholding tax)',
+      text: 'Pembayar di Singapura wajib memotong withholding tax atas pembayaran tertentu ke non-residen — termasuk bunga/interest s.12(6) (15% atau tarif DTA), royalti s.12(7) (10% atau tarif DTA), dan technical/management services s.12(7) (tarif PPh badan 17% atau pembebasan DTA dengan COR) — serta menyetor dan melaporkannya ke IRAS paling lambat tanggal 15 bulan kedua setelah pembayaran.',
     },
     {
       id: 'LIB-MY-SME',
       article: 'Malaysia ITA 1967 Sch.1 (tarif SME)',
       text: 'Perusahaan yang memenuhi syarat SME dikenai 15% atas RM150.000 pertama pendapatan bercukai, 17% atas RM450.000 berikutnya, dan 24% atas sisanya.',
+    },
+    {
+      id: 'LIB-MY-S109',
+      article: 'Malaysia ITA 1967 s.109 & s.109B (withholding tax)',
+      text: 'Pembayaran royalti dan faedah (bunga) kepada non-residen dipotong withholding tax menurut Seksyen 109 ITA 1967 (umumnya 10% royalti dan 15% faedah, atau tarif DTA dengan Certificate of Residence); imbalan perkhidmatan teknis yang dilakukan di Malaysia dipotong 10% menurut Seksyen 109B. Pajak yang dipotong wajib disetor dan dilaporkan ke LHDN dengan Borang CP37 / CP37D dalam 1 bulan sejak dibayar atau dikreditkan.',
     },
     {
       id: 'LIB-OECD-PPT',

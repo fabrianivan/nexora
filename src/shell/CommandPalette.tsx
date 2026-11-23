@@ -79,11 +79,11 @@ export function CommandPalette() {
       .forEach((f) =>
         list.push({
           id: `f-${f.id}`,
-          group: 'Temuan risiko',
+          group: 'Kasus',
           label: f.ruleName,
           hint: f.evidence.split('\n')[0],
           icon: <ShieldAlert />,
-          keywords: `${f.rule} ${f.explanation} ${f.evidence}`,
+          keywords: `kasus temuan ${ws.entityById(f.entityId)?.legalName ?? ''} ${f.rule} ${f.explanation} ${f.evidence}`,
           run: go(`/cases?f=${encodeURIComponent(f.id)}`),
         }),
       );
@@ -101,6 +101,16 @@ export function CommandPalette() {
         }),
       );
     list.push(
+      {
+        id: 'act-smart-compute',
+        group: 'Aksi',
+        label: 'Buka sistem komputasi pintar',
+        hint: 'Optimasi rezim, pemecah target (goal-seek), sensitivitas 2D & Pillar Two',
+        icon: <Sparkles />,
+        keywords: 'komputasi pintar smart compute goal seek optimasi rezim 31e pillar two angsuran pph 25',
+        run: go('/calculation?tab=smart'),
+      },
+      { id: 'act-team', group: 'Aksi', label: 'Tim & peran', hint: 'Kelola anggota, undangan & hak akses ruang kerja', icon: <Building2 />, keywords: 'tim peran anggota rbac invite role owner', run: go('/settings/team') },
       { id: 'act-copilot', group: 'Aksi', label: 'Tanya AI Tax Copilot', icon: <Sparkles />, run: () => ui.setCopilotOpen(true) },
       {
         id: 'act-reset',

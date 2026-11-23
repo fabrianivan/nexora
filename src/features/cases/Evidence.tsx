@@ -21,7 +21,7 @@ const CHECK_ICON = {
 export function CheckList({ checks }: { checks: CaseCheck[] }) {
   if (!checks.length) return <p className="text-[13px] text-ink-3">Tidak ada pemeriksaan per dokumen untuk aturan ini.</p>;
   return (
-    <ul className="rounded-xl border border-line divide-y divide-line">
+    <ul className="rounded-lg border border-line divide-y divide-line">
       {checks.map((c) => (
         <li key={c.id} className="flex items-start gap-2.5 px-3.5 py-2.5">
           <span className="mt-px shrink-0">{CHECK_ICON[c.status]}</span>
@@ -50,7 +50,7 @@ function fieldValue(doc: TaxDocument, field: DocField): string {
 function DocumentFields({ doc, flagged, account }: { doc: TaxDocument; flagged: Set<DocField>; account?: string }) {
   const fields = (doc.type === 'shareholder' ? REGISTER_FIELDS : INVOICE_FIELDS).filter((f) => f !== 'invoiceUuid' || doc.country === 'MY' || doc.invoiceUuid.value);
   return (
-    <div className="rounded-xl border border-line overflow-hidden">
+    <div className="rounded-lg border border-line overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-3.5 py-2 bg-subtle border-b border-line">
         <span className="min-w-0 text-[13px] font-medium text-ink truncate">{doc.counterparty.value}</span>
         <Link href={`/documents?d=${encodeURIComponent(doc.id)}`} className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 shrink-0">
@@ -87,21 +87,35 @@ export function Evidence({ finding }: { finding: RiskFinding }) {
   const docs = ws.compliance.documents.filter((d) => finding.documentIds.includes(d.doc.id));
   const checks = caseChecks(finding, ws.compliance.documents);
   const sources = (RULE_SOURCES[finding.rule] ?? []).map(corpusChunk).filter((x): x is NonNullable<typeof x> => Boolean(x));
+  const bd = finding.scoreBreakdown;
   return (
     <div className="space-y-6">
       <section>
-        <h3 className="text-sm font-semibold text-ink">Mengapa ditandai</h3>
+        <h3 className="font-serif text-[18px] text-ink">Mengapa ditandai</h3>
         <p className="mt-1 text-[13px] text-ink-2 leading-relaxed">{finding.explanation}</p>
+        <dl className="mt-3 grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-line border-y border-line">
+          {[
+            { label: 'Bobot aturan', value: `${bd.ruleScore}/100` },
+            { label: 'Sinyal nilai / stat', value: `${bd.statScore}/100` },
+            { label: 'Dampak fiskal', value: `${bd.contextScore}/100` },
+            { label: 'Keyakinan field', value: `${Math.round(bd.confidence * 100)}%` },
+          ].map((item) => (
+            <div key={item.label} className="py-2 sm:px-3 sm:first:pl-0">
+              <dt className="eyebrow !text-[10px]">{item.label}</dt>
+              <dd className="mt-0.5 text-[13px] font-medium text-ink num">{item.value}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold text-ink mb-2">Pemeriksaan</h3>
+        <h3 className="font-serif text-[18px] text-ink mb-2">Pemeriksaan</h3>
         <CheckList checks={checks} />
       </section>
 
       {docs.length > 0 && (
         <section>
-          <h3 className="text-sm font-semibold text-ink mb-2">Dokumen sumber <span className="font-normal text-ink-3">· field yang ditandai disorot, keyakinan per field</span></h3>
+          <h3 className="font-serif text-[18px] text-ink mb-2">Dokumen sumber <span className="font-sans text-xs font-normal text-ink-3">· field yang ditandai disorot, keyakinan per field</span></h3>
           <div className="space-y-3">
             {docs.map((d) => (
               <DocumentFields key={d.doc.id} doc={d.doc} flagged={flaggedFields(checks, d.doc.id)} account={d.ledger ? `${d.ledger.accountCode} ${d.ledger.accountName}` : undefined} />
@@ -111,7 +125,7 @@ export function Evidence({ finding }: { finding: RiskFinding }) {
       )}
 
       <section>
-        <h3 className="text-sm font-semibold text-ink mb-1">Dasar aturan</h3>
+        <h3 className="font-serif text-[18px] text-ink mb-1">Dasar aturan</h3>
         <p className="text-xs text-ink-3 mb-2">{RULES[finding.rule]?.basis}</p>
         {sources.length > 0 && (
           <ul className="space-y-2">
@@ -129,7 +143,7 @@ export function Evidence({ finding }: { finding: RiskFinding }) {
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold text-ink mb-1">Rekomendasi tindakan</h3>
+        <h3 className="font-serif text-[18px] text-ink mb-1">Rekomendasi tindakan</h3>
         <p className="text-[13px] text-ink-2">{finding.remediation}</p>
       </section>
     </div>

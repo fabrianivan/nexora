@@ -12,11 +12,24 @@ export interface RetrievedChunk {
   score: number;
 }
 
+function normalizeToken(token: string): string {
+  // Strip common Indonesian enclitics/possessives so inflections like
+  // "koreksinya" or "aturannya" match "koreksi" and "aturan".
+  if (token.length > 5 && /(?:nya|kah|lah)$/.test(token)) {
+    return token.slice(0, -3);
+  }
+  if (token.length > 4 && /(?:ku|mu)$/.test(token)) {
+    return token.slice(0, -2);
+  }
+  return token;
+}
+
 function tokenize(text: string): Set<string> {
   return new Set(
     text
       .toLowerCase()
       .split(/[^a-z0-9]+/)
+      .map(normalizeToken)
       .filter((token) => token.length > 1 && !STOPWORDS.has(token)),
   );
 }

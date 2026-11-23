@@ -76,5 +76,5 @@ Nexora is one tax workspace that connects the compliance lifecycle into a **6-st
 - [x] **Pluggable Country Adapters**: Modular architecture decoupling `ID`, `SG`, `MY`, and `US` rules into versioned JSON configs.
 - [x] **Explainable AI & Risk Findings**: rule + failing checks + flagged fields + cited AI investigation + Rupiah trail + remediation.
 - [x] **Maker-Checker Workflow**: Strict separation between drafter and approver prevents unauthorized self-filing.
-- [x] **Code Quality & Testing**: 67 Vitest unit tests (including the investigation loop with a mocked Gemini and Copilot grounding/refusals) and 9 Playwright end-to-end tests pass, `tsc --noEmit` is clean, and ESLint passes with 0 errors and 0 warnings.
+- [x] **Code Quality & Testing**: 71 Vitest unit tests (including the investigation loop with a mocked Gemini and Copilot grounding/refusals) and 11 Playwright end-to-end tests pass, `tsc --noEmit` is clean, and ESLint passes with 0 errors and 0 warnings.
 - [x] **Security**: Strict security headers (CSP, X-Frame-Options, X-Content-Type-Options) in `next.config.mjs`, and masking of sensitive tax IDs (NPWP/NIK).

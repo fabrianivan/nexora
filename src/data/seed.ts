@@ -29,15 +29,15 @@ export const SEED_TAX_RETURN: TaxReturnState = {
 };
 
 /** Bump when the sample dataset changes; the server reseeds older databases. */
-export const SEED_VERSION = 6;
+export const SEED_VERSION = 7;
 
 export const SEED_PAYMENTS: PaymentLiability[] = [
-  { id: 'PAY-01', entityId: 'ENT-ID-001', taxType: 'PPh Badan Tahunan (Pasal 29)', kapKjs: '411126-200', period: 'Tahun Pajak 2026', amount: 25063500, dueDate: '2027-04-30', status: 'Belum dibayar', billingCode: '0192837491823741' },
-  { id: 'PAY-02', entityId: 'ENT-ID-001', taxType: 'PPN Masa Oktober 2026', kapKjs: '411211-100', period: 'Masa 10-2026', amount: 32550000, dueDate: '2026-11-30', status: 'Belum dibayar', billingCode: '0281928374192847' },
-  { id: 'PAY-03', entityId: 'ENT-ID-001', taxType: 'PPh Pasal 21 Masa Oktober 2026', kapKjs: '411121-100', period: 'Masa 10-2026', amount: 18450000, dueDate: '2026-11-10', status: 'Belum dibayar', billingCode: '0371928471928371' },
+  { id: 'PAY-01', entityId: 'ENT-ID-001', taxType: 'PPh Badan Tahunan (Pasal 29)', kapKjs: '411126-200', period: 'Tahun Pajak 2026', amount: 25063500, dueDate: '2027-04-30', status: 'Belum dibayar', billingCode: '019283749182374' },
+  { id: 'PAY-02', entityId: 'ENT-ID-001', taxType: 'PPN Masa Oktober 2026', kapKjs: '411211-100', period: 'Masa 10-2026', amount: 32550000, dueDate: '2026-11-30', status: 'Belum dibayar', billingCode: '028192837419284' },
+  { id: 'PAY-03', entityId: 'ENT-ID-001', taxType: 'PPh Pasal 21 Masa Oktober 2026', kapKjs: '411121-100', period: 'Masa 10-2026', amount: 18450000, dueDate: '2026-11-10', status: 'Belum dibayar', billingCode: '037192847192837' },
   { id: 'PAY-04', entityId: 'ENT-ID-001', taxType: 'PPh Pasal 25 Masa Oktober 2026', kapKjs: '411126-100', period: 'Masa 10-2026', amount: 10000000, dueDate: '2026-11-15', status: 'Belum dibayar' },
-  { id: 'PAY-05', entityId: 'ENT-ID-001', taxType: 'PPN Masa September 2026', kapKjs: '411211-100', period: 'Masa 09-2026', amount: 31650000, dueDate: '2026-10-31', status: 'Dibayar', billingCode: '0281928374101928', ntpn: '8291048291048291', paidAt: '2026-10-27 14:22:10 WIB' },
-  { id: 'PAY-06', entityId: 'ENT-ID-001', taxType: 'PPh Unifikasi Masa September 2026', kapKjs: '411124-100', period: 'Masa 09-2026', amount: 6850000, dueDate: '2026-10-15', status: 'Dibayar', billingCode: '0371928471900012', ntpn: '7391827491827391', paidAt: '2026-10-14 10:15:30 WIB' },
+  { id: 'PAY-05', entityId: 'ENT-ID-001', taxType: 'PPN Masa September 2026', kapKjs: '411211-100', period: 'Masa 09-2026', amount: 31650000, dueDate: '2026-10-31', status: 'Dibayar', billingCode: '028192837410192', ntpn: '8291048291048291', paidAt: '2026-10-27 14:22:10 WIB' },
+  { id: 'PAY-06', entityId: 'ENT-ID-001', taxType: 'PPh Unifikasi Masa September 2026', kapKjs: '411124-100', period: 'Masa 09-2026', amount: 6850000, dueDate: '2026-10-15', status: 'Dibayar', billingCode: '037192847190001', ntpn: '7391827491827391', paidAt: '2026-10-14 10:15:30 WIB' },
   { id: 'PAY-07', entityId: 'ENT-SG-002', taxType: 'GST F5 Q3 2026', kapKjs: 'IRAS GST', period: 'Jul–Sep 2026', amount: 18240, dueDate: '2026-10-20', status: 'Belum dibayar' },
   { id: 'PAY-08', entityId: 'ENT-SG-002', taxType: 'Estimated Chargeable Income (ECI) YA2027', kapKjs: 'IRAS CIT', period: 'YA 2027', amount: 40630, dueDate: '2026-12-31', status: 'Belum dibayar' },
   { id: 'PAY-09', entityId: 'ENT-MY-003', taxType: 'CP204 Instalment Nov 2026', kapKjs: 'LHDN CP204', period: 'YA 2026 #11', amount: 12500, dueDate: '2026-11-15', status: 'Belum dibayar' },

@@ -59,11 +59,11 @@ function TreatySim() {
       </div>
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Tarif domestik</div><div className="figure text-[24px] leading-tight text-ink">{pct(domestic, 0)}</div></div>
-          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Tarif diterapkan</div><div className="figure text-[24px] leading-tight text-ink">{pct(applied, 0)}</div></div>
-          <div className="rounded-xl border border-success-100 bg-success-50 px-3.5 py-3"><div className="text-xs text-success-700">Penghematan</div><div className="figure text-[24px] leading-tight text-success-700">{money(saving, source)}</div></div>
+          <div className="rounded-lg border border-line px-3.5 py-3"><div className="eyebrow !text-[10px]">Tarif domestik</div><div className="mt-1 figure text-[24px] leading-tight text-ink">{pct(domestic, 0)}</div></div>
+          <div className="rounded-lg border border-line px-3.5 py-3"><div className="eyebrow !text-[10px]">Tarif diterapkan</div><div className="mt-1 figure text-[24px] leading-tight text-ink">{pct(applied, 0)}</div></div>
+          <div className="rounded-lg border border-success-100 bg-success-50 px-3.5 py-3"><div className="eyebrow !text-[10px] !text-success-700">Penghematan</div><div className="mt-1 figure text-[24px] leading-tight text-success-700">{money(saving, source)}</div></div>
         </div>
-        <div className="rounded-xl bg-subtle border border-line px-4 py-3 text-[13px] space-y-1">
+        <div className="rounded-lg bg-subtle border border-line px-4 py-3 text-[13px] space-y-1">
           <div className="flex justify-between"><span className="text-ink-3">Pajak dipotong</span><span className="text-ink font-medium num">{money(gross * applied, source)}</span></div>
           <div className="flex justify-between"><span className="text-ink-3">Diterima bersih</span><span className="text-ink font-medium num">{money(gross * (1 - applied), source)}</span></div>
         </div>
@@ -78,6 +78,7 @@ function TreatySim() {
 }
 
 function PillarTwoSim() {
+  const ui = useUi();
   const [revenue, setRevenue] = useState(820);
   const [etr, setEtr] = useState(11.5);
   const [income, setIncome] = useState(50);
@@ -99,17 +100,19 @@ function PillarTwoSim() {
           {applies ? 'Minimum ETR 15% per yurisdiksi berlaku (IIR/QDMTT).' : 'Aturan Pillar Two belum mewajibkan top-up tax.'}
         </Callout>
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Kekurangan ETR</div><div className="figure text-[24px] leading-tight text-ink">{topUpPct.toFixed(1)}%</div></div>
-          <div className="rounded-xl border border-line px-3.5 py-3"><div className="text-xs text-ink-3">Laba lebih</div><div className="figure text-[24px] leading-tight text-ink">€{excess.toFixed(1)} jt</div></div>
-          <div className={cn('rounded-xl border px-3.5 py-3', topUp ? 'border-danger-100 bg-danger-50' : 'border-line')}><div className={cn('text-xs', topUp ? 'text-danger-700' : 'text-ink-3')}>Top-up tax</div><div className={cn('figure text-[24px] leading-tight', topUp ? 'text-danger-700' : 'text-ink')}>€{topUp.toFixed(2)} jt</div></div>
+          <div className="rounded-lg border border-line px-3.5 py-3"><div className="eyebrow !text-[10px]">Kekurangan ETR</div><div className="mt-1 figure text-[24px] leading-tight text-ink">{topUpPct.toFixed(1)}%</div></div>
+          <div className="rounded-lg border border-line px-3.5 py-3"><div className="eyebrow !text-[10px]">Laba lebih</div><div className="mt-1 figure text-[24px] leading-tight text-ink">€{excess.toFixed(1)} jt</div></div>
+          <div className={cn('rounded-lg border px-3.5 py-3', topUp ? 'border-danger-100 bg-danger-50' : 'border-line')}><div className={cn('eyebrow !text-[10px]', topUp && '!text-danger-700')}>Top-up tax</div><div className={cn('mt-1 figure text-[24px] leading-tight', topUp ? 'text-danger-700' : 'text-ink')}>€{topUp.toFixed(2)} jt</div></div>
         </div>
         <p className="text-xs text-ink-3 font-mono">top-up = max(0; 15% − ETR) × (laba GloBE − SBIE)</p>
+        <Button size="sm" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.askCopilot('Jelaskan aturan OECD Pillar Two (GloBE) minimum tax 15%, ambang pendapatan EUR 750 juta, dan penerapan safe harbour.')}>Tanya Copilot</Button>
       </div>
     </div>
   );
 }
 
 function TpSim() {
+  const ui = useUi();
   const [cost, setCost] = useState(2_000_000_000);
   const [markup, setMarkup] = useState(4);
   const q1 = 5.2;
@@ -138,6 +141,7 @@ function TpSim() {
         <Callout tone={inRange ? 'success' : 'danger'} icon={<Scale />} title={inRange ? 'Dalam rentang wajar' : 'Di luar rentang wajar'}>
           {inRange ? 'Markup memenuhi prinsip kewajaran (PMK 172/2023).' : `Risiko penyesuaian ke median: ${money(adjustment, 'ID')} ${adjustment > 0 ? 'tambahan penghasilan' : 'pengurangan'} untuk pihak yang diuji.`}
         </Callout>
+        <Button size="sm" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.askCopilot('Jelaskan prinsip kewajaran transfer pricing menurut PMK 172/2023 dan batas transaksi afiliasi yang wajib Local File dan Master File.')}>Tanya Copilot</Button>
       </div>
     </div>
   );
@@ -193,7 +197,7 @@ export function StudiesPage() {
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex flex-wrap gap-2">
           {CATS.map((c) => (
-            <button key={c} type="button" onClick={() => setCat(c)} className={cn('h-8 px-3 rounded-full border text-[13px] cursor-pointer', cat === c ? 'bg-ink text-white border-ink' : 'bg-surface border-line text-ink-2 hover:border-line-strong')}>
+            <button key={c} type="button" onClick={() => setCat(c)} className={cn('h-8 px-3 rounded-md border text-[13px] cursor-pointer transition-colors', cat === c ? 'bg-ink text-white border-ink' : 'bg-surface border-line text-ink-2 hover:border-line-strong')}>
               {c === 'all' ? 'Semua' : c}
             </button>
           ))}

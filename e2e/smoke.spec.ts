@@ -14,7 +14,7 @@ test('every module renders from the sidebar', async ({ page }) => {
     ['Entitas & struktur', /Entitas & struktur grup/],
     ['Dokumen', /^Dokumen$/],
     ['Kasus', /^Kasus$/],
-    ['Rekonsiliasi fiskal', /Rekonsiliasi fiskal/],
+    ['Rekonsiliasi fiskal', /Rekonsiliasi/],
     ['SPT tahunan', /SPT Tahunan PPh Badan 1771/],
     ['Pembayaran', /Pembayaran/],
     ['Pemegang saham & UBO', /Pemegang saham/],
@@ -132,4 +132,65 @@ test('command palette navigates', async ({ page }) => {
   await page.getByRole('combobox').fill('kalender');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/calendar/);
+});
+
+test('editing share-register ownership in Dokumen resolves the 105% mismatch', async ({ page }) => {
+  await page.goto('/documents');
+  await page.getByText('BlueHorizon Pacific Partners LP').click();
+  await page.getByRole('button', { name: 'Koreksi field' }).click();
+  await page.getByLabel('Persentase saham (%)').fill('20');
+  await page.getByRole('button', { name: 'Simpan koreksi' }).click();
+  await page.goto('/cases');
+  await expect(page.getByRole('option').filter({ hasText: 'Register saham ≠ 100%' })).toHaveCount(0);
+});
+
+test('case view shows score breakdown and copilot reports correction impact', async ({ page }) => {
+  await page.goto('/cases?tab=done');
+  await page.getByRole('option').filter({ hasText: 'CV Mega Suplai' }).first().click();
+  await expect(page.getByText('Bobot aturan')).toBeVisible();
+  await page.getByRole('button', { name: 'Tanya Copilot' }).click();
+  const panel = page.getByRole('dialog');
+  await panel.getByRole('button', { name: 'Berapa dampak koreksinya?' }).click();
+  await expect(panel.getByText(/Rp 120\.000\.000/).first()).toBeVisible();
+});
+
+test('account journey: sign-up flow, waiting state, and team role assignment', async ({ page }) => {
+  await page.goto('/sign-up');
+  await page.getByLabel('Nama lengkap').fill('Siti Rahmawati');
+  await page.getByLabel('Email kerja').fill('siti.rahmawati@nusantara-holding.com');
+  await page.getByLabel('Kata sandi', { exact: true }).fill('AmanSekali2026!');
+  await page.getByRole('button', { name: 'Buat akun' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Periksa email Anda' })).toBeVisible();
+  await page.getByRole('button', { name: 'Isi otomatis' }).click();
+  await page.getByRole('button', { name: 'Verifikasi email' }).click();
+
+  await expect(page.getByRole('heading', { name: /Atur ruang kerja/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Buka ruang kerja' }).click();
+  await expect(page).toHaveURL(/\/overview/);
+
+  await page.goto('/settings/team');
+  await expect(page.getByRole('heading', { level: 1, name: 'Tim & peran' })).toBeVisible();
+  await page.getByRole('button', { name: 'Tetapkan peran' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Tetapkan peran' }).click();
+  await expect(page.getByText('Menunggu peran').first()).toBeVisible();
+});
+
+test('ownership chain calculates effective UBOs and gates signatories until directors exist', async ({ page }) => {
+  await page.goto('/entities/ENT-ID-001');
+  await page.getByRole('tab', { name: 'Rantai kepemilikan' }).click();
+  await expect(page.getByText('96.0%')).toBeVisible();
+  await expect(page.getByText(/Dr\. Hendra Kusuma/).first()).toBeVisible();
+
+  await page.getByRole('tab', { name: /Penanda tangan/ }).click();
+  await expect(page.getByText(/Terblokir · 3 tanda tangan belum memiliki penanda tangan/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Kirim untuk tanda tangan' })).toBeDisabled();
+});
+
+test('entity directory shows reusable profiles and multiple roles', async ({ page }) => {
+  await page.goto('/shareholders');
+  await page.getByRole('tab', { name: /Direktori entitas/ }).click();
+  await page.getByText('Marcus Tan Wei Ming').first().click();
+  await expect(page.getByRole('heading', { name: 'Peran di seluruh ruang kerja' })).toBeVisible();
 });

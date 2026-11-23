@@ -11,12 +11,17 @@ export function downloadFile(name: string, content: string, mime: string): void 
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Minimal RFC 4180 CSV serialiser. */
+/** Minimal RFC 4180 CSV serialiser with spreadsheet formula-injection protection. */
 export function toCsv(rows: (string | number)[][]): string {
   return rows
-    .map((r) => r.map((v) => {
-      const s = String(v ?? '');
-      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    }).join(','))
+    .map((r) =>
+      r
+        .map((v) => {
+          const raw = String(v ?? '');
+          const safe = typeof v !== 'number' && /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+          return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+        })
+        .join(','),
+    )
     .join('\n');
 }

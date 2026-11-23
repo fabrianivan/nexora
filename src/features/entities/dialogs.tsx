@@ -361,17 +361,17 @@ export function ConsolidationDialog({ open, onClose }: { open: boolean; onClose:
 
   return (
     <Dialog open={open} onClose={onClose} size="xl" title="Konsolidasi grup" description="Ringkasan fiskal lintas yurisdiksi, ambang Pillar Two, dan arus transaksi afiliasi." footer={<Button onClick={onClose}>Tutup</Button>}>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        <div className="rounded-xl border border-line px-4 py-3">
-          <div className="text-xs text-ink-3">Omzet konsolidasi (≈)</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-line border-t-2 border-ink border-b border-b-line mb-5">
+        <div className="py-3.5 sm:pr-4">
+          <div className="eyebrow">Omzet konsolidasi (≈)</div>
           <div className="mt-1 figure text-[26px] text-ink">{moneyCompact(totalRevenue)}</div>
         </div>
-        <div className="rounded-xl border border-line px-4 py-3">
-          <div className="text-xs text-ink-3">Pajak disetor YTD (≈)</div>
+        <div className="py-3.5 sm:px-4">
+          <div className="eyebrow">Pajak disetor YTD (≈)</div>
           <div className="mt-1 figure text-[26px] text-ink">{moneyCompact(totalTax)}</div>
         </div>
-        <div className="rounded-xl border border-line px-4 py-3">
-          <div className="text-xs text-ink-3">Pillar Two (ambang €750 jt)</div>
+        <div className="py-3.5 sm:pl-4">
+          <div className="eyebrow">Pillar Two (ambang €750 jt)</div>
           <div className="mt-1 flex items-center gap-2">
             <span className="figure text-[26px] text-ink">€{(eurRevenue / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt</span>
             <Badge tone={eurRevenue >= 750e6 ? 'danger' : 'success'}>{eurRevenue >= 750e6 ? 'Wajib GloBE' : 'Di bawah ambang'}</Badge>
@@ -416,10 +416,10 @@ export function ConsolidationDialog({ open, onClose }: { open: boolean; onClose:
         </tbody>
       </Table>
 
-      <h3 className="mt-6 mb-2 text-sm font-semibold text-ink">Transaksi afiliasi lintas negara</h3>
+      <h3 className="mt-6 mb-2 font-serif text-[18px] text-ink">Transaksi afiliasi lintas negara</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {flows.map(({ from, node }) => (
-          <div key={`${from.id}-${node.id}`} className="rounded-xl border border-line px-4 py-3 text-[13px]">
+          <div key={`${from.id}-${node.id}`} className="rounded-lg border border-line px-4 py-3 text-[13px]">
             <div className="font-medium text-ink">
               {from.flag} → {node.flag} {node.entityName}
             </div>

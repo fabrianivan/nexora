@@ -4,6 +4,7 @@ import { MULTI_COUNTRY_DATA, type CountryCode } from '@/data/multiCountryTaxData
 import { vendorFromFileName, type ScanField, type ScanResult } from '@/lib/scan';
 import { liveBadge, offlineBadge } from '@/lib/ai/badge';
 import { generate, geminiKey, geminiModel, stripCodeFence, textOf } from '@/lib/ai/gemini';
+import { rateLimit } from '@/lib/server/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -139,6 +140,10 @@ function sampleTaxId(country: CountryCode): string {
 const SIM_NOTICE = 'Simulasi: tanpa GEMINI_API_KEY berkas tidak dibaca; nilai dibuat dari nama berkas. Periksa setiap field.';
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'local';
+  if (!rateLimit(`scan:${ip}`, 60, 60_000)) {
+    return NextResponse.json({ error: 'Terlalu banyak permintaan pindai dokumen. Coba lagi sebentar.' }, { status: 429 });
+  }
   let raw: unknown;
   try {
     raw = await req.json();

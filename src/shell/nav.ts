@@ -37,7 +37,7 @@ export const NAV: NavGroup[] = [
       { href: '/entities', label: 'Entitas & struktur', description: 'Direktori, profil legal, struktur kepemilikan', icon: Building2, step: 1 },
       { href: '/documents', label: 'Dokumen', description: 'Inbox faktur & dokumen, ekstraksi AI', icon: Inbox, step: 2 },
       { href: '/cases', label: 'Kasus', description: 'Temuan risiko, bukti, investigasi AI & keputusan maker-checker', icon: ShieldAlert, step: 3 },
-      { href: '/calculation', label: 'Rekonsiliasi fiskal', description: 'Koreksi fiskal, PPN, PPh potput, what-if', icon: Calculator, step: 4 },
+      { href: '/calculation', label: 'Rekonsiliasi fiskal', description: 'Koreksi fiskal, komputasi pintar, PPN, PPh potput, what-if', icon: Calculator, step: 4 },
       { href: '/tax-return', label: 'SPT tahunan', description: 'Draf SPT 1771, lampiran & persetujuan', icon: FileCheck2, step: 5 },
       { href: '/payments', label: 'Pembayaran', description: 'Kode billing, NTPN & kewajiban setor', icon: Landmark, step: 6 },
     ],

@@ -12,6 +12,7 @@ import {
 } from '@/lib/ai/copilot';
 import { liveBadge, offlineBadge } from '@/lib/ai/badge';
 import { generate, geminiKey, geminiModel, stripCodeFence, textOf } from '@/lib/ai/gemini';
+import { rateLimit } from '@/lib/server/rateLimit';
 import type { CaseContext } from '@/lib/cases';
 
 export const runtime = 'nodejs';
@@ -96,8 +97,14 @@ async function liveAnswer(req: CopilotRequest, chunks: PoolChunk[]): Promise<Cop
   if (!answer) throw new Error('Jawaban Gemini kosong.');
   const cited = Array.isArray(parsed.citations) ? parsed.citations.map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= chunks.length) : [];
   const used = [...new Set(cited)].sort((a, b) => a - b).map((n) => chunks[n - 1]);
-  // Renumber [n] markers to the order of the citation list we return.
-  const reply = answer.replace(/\[(\d+)\]/g, (m, n) => {
+  // Renumber [n] markers (including grouped forms like [1, 2]) to the order of the citation list we return.
+  const expanded = answer.replace(/\[(\d+(?:\s*,\s*\d+)+)\]/g, (_m, nums: string) =>
+    nums
+      .split(',')
+      .map((s) => `[${s.trim()}]`)
+      .join(''),
+  );
+  const reply = expanded.replace(/\[(\d+)\]/g, (m, n) => {
     const idx = used.indexOf(chunks[Number(n) - 1]);
     return idx >= 0 ? `[${idx + 1}]` : '';
   });
@@ -129,6 +136,10 @@ function offlineAnswer(req: CopilotRequest, chunks: PoolChunk[], notice?: string
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'local';
+  if (!rateLimit(`copilot:${ip}`, 60, 60_000)) {
+    return NextResponse.json({ error: 'Terlalu banyak permintaan ke Copilot. Coba lagi sebentar.' }, { status: 429 });
+  }
   let raw: unknown;
   try {
     raw = await req.json();

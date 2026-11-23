@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { documentSchema } from '../src/lib/domain';
+import { toCsv } from '../src/lib/download';
 import {
   SAMPLE_DOCUMENTS, createInitialComplianceState, runRiskEngine, proposeDecision, decide, canApprove,
   emptyReview, entityRiskScore, groupRiskScore, applyCorrectionToItems, isCorrectionReflected, normalizeComplianceState, type Actor,
@@ -96,13 +97,21 @@ describe('scores & reconciliation link', () => {
   it('scores an empty group as clean', () => {
     expect(groupRiskScore([], [], {})).toBe(100);
   });
-  it('applies a correction once', () => {
+  it('applies a correction once without false-positive matching unrelated amounts', () => {
     const items = [{ accountCode: '6300', commercialAmount: 340, positiveCorrection: 9, negativeCorrection: 0, fiscalAmount: 331, correctionReason: 'Denda' }];
+    const smaller = { accountCode: '6300', accountName: 'Opex', amount: 5, basis: 'x' };
+    expect(isCorrectionReflected(items, smaller, '[F-SMALL]')).toBe(false);
     const c = { accountCode: '6300', accountName: 'Opex', amount: 14, basis: 'x' };
     expect(isCorrectionReflected(items, c, '[F1]')).toBe(false);
     const once = applyCorrectionToItems(items, c, '[F1]', 'Konsultan');
     expect(once.items[0]).toMatchObject({ positiveCorrection: 23, fiscalAmount: 317 });
     expect(applyCorrectionToItems(once.items, c, '[F1]', 'Konsultan').changed).toBe(false);
+  });
+  it('neutralizes spreadsheet formula injection in CSV exports while keeping numbers intact', () => {
+    const csv = toCsv([
+      ['=CMD()', '+1+1', '-alert', '@SUM(A1)', -120, 'Normal text'],
+    ]);
+    expect(csv).toBe("'=CMD(),'+1+1,'-alert,'@SUM(A1),-120,Normal text");
   });
   it('falls back to the sample state for invalid storage', () => {
     expect(normalizeComplianceState(null).documents.length).toBe(createInitialComplianceState().documents.length);

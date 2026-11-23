@@ -57,6 +57,10 @@ const DOC_CHECKS: Record<string, ('taxid' | 'math' | 'evidence' | 'deductible' |
 
 const FIELDS: DocField[] = ['number', 'date', 'counterparty', 'counterpartyTaxId', 'taxableBase', 'taxAmount', 'totalAmount', 'ownershipPercentage', 'invoiceUuid'];
 
+export function hasAiFields(doc: TaxDocument): boolean {
+  return FIELDS.some((field) => doc[field].source === 'ai');
+}
+
 export function lowestConfidence(doc: TaxDocument): { field: DocField; confidence: number } | null {
   let lowest: { field: DocField; confidence: number } | null = null;
   for (const field of FIELDS) {

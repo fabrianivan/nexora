@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { cn } from './cn';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'subtle' | 'dark';
@@ -8,7 +9,7 @@ type Size = 'xs' | 'sm' | 'md' | 'lg';
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    'bg-brand-700 text-white hover:bg-brand-800 active:bg-brand-900 disabled:bg-brand-300',
+    'bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 disabled:bg-brand-300',
   secondary:
     'bg-surface text-ink border border-line-strong hover:border-ink-3 hover:bg-subtle disabled:text-ink-4',
   ghost: 'text-ink-2 hover:bg-muted hover:text-ink disabled:text-ink-4',
@@ -56,6 +57,41 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
   );
 });
 
+/** A link that looks like a `Button` — for navigation, where a <button> would be wrong. */
+export function ButtonLink({
+  href,
+  variant = 'secondary',
+  size = 'md',
+  icon,
+  iconRight,
+  className,
+  children,
+}: {
+  href: string;
+  variant?: Variant;
+  size?: Size;
+  icon?: React.ReactNode;
+  iconRight?: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'inline-flex items-center justify-center font-medium whitespace-nowrap transition-colors select-none [&_svg]:size-4 [&_svg]:shrink-0',
+        VARIANTS[variant],
+        SIZES[size],
+        className,
+      )}
+    >
+      {icon}
+      {children}
+      {iconRight}
+    </Link>
+  );
+}
+
 export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;
   variant?: 'ghost' | 'secondary';
@@ -84,6 +120,43 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(f
     </button>
   );
 });
+
+/**
+ * A text-weight action link — "Kalender", "Buka kasus", "Semua entitas".
+ * Carries a 24px minimum hit area (WCAG 2.2 AA 2.5.8): the bare 13px links
+ * these replace were 20px tall, which is under the minimum for a standalone
+ * target that isn't inline in a sentence.
+ */
+export function ActionLink({
+  href,
+  children,
+  iconRight,
+  tone = 'brand',
+  className,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  iconRight?: React.ReactNode;
+  tone?: 'brand' | 'quiet';
+  className?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        'inline-flex min-h-6 items-center gap-1.5 text-[13px] font-medium transition-colors [&_svg]:size-3.5',
+        tone === 'brand' ? 'text-brand-700 hover:text-brand-900' : 'text-ink-3 hover:text-ink',
+        className,
+      )}
+    >
+      {children}
+      {iconRight}
+    </Link>
+  );
+}
 
 export function Spinner({ className }: { className?: string }) {
   return (

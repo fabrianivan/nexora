@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowRight, Info, Link2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowRight, Info, Link2, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import type { FiscalReconciliationItem } from '@/data/indonesiaTaxData';
 import { MULTI_COUNTRY_DATA } from '@/data/multiCountryTaxData';
 import { useWorkspace } from '@/state/workspace';
@@ -39,8 +39,10 @@ import {
 import { CycleFooter } from '@/shell/CycleFooter';
 import { CycleNext } from '@/shell/CycleNext';
 import { shortMonth } from '../shared';
+import { analyzeTaxPosition } from '@/lib/smartCompute';
+import { SmartAdvisor } from './SmartAdvisor';
 
-type Tab = 'recon' | 'vat' | 'wht' | 'whatif';
+type Tab = 'recon' | 'smart' | 'vat' | 'wht' | 'whatif';
 
 const GROUP_LABEL: Record<FiscalReconciliationItem['group'], string> = {
   PENDAPATAN: 'Pendapatan',
@@ -172,7 +174,7 @@ function ReconTab() {
       <Card>
         <CardHeader
           title="Rekonsiliasi laba komersial ke fiskal"
-          description="Setiap koreksi wajib memiliki dasar hukum. Koreksi dari temuan yang dikonfirmasi diberi tautan."
+          description="Setiap koreksi wajib memiliki dasar hukum. Koreksi dari kasus yang dikonfirmasi diberi tautan."
           actions={<Button size="sm" icon={<Plus />} onClick={() => setDialog({ open: true, item: null })}>Tambah koreksi</Button>}
         />
         <Table>
@@ -342,7 +344,6 @@ function VatTab() {
   return (
     <div className="space-y-6">
       <MetricBand
-        variant="light"
         label={`Posisi ${vatName} masa ${shortMonth(last.month)}`}
         lead={
           <BandLead
@@ -374,7 +375,7 @@ function VatTab() {
       {blocked.length > 0 && (
         <Callout tone="danger" title={`${vatName} masukan dari ${blocked.length} faktur tidak dikreditkan`}>
           {blocked.map((b) => `${b.doc!.counterparty.value} (${money(b.doc!.taxAmount.value, country)})`).join(', ')} — menunggu keputusan atau sudah dikonfirmasi berisiko.{' '}
-          <Link href="/cases" className="underline">Lihat temuan</Link>
+          <Link href="/cases" className="underline">Lihat kasus</Link>
         </Callout>
       )}
       <Card>
@@ -488,7 +489,16 @@ function Slider({ label, value, onChange }: { label: string; value: number; onCh
         {label}
         <span className={cn('font-medium num', value > 0 ? 'text-success-700' : value < 0 ? 'text-danger-700' : 'text-ink')}>{value > 0 ? '+' : ''}{value}%</span>
       </span>
-      <input type="range" min={-50} max={50} step={5} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-brand-600 cursor-pointer" />
+      <input
+        type="range"
+        min={-50}
+        max={50}
+        step={5}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="slider"
+        style={{ '--v': `${((value + 50) / 100) * 100}%` } as React.CSSProperties}
+      />
     </label>
   );
 }
@@ -562,17 +572,46 @@ function WhatIfTab() {
   );
 }
 
+const VALID_TABS: Tab[] = ['recon', 'smart', 'vat', 'wht', 'whatif'];
+
 export function CalculationPage() {
   const ws = useWorkspace();
-  const [tab, setTab] = useState<Tab>('recon');
+  const params = useSearchParams();
+  const initialTab = params.get('tab') as Tab | null;
+  const [tab, setTab] = useState<Tab>(initialTab && VALID_TABS.includes(initialTab) ? initialTab : 'recon');
   const country = ws.country;
+  const entity = ws.activeEntity;
+  const calc = ws.calculationFor(entity.id);
+
+  useEffect(() => {
+    const q = params.get('tab') as Tab | null;
+    if (q && VALID_TABS.includes(q)) setTab(q);
+  }, [params]);
+
+  const smartBadgeCount = useMemo(() => {
+    const res = analyzeTaxPosition({
+      items: calc.items,
+      country,
+      applyFacility: calc.apply31EFacility,
+      credits: calc.credits ?? [],
+      findings: ws.findings.filter((f) => f.entityId === entity.id),
+      reviewOf: ws.reviewOf,
+      benchmarks: MULTI_COUNTRY_DATA[country].industryBenchmarks,
+    });
+    return (
+      res.pendingCorrections.count +
+      (res.regimes.bestToggleSaving > 0 ? 1 : 0) +
+      res.anomalies.filter((a) => a.severity !== 'info').length
+    );
+  }, [calc.items, calc.apply31EFacility, calc.credits, country, ws.findings, ws.reviewOf, entity.id]);
+
   return (
     <div>
       <PageHeader
         next={<CycleNext current="/calculation" />}
         eyebrow={<span>Langkah 4 dari 6 · Siklus kepatuhan</span>}
-        title="Rekonsiliasi fiskal"
-        description={`${ws.activeEntity.flag} ${ws.activeEntity.legalName} · tahun pajak 2026 · ${RETURN_FORM[country].name}`}
+        title="Rekonsiliasi & komputasi pintar"
+        description={`${entity.flag} ${entity.legalName} · tahun pajak 2026 · ${RETURN_FORM[country].name}`}
       />
       <Tabs<Tab>
         className="mb-5"
@@ -580,12 +619,14 @@ export function CalculationPage() {
         onChange={setTab}
         items={[
           { id: 'recon', label: 'Rekonsiliasi & PPh badan' },
+          { id: 'smart', label: 'Komputasi pintar', icon: <Sparkles />, count: smartBadgeCount || undefined },
           { id: 'vat', label: country === 'ID' ? 'PPN masukan/keluaran' : 'Indirect tax' },
           { id: 'wht', label: 'Pemotongan pajak' },
           { id: 'whatif', label: 'Simulasi what-if' },
         ]}
       />
       {tab === 'recon' && <ReconTab />}
+      {tab === 'smart' && <SmartAdvisor onOpenRecon={() => setTab('recon')} />}
       {tab === 'vat' && <VatTab />}
       {tab === 'wht' && <WhtTab />}
       {tab === 'whatif' && <WhatIfTab />}

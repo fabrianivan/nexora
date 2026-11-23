@@ -90,7 +90,7 @@ export function DecisionPanel({ finding }: { finding: RiskFinding }) {
   };
 
   return (
-    <div className="rounded-xl border border-line bg-subtle p-4 space-y-3">
+    <div className="rounded-lg border border-line bg-subtle p-4 space-y-3">
       {review.status === 'open' && (
         <>
           <div className="flex items-center justify-between gap-2">

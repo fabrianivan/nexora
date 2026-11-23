@@ -414,7 +414,7 @@ export const fiscalReconciliationData: FiscalReconciliationItem[] = [
     positiveCorrection: 120000000,
     negativeCorrection: 0,
     fiscalAmount: 1690000000,
-    correctionReason: 'Koreksi Positif atas transaksi CV Mega Suplai Abadi (indikasi TBTS / tanpa bukti pengiriman sah)',
+    correctionReason: 'Koreksi Positif atas transaksi CV Mega Suplai Abadi (indikasi TBTS / tanpa bukti pengiriman sah) [TBTS:DOC-ID-001]',
     legalBasis: 'Pasal 6 ayat (1) & Pasal 28 UU KUP',
   },
   {
@@ -438,7 +438,7 @@ export const fiscalReconciliationData: FiscalReconciliationItem[] = [
     positiveCorrection: 20350000,
     negativeCorrection: 0,
     fiscalAmount: 364650000,
-    correctionReason: 'Koreksi Positif biaya entertainment tanpa lampiran Daftar Nominatif',
+    correctionReason: 'Koreksi Positif biaya entertainment tanpa lampiran Daftar Nominatif [NON_DEDUCTIBLE:DOC-ID-010]',
     legalBasis: 'Pasal 9 ayat (1) UU PPh & SE-27/PJ.22/1986',
   },
   {

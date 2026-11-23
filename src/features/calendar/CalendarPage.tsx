@@ -8,7 +8,7 @@ import { dateShort, daysUntil, relativeDays } from '@/lib/format';
 import { eventStatus } from '@/lib/schedule';
 import { downloadFile } from '@/lib/download';
 import type { CalendarEvent } from '@/state/types';
-import { Badge, Button, Card, Dialog, EmptyState, IconButton, PageHeader, Segmented, Select, SelectField, TextField, cn, Section } from '@/ui';
+import { Badge, Button, Card, CardBody, CardHeader, Dialog, EmptyState, IconButton, PageHeader, Segmented, Select, SelectField, TextField, cn, Section } from '@/ui';
 import { ScopeToggle, useScopedIds, type Scope } from '../shared';
 
 type View = 'list' | 'month';
@@ -269,21 +269,76 @@ export function CalendarPage() {
           </div>
         )
       ) : (
-        <Card className="overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3">
-            <div className="text-sm font-semibold text-ink">{MONTHS[cursor.m]} {cursor.y}</div>
-            <div className="flex items-center gap-1">
-              <IconButton label="Bulan sebelumnya" size="sm" onClick={() => setCursor((c) => (c.m === 0 ? { m: 11, y: c.y - 1 } : { m: c.m - 1, y: c.y }))}><ChevronLeft /></IconButton>
-              <Button size="xs" variant="ghost" onClick={() => setCursor({ m: now.getMonth(), y: now.getFullYear() })}>Hari ini</Button>
-              <IconButton label="Bulan berikutnya" size="sm" onClick={() => setCursor((c) => (c.m === 11 ? { m: 0, y: c.y + 1 } : { m: c.m + 1, y: c.y }))}><ChevronRight /></IconButton>
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)] gap-6 items-start">
+          <Card className="overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3">
+              <div className="text-sm font-semibold text-ink">{MONTHS[cursor.m]} {cursor.y}</div>
+              <div className="flex items-center gap-1">
+                <IconButton label="Bulan sebelumnya" size="sm" onClick={() => setCursor((c) => (c.m === 0 ? { m: 11, y: c.y - 1 } : { m: c.m - 1, y: c.y }))}><ChevronLeft /></IconButton>
+                <Button size="xs" variant="ghost" onClick={() => setCursor({ m: now.getMonth(), y: now.getFullYear() })}>Hari ini</Button>
+                <IconButton label="Bulan berikutnya" size="sm" onClick={() => setCursor((c) => (c.m === 11 ? { m: 0, y: c.y + 1 } : { m: c.m + 1, y: c.y }))}><ChevronRight /></IconButton>
+              </div>
             </div>
-          </div>
-          <div className="overflow-x-auto">
-            <div className="min-w-[700px]">
-              <MonthGrid events={filtered} month={cursor.m} year={cursor.y} />
+            <div className="overflow-x-auto">
+              <div className="min-w-[700px]">
+                <MonthGrid events={filtered} month={cursor.m} year={cursor.y} />
+              </div>
             </div>
-          </div>
-        </Card>
+            <div className="px-5 py-3 border-t border-line flex flex-wrap items-center gap-4 text-xs text-ink-3">
+              <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-danger-500" /> Terlambat</span>
+              <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-brand-600" /> Akan datang</span>
+              <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-success-500" /> Selesai</span>
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader title="30 hari berikutnya" description="Ditambah tenggat yang sudah lewat" />
+            <CardBody className="space-y-4">
+              {(() => {
+                const overdueList = filtered.filter((e) => eventStatus(e) === 'Overdue');
+                const upcomingList = filtered.filter((e) => eventStatus(e) !== 'Completed' && daysUntil(e.dueDate) >= 0 && daysUntil(e.dueDate) <= 30);
+                if (!overdueList.length && !upcomingList.length) {
+                  return <p className="text-xs text-ink-3">Tidak ada tenggat terlambat maupun dalam 30 hari ke depan.</p>;
+                }
+                const renderMini = (ev: CalendarEvent) => {
+                  const [day, mon] = dateShort(ev.dueDate).split(' ');
+                  const late = eventStatus(ev) === 'Overdue';
+                  const ent = ws.entityById(ev.entityId);
+                  return (
+                    <li key={ev.id} className="flex items-start gap-3 py-2.5">
+                      <div className="w-9 shrink-0 text-center">
+                        <div className={cn('figure text-[20px] leading-none', late ? 'text-danger-600' : 'text-ink')}>{day}</div>
+                        <div className={cn('eyebrow !text-[9px] mt-0.5', late && '!text-danger-600')}>{mon}</div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[13px] font-medium text-ink truncate">{ev.title}</div>
+                        <div className={cn('text-xs', late ? 'text-danger-600' : 'text-ink-3')}>
+                          {ent?.flag} {relativeDays(ev.dueDate)}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                };
+                return (
+                  <div className="space-y-4">
+                    {overdueList.length > 0 && (
+                      <div>
+                        <div className="eyebrow !text-[10px] !text-danger-600 mb-1">Terlambat</div>
+                        <ul className="divide-y divide-line border-t border-line">{overdueList.map(renderMini)}</ul>
+                      </div>
+                    )}
+                    {upcomingList.length > 0 && (
+                      <div>
+                        <div className="eyebrow !text-[10px] mb-1">Akan datang</div>
+                        <ul className="divide-y divide-line border-t border-line">{upcomingList.map(renderMini)}</ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </CardBody>
+          </Card>
+        </div>
       )}
       <AddEventDialog open={adding} onClose={() => setAdding(false)} />
     </div>

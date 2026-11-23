@@ -82,7 +82,7 @@ export function InvestigationPanel({ finding }: { finding: RiskFinding }) {
       </Callout>
 
       <section>
-        <h3 className="text-sm font-semibold text-ink mb-2">Ringkasan kasus</h3>
+        <h3 className="font-serif text-[18px] text-ink mb-2">Ringkasan kasus</h3>
         <ul className="space-y-2">
           {inv.brief.map((line, i) => (
             <li key={i} className="text-[13px] text-ink-2 leading-relaxed">
@@ -91,12 +91,16 @@ export function InvestigationPanel({ finding }: { finding: RiskFinding }) {
                 <button
                   key={n}
                   type="button"
+                  onClick={() => setHighlight((cur) => (cur === n ? null : n))}
                   onMouseEnter={() => setHighlight(n)}
                   onMouseLeave={() => setHighlight(null)}
                   onFocus={() => setHighlight(n)}
                   onBlur={() => setHighlight(null)}
                   aria-label={`Langkah ${n}`}
-                  className="mx-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded bg-muted px-1 text-[10px] font-medium text-ink-2 ring-1 ring-line align-text-top cursor-default"
+                  className={cn(
+                    'mx-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded px-1 text-[10px] font-medium ring-1 align-text-top cursor-pointer transition-colors',
+                    highlight === n ? 'bg-brand-100 text-brand-900 ring-brand-400' : 'bg-muted text-ink-2 ring-line',
+                  )}
                 >
                   {n}
                 </button>
@@ -107,8 +111,8 @@ export function InvestigationPanel({ finding }: { finding: RiskFinding }) {
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold text-ink mb-2">Langkah yang dijalankan</h3>
-        <ol className="rounded-xl border border-line divide-y divide-line">
+        <h3 className="font-serif text-[18px] text-ink mb-2">Langkah yang dijalankan</h3>
+        <ol className="rounded-lg border border-line divide-y divide-line">
           {inv.steps.map((s) => (
             <li key={s.n} className={cn('flex items-start gap-3 px-3.5 py-2.5 transition-colors', highlight === s.n && 'bg-brand-50/60')}>
               <span className="num text-xs text-ink-4 w-4 shrink-0 pt-0.5">{s.n}</span>
@@ -128,7 +132,7 @@ export function InvestigationPanel({ finding }: { finding: RiskFinding }) {
 
       {inv.openQuestions.length > 0 && (
         <section>
-          <h3 className="text-sm font-semibold text-ink mb-2">Pertanyaan terbuka untuk maker</h3>
+          <h3 className="font-serif text-[18px] text-ink mb-2">Pertanyaan terbuka untuk maker</h3>
           <ul className="space-y-1.5">
             {inv.openQuestions.map((q) => (
               <li key={q} className="flex items-start gap-2 text-[13px] text-ink-2">

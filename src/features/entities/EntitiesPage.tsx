@@ -39,8 +39,8 @@ function OrgNode({ entity, onOpen }: { entity: CorporateEntity; onOpen: (e: Corp
       type="button"
       onClick={() => onOpen(entity)}
       className={cn(
-        'relative w-[220px] text-left rounded-xl border bg-surface px-3.5 py-3 shadow-xs transition cursor-pointer hover:shadow-md',
-        active ? 'border-brand-400 ring-4 ring-brand-500/10' : 'border-line hover:border-line-strong',
+        'relative w-[220px] text-left rounded-lg border bg-surface px-3.5 py-3 transition-colors cursor-pointer',
+        active ? 'border-ink bg-mark-soft/45' : 'border-line hover:border-ink-3',
       )}
     >
       {entity.parentCompanyId && (

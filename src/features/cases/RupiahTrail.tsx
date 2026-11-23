@@ -37,7 +37,7 @@ export function RupiahTrailCard({ finding }: { finding: RiskFinding }) {
   const facility = FACILITY[c];
   const gap = Math.round(trail.flatEstimate - trail.taxDelta);
   return (
-    <section aria-label="Jejak Rupiah" className="rounded-xl border border-line p-4">
+    <section aria-label="Jejak Rupiah" className="rounded-lg border border-line p-4">
       <div className="flex items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 font-serif text-[19px] text-ink">
           <Coins className="size-4 text-ink-3" /> Jejak Rupiah

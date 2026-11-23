@@ -46,7 +46,11 @@ export function rupiahTrail(finding: RiskFinding, calc: CalculationState, countr
     withoutItems = calc.items.map((i) => {
       if (i.accountCode !== correction.accountCode) return i;
       const positiveCorrection = Math.max(0, i.positiveCorrection - correction.amount);
-      return { ...i, positiveCorrection };
+      const isRevenue = i.accountCode.startsWith('4') || i.accountCode.startsWith('7');
+      const fiscalAmount = isRevenue
+        ? i.commercialAmount + positiveCorrection - i.negativeCorrection
+        : i.commercialAmount - positiveCorrection + i.negativeCorrection;
+      return { ...i, positiveCorrection, fiscalAmount };
     });
   } else {
     withItems = applyCorrectionToItems(calc.items, correction, marker, finding.ruleName).items;

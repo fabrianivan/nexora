@@ -13,9 +13,11 @@ import { FX_NOTE, toIdr } from '@/lib/fx';
 import { paymentStatus } from '@/lib/schedule';
 import { CycleRibbon } from '@/shell/CycleRibbon';
 import {
+  ActionLink,
   Badge,
   BandLead,
   Button,
+  Callout,
   ColumnChart,
   ComplianceRing,
   Meter,
@@ -80,6 +82,17 @@ export function OverviewPage() {
   const reviewReturns = ws.accessibleEntities.filter((e) => ws.returnFor(e.id).returnStatus === 'Review');
   if (reviewReturns.length)
     actions.push({ key: 'spt', kind: 'SPT', tone: 'brand', title: `${reviewReturns.length} SPT tahunan menunggu persetujuan`, body: `${reviewReturns.map((e) => e.legalName).join(', ')} perlu sign-off Group CFO/CEO.`, cta: 'Buka SPT', href: '/tax-return' });
+  const waitingMembers = ws.account.members.filter((m) => m.status === 'waiting' || m.roleId === 'view_only');
+  if (ws.isParentExec && waitingMembers.length > 0)
+    actions.push({
+      key: 'team-waiting',
+      kind: 'Tim & peran',
+      tone: 'warning',
+      title: `${waitingMembers.length} anggota menunggu penetapan peran`,
+      body: `${waitingMembers.map((m) => m.name).join(', ')} bergabung dengan akses baca-saja sementara.`,
+      cta: 'Tetapkan peran',
+      href: '/settings/team',
+    });
 
   const firstName = ws.persona.name.replace(/^(Ir\.|Dr\.)\s*/, '').split(/[ ,]/)[0];
   const overdueIdr = overduePayments.reduce((s, p) => s + toIdr(p.amount, entityCountry(p.entityId)), 0);
@@ -105,6 +118,15 @@ export function OverviewPage() {
 
   return (
     <div className="space-y-12">
+      {ws.isViewOnly && (
+        <Callout
+          tone="warning"
+          title="Akun Anda sedang menunggu penetapan peran"
+          action={<Button size="sm" onClick={() => router.push('/waiting')}>Lihat status akses</Button>}
+        >
+          Anda saat ini hanya dapat melihat Ringkasan grup. Modul entitas, dokumen, kasus, dan SPT dibuka setelah pemilik ruang kerja menetapkan peran Anda.
+        </Callout>
+      )}
       <PageHeader
         eyebrow={
           <span>
@@ -112,7 +134,7 @@ export function OverviewPage() {
           </span>
         }
         title={
-          <span className="block text-[44px] sm:text-[52px] leading-[1.04]">
+          <span className="block text-[32px] sm:text-[44px] lg:text-[52px] leading-[1.04]">
             <span className="mark mark-sweep">{headline.mark}</span>
             {headline.rest}
           </span>
@@ -149,7 +171,7 @@ export function OverviewPage() {
         ]}
       />
 
-      <Section title="Siklus kepatuhan" description={`${ws.activeEntity.flag} ${ws.activeEntity.legalName}: enam langkah dari dokumen sampai setoran.`}>
+      <Section title="Siklus kepatuhan" description={`${ws.activeEntity.flag} ${ws.activeEntity.legalName}: enam langkah dari struktur entitas sampai setoran.`}>
         <CycleRibbon />
       </Section>
 
@@ -169,16 +191,16 @@ export function OverviewPage() {
                     <div className="mt-0.5 text-[15px] font-medium text-ink">{a.title}</div>
                     <div className="mt-0.5 text-[13px] text-ink-3 line-clamp-2">{a.body}</div>
                   </div>
-                  <Link href={a.href} className="mt-5 inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-900 shrink-0">
-                    {a.cta} <ArrowRight className="size-3.5" />
-                  </Link>
+                  <ActionLink href={a.href} className="mt-5 shrink-0" iconRight={<ArrowRight />}>
+                    {a.cta}
+                  </ActionLink>
                 </li>
               ))}
             </ol>
           )}
         </Section>
 
-        <Section title="Tenggat terdekat" actions={<Link href="/calendar" className="text-[13px] text-brand-700 hover:text-brand-900 font-medium">Kalender</Link>}>
+        <Section title="Tenggat terdekat" actions={<ActionLink href="/calendar">Kalender</ActionLink>}>
           <ul className="divide-y divide-line">
             {upcoming.map((e) => {
               const d = daysUntil(e.dueDate);
@@ -203,8 +225,8 @@ export function OverviewPage() {
         </Section>
       </div>
 
-      <Section title="Entitas grup" description="Skor kepatuhan: 100 berarti tidak ada kasus terbuka." actions={<Link href="/entities" className="text-[13px] text-brand-700 hover:text-brand-900 font-medium">Semua entitas</Link>}>
-        <Table className="-mx-5">
+      <Section title="Entitas grup" description="Skor kepatuhan: 100 berarti tidak ada kasus terbuka." actions={<ActionLink href="/entities">Semua entitas</ActionLink>}>
+        <Table flush>
           <THead>
             <tr>
               <TH>Entitas</TH>

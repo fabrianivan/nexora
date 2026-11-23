@@ -2,10 +2,12 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FileSearch, History, ListChecks, MessageSquareText, Scale, Search, ShieldCheck, Sparkles, UserCheck } from 'lucide-react';
+import { Download, FileSearch, History, ListChecks, MessageSquareText, Scale, Search, ShieldCheck, Sparkles, UserCheck } from 'lucide-react';
 import { RULES, groupRiskScore, isUnresolved, riskBand, type RiskFinding } from '@/lib/compliance';
+import { RECOMMENDATION_LABEL } from '@/lib/investigation';
 import { useWorkspace } from '@/state/workspace';
 import { useUi } from '@/state/ui';
+import { downloadFile, toCsv } from '@/lib/download';
 import { dateTime, money, moneyCompact } from '@/lib/format';
 import { toIdr } from '@/lib/fx';
 import { CASE_QUESTIONS } from '@/shell/Copilot';
@@ -45,7 +47,7 @@ function CaseHistory({ finding }: { finding: RiskFinding }) {
   const inv = ws.compliance.investigations?.[finding.id];
   const events = [
     ...review.history.map((h) => ({ at: h.at, who: `${h.by}`, role: h.role, note: h.note ?? '' })),
-    ...(inv ? [{ at: inv.at, who: 'Agen investigasi', role: inv.engine.label, note: `${inv.steps.length} langkah · saran: ${inv.recommendation}` }] : []),
+    ...(inv ? [{ at: inv.at, who: 'Agen investigasi', role: inv.engine.label, note: `${inv.steps.length} langkah · saran: ${RECOMMENDATION_LABEL[inv.recommendation]}` }] : []),
   ].sort((a, b) => a.at.localeCompare(b.at));
   if (!events.length) return <EmptyState icon={<History />} title="Belum ada riwayat" description="Usulan, persetujuan, investigasi, dan koreksi tercatat di sini." />;
   return (
@@ -105,7 +107,7 @@ function CasePane({ finding }: { finding: RiskFinding }) {
             items={[
               { id: 'evidence', label: 'Bukti', icon: <FileSearch /> },
               { id: 'investigation', label: inv ? 'Investigasi AI' : 'Investigasi AI · belum', icon: <Sparkles /> },
-              { id: 'history', label: 'Riwayat', icon: <History />, count: review.history.length || undefined },
+              { id: 'history', label: 'Riwayat', icon: <History />, count: (review.history.length + (inv ? 1 : 0)) || undefined },
             ]}
           />
           {tab === 'evidence' && <Evidence finding={finding} />}
@@ -181,6 +183,19 @@ export function CasesPage() {
   const band = riskBand(score);
   const ruleOptions = Object.keys(RULES).filter((r) => all.some((f) => f.rule === r));
 
+  const exportCasesCsv = () => {
+    const rows = [
+      ['id', 'entitas', 'aturan', 'tingkat', 'nilai', 'status', 'diputuskan_oleh'],
+      ...all.map((f) => {
+        const r = ws.reviewOf(f.id);
+        return [f.id, ws.entityById(f.entityId)?.legalName ?? f.entityId, f.ruleName, f.severity, f.amountAtRisk, r.status, r.decidedBy ?? ''];
+      }),
+    ];
+    downloadFile(`nexora-kasus-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows as (string | number)[][]), 'text/csv');
+    ws.logAudit('EXPORT_CASES_CSV', `${all.length} kasus`, 'Daftar kasus diekspor ke CSV.');
+    ui.toast(`${all.length} kasus diekspor ke CSV.`);
+  };
+
   return (
     <div>
       <PageHeader
@@ -189,14 +204,18 @@ export function CasesPage() {
         title="Kasus"
         description={`Setiap temuan mesin aturan menjadi satu kasus: bukti per field, investigasi AI, keputusan maker-checker, dan dampaknya ke SPT. ${ws.compliance.documents.filter((d) => ids.includes(d.doc.entityId)).length} dokumen diperiksa${ws.zScoreReady ? '' : '; Z-score butuh ≥ 5 invoice'}.`}
         actions={
-          <Button variant="ghost" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.askCopilot('Urutkan prioritas penanganan kasus terbuka kami, mulai dari yang kritis.')}>
-            Prioritaskan dengan Copilot
-          </Button>
+          <>
+            <Button icon={<Download />} onClick={exportCasesCsv}>
+              Ekspor kasus
+            </Button>
+            <Button variant="ghost" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.askCopilot('Urutkan prioritas penanganan kasus terbuka kami, mulai dari yang kritis.')}>
+              Prioritaskan dengan Copilot
+            </Button>
+          </>
         }
       />
 
       <MetricBand
-        variant="light"
         className="mb-6"
         label="Posisi kasus"
         lead={

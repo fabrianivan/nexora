@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { RiskFinding, WorkspaceDocument } from '@/lib/compliance';
 import { investigate } from '@/lib/ai/investigator';
+import { rateLimit } from '@/lib/server/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -27,6 +28,10 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'local';
+  if (!rateLimit(`investigate:${ip}`, 60, 60_000)) {
+    return NextResponse.json({ error: 'Terlalu banyak permintaan investigasi. Coba lagi sebentar.' }, { status: 429 });
+  }
   let parsed;
   try {
     parsed = bodySchema.safeParse(await req.json());
