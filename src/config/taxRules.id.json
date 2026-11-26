@@ -1,0 +1,109 @@
+{
+  "countryCode": "ID",
+  "countryName": "Indonesia",
+  "taxAuthority": "Direktorat Jenderal Pajak (DJP)",
+  "currency": "IDR",
+  "currencySymbol": "Rp",
+  "rates": [
+    {
+      "key": "cit_standard_rate",
+      "label": "Tarif PPh Badan Standar",
+      "value": 0.22,
+      "regulation": "UU No. 7 Tahun 2021 (UU HPP) Pasal 17 ayat (1) huruf b",
+      "effectiveDate": "2022-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "cit_sme_discount_rate",
+      "label": "Fasilitas Pengurangan Tarif PPh Badan (Pasal 31E)",
+      "value": 0.5,
+      "regulation": "UU PPh Pasal 31E (Peredaran bruto sampai Rp 50 Miliar)",
+      "effectiveDate": "2010-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "vat_standard_rate",
+      "label": "Tarif PPN Standar",
+      "value": 0.11,
+      "regulation": "UU No. 7 Tahun 2021 (UU HPP) Pasal 7 ayat (1) huruf a",
+      "effectiveDate": "2022-04-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "wht_23_service_rate",
+      "label": "Tarif PPh 23 Jasa / Royalti / Bunga",
+      "value": 0.02,
+      "regulation": "UU PPh Pasal 23 ayat (1) huruf c",
+      "effectiveDate": "2009-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "wht_4_2_rent_rate",
+      "label": "Tarif PPh Final Pasal 4 ayat (2) Sewa Tanah & Bangunan",
+      "value": 0.10,
+      "regulation": "PP No. 34 Tahun 2017",
+      "effectiveDate": "2017-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "wht_26_foreign_rate",
+      "label": "Tarif PPh 26 Pembayaran Luar Negeri (Non-P3B)",
+      "value": 0.20,
+      "regulation": "UU PPh Pasal 26 ayat (1)",
+      "effectiveDate": "2009-01-01",
+      "verified": true,
+      "flag": null
+    }
+  ],
+  "thresholds": [
+    {
+      "key": "der_max_ratio",
+      "label": "Batas Maksimum Debt to Equity Ratio (DER)",
+      "value": 4.0,
+      "regulation": "PMK-169/PMK.010/2015",
+      "effectiveDate": "2016-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "transfer_pricing_local_file_gross_revenue",
+      "label": "Batas Kewajiban Local File TP Doc (Peredaran Bruto)",
+      "value": 50000000000,
+      "regulation": "PMK-213/PMK.03/2016",
+      "effectiveDate": "2016-12-30",
+      "verified": true,
+      "flag": null
+    }
+  ],
+  "deadlines": [
+    {
+      "key": "ppn_monthly",
+      "label": "SPT Masa PPN",
+      "deadlineRule": "Akhir bulan berikutnya setelah masa pajak berakhir",
+      "regulation": "UU KUP Pasal 3 ayat (3) huruf a",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "cit_annual",
+      "label": "SPT Tahunan PPh Badan (Form 1771)",
+      "deadlineRule": "Akhir bulan ke-4 setelah akhir tahun pajak (30 April)",
+      "regulation": "UU KUP Pasal 3 ayat (3) huruf c",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "pph_21_23_monthly",
+      "label": "Penyetoran PPh 21 / 23 Bulanan",
+      "deadlineRule": "Tanggal 10 (setor) dan tanggal 20 (lapor) bulan berikutnya",
+      "regulation": "PMK-242/PMK.03/2014",
+      "verified": true,
+      "flag": null
+    }
+  ]
+}

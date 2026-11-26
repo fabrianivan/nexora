@@ -1,0 +1,65 @@
+{
+  "countryCode": "SG",
+  "countryName": "Singapore",
+  "taxAuthority": "Inland Revenue Authority of Singapore (IRAS)",
+  "currency": "SGD",
+  "currencySymbol": "S$",
+  "rates": [
+    {
+      "key": "cit_standard_rate",
+      "label": "Corporate Income Tax Standard Headline Rate",
+      "value": 0.17,
+      "regulation": "Singapore Income Tax Act 1947 Section 43",
+      "effectiveDate": "2010-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "gst_standard_rate",
+      "label": "Goods and Services Tax (GST) Rate",
+      "value": 0.09,
+      "regulation": "Singapore GST Act Section 16(1)",
+      "effectiveDate": "2024-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "wht_interest_rate",
+      "label": "Non-Resident Withholding Tax (Interest)",
+      "value": 0.15,
+      "regulation": "Singapore Income Tax Act Section 45",
+      "effectiveDate": "2015-01-01",
+      "verified": true,
+      "flag": null
+    }
+  ],
+  "thresholds": [
+    {
+      "key": "partial_tax_exemption_first_tier",
+      "label": "Partial Tax Exemption (First S$10,000 at 75%)",
+      "value": 10000,
+      "regulation": "IRAS Corporate Tax Exemption Scheme",
+      "effectiveDate": "2020-01-01",
+      "verified": true,
+      "flag": null
+    }
+  ],
+  "deadlines": [
+    {
+      "key": "cit_form_c_s",
+      "label": "Corporate Income Tax Filing (Form C-S / Form C)",
+      "deadlineRule": "30 November of Year of Assessment (e-Filing)",
+      "regulation": "IRAS Statutory Filing Deadline",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "gst_f5_quarterly",
+      "label": "Quarterly GST Return (Form F5)",
+      "deadlineRule": "1 month after the end of the accounting period",
+      "regulation": "IRAS GST Regulations",
+      "verified": true,
+      "flag": null
+    }
+  ]
+}

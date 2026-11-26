@@ -1,0 +1,555 @@
+'use client';
+
+import React, { useMemo, useState } from 'react';
+import { Building2, Eye, EyeOff, Plus, Search, ShieldAlert, Sparkles, UserCheck, UserRound, Users, Globe2 } from 'lucide-react';
+import type { CorporateEntity, IndividualShareholder } from '@/data/entities';
+import { useWorkspace } from '@/state/workspace';
+import { useUi } from '@/state/ui';
+import { TAX_CONFIG } from '@/lib/tax';
+import { money, pct } from '@/lib/format';
+import { rolesForProfile, type PartyKind, type PartyProfile, type PartyStatus } from '@/lib/ownershipChain';
+import {
+  Badge,
+  BandLead,
+  Button,
+  Callout,
+  Card,
+  CardBody,
+  CardHeader,
+  Checkbox,
+  ComplianceRing,
+  DescriptionList,
+  Dialog,
+  EmptyState,
+  Input,
+  MetricBand,
+  PageHeader,
+  Segmented,
+  Select,
+  SelectField,
+  Sheet,
+  Table,
+  Tabs,
+  TD,
+  TextField,
+  TH,
+  THead,
+  TR,
+} from '@/ui';
+import { IndividualDialog } from '../entities/dialogs';
+
+interface Row {
+  p: IndividualShareholder;
+  entity: CorporateEntity;
+}
+
+/** Masks identity numbers: keep the first 4 and last 2 characters. */
+export function mask(value: string): string {
+  const m = /^(.*?:\s*)?(.+)$/.exec(value);
+  const prefix = m?.[1] ?? '';
+  const raw = (m?.[2] ?? value).trim();
+  if (raw.length <= 6) return value;
+  return `${prefix}${raw.slice(0, 4)}${'•'.repeat(Math.min(6, Math.max(3, raw.length - 6)))}${raw.slice(-2)}`;
+}
+
+const isResident = (p: IndividualShareholder, entity: CorporateEntity) => p.taxResidency.includes(entity.jurisdictionName === 'Indonesia' ? 'Indonesia' : entity.jurisdictionName);
+
+function DividendSimulator({ row }: { row: Row }) {
+  const ui = useUi();
+  const { p, entity } = row;
+  const cfg = TAX_CONFIG[entity.countryCode];
+  const resident = isResident(p, entity);
+  const [amount, setAmount] = useState(100_000_000);
+  const [reinvest, setReinvest] = useState(true);
+  const [treaty, setTreaty] = useState(true);
+
+  let rate = 0;
+  let basis = '';
+  if (entity.countryCode === 'ID') {
+    if (resident) {
+      rate = reinvest ? 0 : 0.1;
+      basis = reinvest ? 'Dikecualikan — diinvestasikan kembali di Indonesia (UU HPP Pasal 4 ayat 3 huruf f)' : 'PPh final 10% (PP 9/2021)';
+    } else {
+      rate = treaty ? cfg.treatyWht : cfg.domesticWht;
+      basis = treaty ? 'PPh 26 tarif P3B — DGT/e-SKD & COR valid' : 'PPh 26 tarif domestik 20%';
+    }
+  } else {
+    rate = resident ? 0 : treaty ? cfg.treatyWht : cfg.domesticWht;
+    basis = resident ? 'Dividen domestik — umumnya tidak dipotong' : treaty ? 'Tarif treaty dengan formulir residensi valid' : 'Tarif WHT domestik';
+  }
+  const tax = amount * rate;
+
+  return (
+    <div className="rounded-lg border border-line p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-serif text-[18px] text-ink">Simulasi pajak dividen</h3>
+        <Badge tone={resident ? 'neutral' : 'brand'}>{resident ? 'Subjek pajak dalam negeri' : 'Subjek pajak luar negeri'}</Badge>
+      </div>
+      <TextField label={`Dividen bruto (${entity.functionalCurrency.split(' ')[0]})`} type="number" min={0} value={amount} onChange={(e) => setAmount(Number(e.target.value) || 0)} />
+      {entity.countryCode === 'ID' && resident ? (
+        <Checkbox label="Diinvestasikan kembali di Indonesia ≥ 3 tahun" checked={reinvest} onChange={(e) => setReinvest(e.target.checked)} />
+      ) : !resident ? (
+        <Checkbox label="Formulir treaty (DGT / COR / W-8BEN) valid" checked={treaty} onChange={(e) => setTreaty(e.target.checked)} />
+      ) : null}
+      <div className="grid grid-cols-3 gap-3 rounded-lg bg-subtle px-4 py-3">
+        <div>
+          <div className="text-xs text-ink-3">Tarif</div>
+          <div className="text-base font-semibold text-ink num">{pct(rate, 2)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-ink-3">Pajak dipotong</div>
+          <div className="text-base font-semibold text-ink num">{money(tax, entity.countryCode)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-ink-3">Diterima bersih</div>
+          <div className="text-base font-semibold text-ink num">{money(amount - tax, entity.countryCode)}</div>
+        </div>
+      </div>
+      <p className="text-xs text-ink-3">{basis}</p>
+      <Button size="sm" icon={<Sparkles className="text-brand-600" />} onClick={() => ui.askCopilot(`Hitung dan jelaskan pajak atas dividen ${money(amount, entity.countryCode)} dari ${entity.legalName} kepada ${p.fullName} (residen ${p.taxResidency}). Sebutkan dasar hukum dan dokumen yang diperlukan.`)}>
+        Jelaskan dengan Copilot
+      </Button>
+    </div>
+  );
+}
+
+function EntityDirectoryTab({ reveal }: { reveal: boolean }) {
+  const ws = useWorkspace();
+  const ui = useUi();
+  const [statusFilter, setStatusFilter] = useState<'all' | PartyStatus>('all');
+  const [kindFilter, setKindFilter] = useState<'all' | PartyKind>('all');
+  const [q, setQ] = useState('');
+  const [inspecting, setInspecting] = useState<PartyProfile | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newKind, setNewKind] = useState<PartyKind>('individual');
+  const [newName, setNewName] = useState('');
+  const [newIdNum, setNewIdNum] = useState('');
+  const [newJur, setNewJur] = useState('Indonesia');
+  const [newEmail, setNewEmail] = useState('');
+  const [newAddress, setNewAddress] = useState('');
+
+  const profiles = ws.ownership.profiles;
+  const activeCount = profiles.filter((p) => p.status === 'Active').length;
+  const draftCount = profiles.filter((p) => p.status === 'Draft').length;
+  const expiredCount = profiles.filter((p) => p.status === 'Expired').length;
+
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return profiles
+      .filter((p) => (statusFilter === 'all' ? true : p.status === statusFilter))
+      .filter((p) => (kindFilter === 'all' ? true : p.kind === kindFilter))
+      .filter((p) => !term || `${p.legalName} ${p.registrationOrIdNumber} ${p.email} ${p.jurisdictionOrNationality}`.toLowerCase().includes(term));
+  }, [profiles, statusFilter, kindFilter, q]);
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim() || !newIdNum.trim()) return;
+    const profile: PartyProfile = {
+      id: `PTY-${newKind === 'corporate' ? 'CORP' : 'IND'}-${Date.now().toString(36).toUpperCase()}`,
+      kind: newKind,
+      legalName: newName.trim(),
+      registrationOrIdNumber: newIdNum.trim(),
+      idType: newKind === 'corporate' ? 'Nomor registrasi' : 'NIK / Paspor',
+      jurisdictionOrNationality: newJur,
+      dateOfBirthOrIncorporation: new Date().toISOString().slice(0, 10),
+      email: newEmail.trim(),
+      address: newAddress.trim() || newJur,
+      status: 'Active',
+      directorIds: [],
+    };
+    ws.updateOwnership((prev) => ({
+      ...prev,
+      profiles: [profile, ...prev.profiles],
+    }));
+    ws.logAudit('CREATE_PARTY_PROFILE', profile.legalName, `Profil ${newKind === 'corporate' ? 'korporasi' : 'perorangan'} ditambahkan ke direktori.`);
+    ui.toast(`${profile.legalName} ditambahkan ke direktori.`);
+    setCreating(false);
+    setNewName('');
+    setNewIdNum('');
+    setNewEmail('');
+    setNewAddress('');
+  };
+
+  const inspectedRoles = inspecting ? rolesForProfile(ws.ownership, ws.entities, inspecting.id) : [];
+
+  return (
+    <div className="space-y-6">
+      <MetricBand
+        label="Ringkasan direktori entitas"
+        metrics={[
+          { label: 'Profil aktif', value: activeCount, detail: 'Siap dipakai di semua entitas', tone: 'success' },
+          { label: 'Profil draf', value: draftCount, detail: draftCount ? 'Perlu dilengkapi pemilik / dokumen' : 'Tidak ada draf belum lengkap', tone: draftCount ? 'warning' : undefined },
+          { label: 'Profil kedaluwarsa', value: expiredCount, detail: expiredCount ? 'Perlu pembaruan dokumen ID' : 'Tidak ada catatan kedaluwarsa' },
+          { label: 'Total profil bersama', value: profiles.length, detail: 'Satu profil untuk seluruh peran' },
+        ]}
+      />
+
+      <Card>
+        <div className="flex flex-wrap items-center gap-3 px-5 py-3.5 border-b border-line">
+          <Segmented<'all' | PartyStatus>
+            value={statusFilter}
+            onChange={setStatusFilter}
+            items={[
+              { id: 'all', label: 'Semua', count: profiles.length },
+              { id: 'Active', label: 'Aktif', count: activeCount },
+              { id: 'Draft', label: 'Draf', count: draftCount },
+              { id: 'Expired', label: 'Kedaluwarsa', count: expiredCount },
+            ]}
+          />
+          <div className="w-40">
+            <Select value={kindFilter} onChange={(e) => setKindFilter(e.target.value as 'all' | PartyKind)} aria-label="Jenis profil">
+              <option value="all">Semua jenis</option>
+              <option value="individual">Perorangan</option>
+              <option value="corporate">Korporasi</option>
+            </Select>
+          </div>
+          <div className="w-full sm:w-64 sm:ml-auto">
+            <Input leading={<Search />} placeholder="Cari nama atau nomor ID…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Cari direktori" />
+          </div>
+          <Button variant="primary" size="sm" icon={<Plus />} onClick={() => setCreating(true)}>
+            Profil baru
+          </Button>
+        </div>
+
+        <Table>
+          <THead>
+            <tr>
+              <TH>Jenis</TH>
+              <TH>Nama</TH>
+              <TH>Dokumen / Registrasi</TH>
+              <TH>Peran di grup</TH>
+              <TH>Status</TH>
+            </tr>
+          </THead>
+          <tbody>
+            {filtered.map((p) => {
+              const roles = rolesForProfile(ws.ownership, ws.entities, p.id);
+              return (
+                <TR key={p.id} onClick={() => setInspecting(p)}>
+                  <TD>
+                    <Badge tone={p.kind === 'corporate' ? 'brand' : 'neutral'}>
+                      {p.kind === 'corporate' ? <Building2 className="size-3" /> : <UserRound className="size-3" />}
+                      {p.kind === 'corporate' ? 'Korporasi' : 'Perorangan'}
+                    </Badge>
+                  </TD>
+                  <TD>
+                    <div className="text-ink font-medium">{p.legalName}</div>
+                    <div className="text-xs text-ink-3">{p.jurisdictionOrNationality} {p.email ? `· ${p.email}` : ''}</div>
+                  </TD>
+                  <TD className="font-mono text-xs">
+                    {reveal || p.kind === 'corporate' ? p.registrationOrIdNumber : mask(p.registrationOrIdNumber)}
+                  </TD>
+                  <TD className="text-xs text-ink-2">
+                    {roles.length === 0 ? (
+                      <span className="text-ink-4">Belum ditautkan</span>
+                    ) : (
+                      <span>{roles.length} peran ({roles[0].companyName})</span>
+                    )}
+                  </TD>
+                  <TD>
+                    <Badge tone={p.status === 'Active' ? 'success' : p.status === 'Draft' ? 'warning' : 'danger'} dot>
+                      {p.status === 'Active' ? 'Aktif' : p.status === 'Draft' ? 'Draf' : 'Kedaluwarsa'}
+                    </Badge>
+                  </TD>
+                </TR>
+              );
+            })}
+          </tbody>
+        </Table>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader title="Satu profil. Setiap perusahaan." />
+          <CardBody className="text-[13px] text-ink-3">
+            Pakai ulang profil yang sudah ada saat menambah direktur, pemegang saham korporasi, atau pemegang saham perantara — satu profil menyimpan seluruh perannya secara konsisten.
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader title="Jaga kelengkapan profil" />
+          <CardBody className="text-[13px] text-ink-3 space-y-1">
+            <div>01 · Pastikan detail identitas atau registrasi badan</div>
+            <div>02 · Lengkapi dokumen identitas & alamat domisili</div>
+            <div>03 · Tautkan profil ke perusahaan terkait dalam rantai</div>
+          </CardBody>
+        </Card>
+      </div>
+
+      <Sheet
+        open={Boolean(inspecting)}
+        onClose={() => setInspecting(null)}
+        width="max-w-lg"
+        title={inspecting?.legalName}
+        description={inspecting ? `${inspecting.kind === 'corporate' ? 'Entitas korporasi' : 'Perorangan'} · ${inspecting.jurisdictionOrNationality}` : undefined}
+      >
+        {inspecting && (
+          <div className="p-6 space-y-6">
+            <DescriptionList
+              columns={2}
+              items={[
+                { label: 'Jenis', value: inspecting.kind === 'corporate' ? 'Korporasi' : 'Perorangan' },
+                { label: 'Status', value: inspecting.status },
+                { label: inspecting.idType, value: reveal || inspecting.kind === 'corporate' ? inspecting.registrationOrIdNumber : mask(inspecting.registrationOrIdNumber), mono: true },
+                { label: 'Email', value: inspecting.email || '—' },
+                { label: 'Alamat', value: inspecting.address || '—' },
+              ]}
+            />
+            <div>
+              <h3 className="font-serif text-[18px] text-ink mb-2">Peran di seluruh ruang kerja</h3>
+              {inspectedRoles.length === 0 ? (
+                <Callout tone="neutral">Profil ini belum ditautkan ke perusahaan mana pun.</Callout>
+              ) : (
+                <ul className="divide-y divide-line border border-line rounded-lg">
+                  {inspectedRoles.map((r, i) => (
+                    <li key={i} className="px-4 py-3 flex items-center justify-between gap-3 text-[13px]">
+                      <div>
+                        <div className="font-medium text-ink">{r.role}</div>
+                        <div className="text-xs text-ink-3">{r.companyName}</div>
+                      </div>
+                      {r.percent !== undefined && <Badge tone="brand">{r.percent}%</Badge>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </Sheet>
+
+      <Dialog
+        open={creating}
+        onClose={() => setCreating(false)}
+        size="md"
+        title="Tambah profil ke direktori"
+        description="Buat profil perorangan atau perusahaan yang bisa dipakai ulang di seluruh grup."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setCreating(false)}>Batal</Button>
+            <Button variant="primary" type="submit" form="new-party-form">Simpan profil</Button>
+          </>
+        }
+      >
+        <form id="new-party-form" onSubmit={handleCreate} className="space-y-4">
+          <Segmented<PartyKind>
+            value={newKind}
+            onChange={setNewKind}
+            items={[
+              { id: 'individual', label: 'Perorangan', icon: <UserRound /> },
+              { id: 'corporate', label: 'Korporasi', icon: <Building2 /> },
+            ]}
+          />
+          <TextField label="Nama legal *" value={newName} onChange={(e) => setNewName(e.target.value)} required />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <TextField label={newKind === 'corporate' ? 'Nomor registrasi *' : 'NIK / Paspor *'} mono value={newIdNum} onChange={(e) => setNewIdNum(e.target.value)} required />
+            <SelectField label="Yurisdiksi / Kewarganegaraan" value={newJur} onChange={(e) => setNewJur(e.target.value)}>
+              <option value="Indonesia">Indonesia</option>
+              <option value="Singapore">Singapura</option>
+              <option value="Malaysia">Malaysia</option>
+              <option value="United States">Amerika Serikat</option>
+            </SelectField>
+          </div>
+          <TextField label="Email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+          <TextField label="Alamat terdaftar" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} />
+        </form>
+      </Dialog>
+    </div>
+  );
+}
+
+export function ShareholdersPage() {
+  const ws = useWorkspace();
+  const [pageTab, setPageTab] = useState<'register' | 'directory'>('register');
+  const [q, setQ] = useState('');
+  const [reveal, setReveal] = useState(false);
+  const [selected, setSelected] = useState<Row | null>(null);
+  const [addFor, setAddFor] = useState<string>('');
+  const [adding, setAdding] = useState(false);
+
+  const rows: Row[] = useMemo(
+    () => ws.accessibleEntities.flatMap((entity) => entity.individualShareholders.map((p) => ({ p, entity }))),
+    [ws.accessibleEntities],
+  );
+  const filtered = rows.filter(({ p, entity }) => !q.trim() || `${p.fullName} ${p.taxResidency} ${entity.legalName}`.toLowerCase().includes(q.toLowerCase()));
+  const ubo = rows.filter(({ p }) => p.effectiveSharePercent >= 25 || p.type === 'Individual Shareholder (UBO)');
+  const pep = rows.filter(({ p }) => !p.pepAndSanctionStatus.startsWith('Verified'));
+  const kyc = rows.filter(({ p }) => !p.kycDocStatus.startsWith('Verified'));
+  const foreign = rows.filter(({ p, entity }) => !isResident(p, entity));
+  const kycPct = rows.length ? Math.round(((rows.length - kyc.length) / rows.length) * 100) : 100;
+  const kycTone = kycPct >= 90 ? 'emerald' : kycPct >= 60 ? 'amber' : 'rose';
+  const addEntity = ws.entityById(addFor || ws.activeEntityId) ?? ws.activeEntity;
+  const live = selected ? rows.find((r) => r.p.id === selected.p.id && r.entity.id === selected.entity.id) ?? selected : null;
+
+  return (
+    <div>
+      <PageHeader
+        eyebrow={<span>Tata kelola</span>}
+        title="Pemegang saham & pemilik manfaat"
+        description="Register perorangan di seluruh entitas: kepemilikan efektif, status PEP/KYC, direktori profil bersama, dan perlakuan pajak dividen. Identitas disamarkan secara default."
+        actions={
+          <>
+            <Button icon={reveal ? <EyeOff /> : <Eye />} onClick={() => { setReveal((v) => !v); if (!reveal) ws.logAudit('REVEAL_PII', 'Register pemegang saham', 'Identitas pribadi ditampilkan tanpa masking.'); }}>
+              {reveal ? 'Samarkan identitas' : 'Tampilkan identitas'}
+            </Button>
+            <Button variant="primary" icon={<Plus />} onClick={() => setAdding(true)}>Tambah</Button>
+          </>
+        }
+      />
+
+      <Tabs<'register' | 'directory'>
+        className="mb-6"
+        value={pageTab}
+        onChange={setPageTab}
+        items={[
+          { id: 'register', label: 'Pemegang saham & UBO', count: rows.length },
+          { id: 'directory', label: 'Direktori entitas & profil', count: ws.ownership.profiles.length },
+        ]}
+      />
+
+      {pageTab === 'directory' ? (
+        <EntityDirectoryTab reveal={reveal} />
+      ) : (
+        <>
+          <MetricBand
+            className="mb-6"
+            label="Posisi uji tuntas pemegang saham"
+            lead={
+              <BandLead
+                eyebrow="KYC terverifikasi"
+                title={`${kycPct}% lengkap`}
+                detail={kyc.length ? `${kyc.length} dokumen identitas belum diverifikasi` : 'Seluruh dokumen identitas terverifikasi'}
+                tone={kycTone === 'rose' ? 'danger' : kycTone === 'amber' ? 'warning' : 'success'}
+                visual={<ComplianceRing value={kycPct} tone={kycTone} caption="%" label={`${kycPct} persen KYC lengkap`} />}
+              />
+            }
+            metrics={[
+              {
+                label: 'Pemilik manfaat (≥ 25%)',
+                value: ubo.length,
+                detail: `dari ${rows.length} perorangan terdaftar`,
+                icon: <UserCheck />,
+              },
+              {
+                label: 'PEP — perlu EDD',
+                value: pep.length,
+                detail: 'Enhanced due diligence',
+                icon: <ShieldAlert />,
+                tone: pep.length ? 'warning' : undefined,
+              },
+              {
+                label: 'Non-residen',
+                value: foreign.length,
+                detail: 'Dividen kena WHT / tarif treaty',
+                icon: <Globe2 />,
+              },
+            ]}
+          />
+
+          <Card>
+            <div className="flex flex-wrap items-center gap-3 px-5 py-3.5">
+              <div className="w-full sm:w-80">
+                <Input leading={<Search />} placeholder="Cari nama, residensi, entitas…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Cari pemegang saham" />
+              </div>
+            </div>
+            {filtered.length === 0 ? (
+              <EmptyState icon={<Users />} title="Tidak ada pemegang saham" />
+            ) : (
+              <Table>
+                <THead>
+                  <tr>
+                    <TH>Nama</TH>
+                    <TH>Identitas</TH>
+                    <TH>Residensi pajak</TH>
+                    <TH align="right">Kepemilikan efektif</TH>
+                    <TH>Kepatuhan</TH>
+                  </tr>
+                </THead>
+                <tbody>
+                  {filtered.map((r) => (
+                    <TR key={`${r.entity.id}-${r.p.id}`} onClick={() => setSelected(r)}>
+                      <TD>
+                        <div className="flex items-center gap-2">
+                          <span className="text-ink font-medium">{r.p.fullName}</span>
+                          {r.p.effectiveSharePercent >= 25 && <Badge tone="brand">UBO</Badge>}
+                        </div>
+                        <div className="text-xs text-ink-3 truncate max-w-[340px]">{r.entity.flag} {r.entity.legalName} · {r.p.roleTitle}</div>
+                      </TD>
+                      <TD className="font-mono text-xs whitespace-nowrap">{reveal ? r.p.nationalIdOrPassport : mask(r.p.nationalIdOrPassport)}</TD>
+                      <TD className="whitespace-nowrap">{r.p.taxResidency.split('(')[0]}</TD>
+                      <TD align="right">
+                        <div className="text-ink font-medium">{r.p.effectiveSharePercent}%</div>
+                        <div className="text-xs text-ink-3">langsung {r.p.directSharePercent}%</div>
+                      </TD>
+                      <TD>
+                        <div className="flex gap-1">
+                          <Badge tone={r.p.pepAndSanctionStatus.startsWith('Verified') ? 'success' : 'warning'} dot>{r.p.pepAndSanctionStatus.startsWith('Verified') ? 'Non-PEP' : 'PEP'}</Badge>
+                          <Badge tone={r.p.kycDocStatus.startsWith('Verified') ? 'success' : 'warning'} dot>{r.p.kycDocStatus.startsWith('Verified') ? 'KYC' : 'KYC pending'}</Badge>
+                        </div>
+                      </TD>
+                    </TR>
+                  ))}
+                </tbody>
+              </Table>
+            )}
+          </Card>
+        </>
+      )}
+
+      <Sheet open={Boolean(live)} onClose={() => setSelected(null)} width="max-w-xl" title={live?.p.fullName} description={live ? `${live.entity.flag} ${live.entity.legalName}` : undefined}>
+        {live && (
+          <div className="p-6 space-y-6">
+            {!live.p.pepAndSanctionStatus.startsWith('Verified') && (
+              <Callout tone="warning" icon={<ShieldAlert />} title="Politically exposed person">Lakukan enhanced due diligence dan dokumentasikan sumber dana sebelum distribusi dividen.</Callout>
+            )}
+            <DescriptionList
+              columns={2}
+              items={[
+                { label: 'Peran', value: live.p.roleTitle || '—' },
+                { label: 'Jenis', value: live.p.type },
+                { label: 'Kewarganegaraan', value: live.p.nationality },
+                { label: 'Residensi pajak', value: live.p.taxResidency },
+                { label: 'NIK / paspor', value: reveal ? live.p.nationalIdOrPassport : mask(live.p.nationalIdOrPassport), mono: true },
+                { label: 'NPWP / TIN', value: reveal ? live.p.personalTaxId : mask(live.p.personalTaxId), mono: true },
+                { label: 'Kepemilikan langsung', value: `${live.p.directSharePercent}%` },
+                { label: 'Kepemilikan efektif', value: `${live.p.effectiveSharePercent}%` },
+                { label: 'Hak suara', value: `${live.p.votingRightPercent}%` },
+                { label: 'Rezim pajak dividen', value: live.p.dividendTaxRegime },
+              ]}
+            />
+            <DividendSimulator row={live} />
+          </div>
+        )}
+      </Sheet>
+
+      {adding && !addFor && (
+        <AddPicker
+          onPick={(id) => setAddFor(id)}
+          onClose={() => setAdding(false)}
+        />
+      )}
+      <IndividualDialog
+        open={adding && Boolean(addFor)}
+        onClose={() => {
+          setAdding(false);
+          setAddFor('');
+        }}
+        entity={addEntity}
+      />
+    </div>
+  );
+}
+
+function AddPicker({ onPick, onClose }: { onPick: (id: string) => void; onClose: () => void }) {
+  const ws = useWorkspace();
+  const [id, setId] = useState(ws.activeEntityId);
+  return (
+    <Dialog open onClose={onClose} size="sm" title="Tambah pemegang saham perorangan" description="Pilih entitas penerbit saham" footer={<><Button variant="ghost" onClick={onClose}>Batal</Button><Button variant="primary" onClick={() => onPick(id)}>Lanjut</Button></>}>
+      <div>
+        <SelectField label="Entitas" value={id} onChange={(e) => setId(e.target.value)}>
+          {ws.accessibleEntities.map((e) => (
+            <option key={e.id} value={e.id}>{e.flag} {e.legalName}</option>
+          ))}
+        </SelectField>
+      </div>
+    </Dialog>
+  );
+}

@@ -1,0 +1,57 @@
+{
+  "countryCode": "MY",
+  "countryName": "Malaysia",
+  "taxAuthority": "Lembaga Hasil Dalam Negeri (LHDN)",
+  "currency": "MYR",
+  "currencySymbol": "RM",
+  "rates": [
+    {
+      "key": "cit_standard_rate",
+      "label": "Corporate Income Tax Standard Headline Rate",
+      "value": 0.24,
+      "regulation": "Income Tax Act 1967 Schedule 1 Part I",
+      "effectiveDate": "2016-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "cit_sme_rate_first_tier",
+      "label": "SME Preferential Rate (First RM150,000)",
+      "value": 0.15,
+      "regulation": "Budget 2023 / LHDN Practice Note",
+      "effectiveDate": "2023-01-01",
+      "verified": true,
+      "flag": null
+    },
+    {
+      "key": "sst_service_tax_rate",
+      "label": "Service Tax Rate",
+      "value": 0.08,
+      "regulation": "Service Tax (Amendment) Regulations 2024",
+      "effectiveDate": "2024-03-01",
+      "verified": true,
+      "flag": null
+    }
+  ],
+  "thresholds": [
+    {
+      "key": "myinvois_mandatory_phase_1",
+      "label": "MyInvois E-Invoice Phase 1 Mandate (Turnover > RM100M)",
+      "value": 100000000,
+      "regulation": "LHDN E-Invoice Guideline v3.0",
+      "effectiveDate": "2024-08-01",
+      "verified": true,
+      "flag": null
+    }
+  ],
+  "deadlines": [
+    {
+      "key": "cit_form_c",
+      "label": "Corporate Tax Return (Form C)",
+      "deadlineRule": "Within 7 months after the close of the accounting period",
+      "regulation": "Income Tax Act 1967 Section 77A",
+      "verified": true,
+      "flag": null
+    }
+  ]
+}
